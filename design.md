@@ -153,9 +153,9 @@
 | 局部常量\|变量       | alloc  | variableName            | value               | size            |
 | 全局变量\|常量       | global | variableName            | value               | size            |
 | 赋值单值             | store  | value  ➡                | name                | 0               |
-| 赋值数组             | store  | value  ➡                | address(暂时用name) | index           |
+| 赋值数组             | store  | value  ➡                | address(暂时用name) | offset          |
 | 取内存               | load   | tmpReg  ⬅               | name                | 0               |
-| 取内存               | load   | tmpReg  ⬅               | address(暂时用name) | index           |
+| 取内存               | load   | tmpReg  ⬅               | address(暂时用name) | offset          |
 | 函数调用             | call   | funcName                | retReg              | paraNum         |
 | 函数返回             | ret    | value                   |                     |                 |
 | 函数传参             | push   | tmpReg                  |                     | type(int\|int*) |
@@ -193,3 +193,4 @@
 - 尾递归
 - 栈空间申请合并以及初始化的操作
 - 非具名临时变量是按顺序编号的（使用一个递增计数器，从0开始）。注意整个基本块都被包含在这种编号方法中。例如，如果一个基本块的入口没有被给予一个标签名，那么它就会获得一个编号0。
+
