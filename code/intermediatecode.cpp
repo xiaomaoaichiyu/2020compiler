@@ -2,125 +2,132 @@
 #include <string>
 #include <iostream>
 using namespace std;
+string standardLength(string a)
+{
+	while (a.size() < 10) {
+		a = a + " ";
+	}
+	return a;
+}
 string setContent(irCodeType type, string res, string ope1, string ope2)
 {
 	string content = "";
 	switch (type) {
 	case ADD: {
-		content = "add " + res + " " + ope1 + " " + ope2;
+		content = "add        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case SUB: {
-		content = "sub " + res + " " + ope1 + " " + ope2;
+		content = "sub        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case DIV: {
-		content = "div " + res + " " + ope1 + " " + ope2;
+		content = "div        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case MUL: {
-		content = "mul " + res + " " + ope1 + " " + ope2;
+		content = "mul        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case REM: {
-		content = "rem " + res + " " + ope1 + " " + ope2;
+		content = "rem        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case AND: {
-		content = "and " + res + " " + ope1 + " " + ope2;
+		content = "and        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case OR: {
-		content = "or " + res + " " + ope1 + " " + ope2;
+		content = "or         " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case NOT: {
-		content = "not " + res + " " + ope1;
+		content = "not        " + standardLength(res) + " " + standardLength(ope1);
 		break;
 	}
 	case EQL: {
-		content = "eql " + res + " " + ope1 + " " + ope2;
+		content = "eql        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case NEQ: {
-		content = "neq " + res + " " + ope1 + " " + ope2;
+		content = "neq        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case SGT: {
-		content = "sgt " + res + " " + ope1 + " " + ope2;
+		content = "sgt        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case SGE: {
-		content = "sge " + res + " " + ope1 + " " + ope2;
+		content = "sge        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case SLT: {
-		content = "slt " + res + " " + ope1 + " " + ope2;
+		content = "slt        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case SLE: {
-		content = "sle " + res + " " + ope1 + " " + ope2;
+		content = "sle        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case ALLOC: {
 		if (ope1.size() == 0) {
 			ope1 = "_";
 		}
-		content = "alloc " + res + " " + ope1 + " " + ope2;
+		content = "alloc      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case STORE: {
-		content = "store " + res + " " + ope1 + " " + ope2;
+		content = "store      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case LOAD: {
-		content = "load " + res + " " + ope1 + " " + ope2;
+		content = "load       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case INDEX: {
 		break;
 	}
 	case CALL: {
-		content = "call " + res + " " + ope1 + " " + ope2;
+		content = "call       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case RET: {
-		content = "ret " + res;
+		content = "ret        " + standardLength(res);
 		break;
 	}
 	case PUSH: {
-		content = "push " + res + " " + ope2;
+		content = "push       " + standardLength(res) + "           " + standardLength(ope2);
 		break;
 	}
 	case POP: {
 		break;
 	}
 	case LABEL: {
-		content = "label " + res;
+		content = "label      " + standardLength(res);
 		break;
 	}
 	case BR: {
 		if (ope1.size() > 0) {
-			content = "br " + res + " " + ope1 + " " + ope2;
+			content = "br         " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		}
 		else {
-			content = "br " + res;
+			content = "br         " + standardLength(res);
 		}
 		break;
 	}
 	case DEFINE: {
-		content = "define " + res + " " + ope1;
+		content = "define     " + standardLength(res) + " " + standardLength(ope1);
 		break;
 	}
 	case PARA: {
-		content = "para " + res + " " + ope1 + " " + ope2;
+		content = "para       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case GLOBAL: {
 		if (ope1.size() == 0) {
 			ope1 = "_";
 		}
-		content = "global " + res + " " + ope1 + " " + ope2;
+		content = "global     " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	default:

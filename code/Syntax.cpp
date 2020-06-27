@@ -188,7 +188,7 @@ int main()
 		}
 	}
 	//检测符号表内容
-	/*     
+	/*
 	cout << "名字 " << "Block下标 " << "种类 0Con 1Var 2Para 3Func " << "维度 " << endl;
 	for (int i = 0; i < total.size(); i++) {
 		vector<symbolTable> item = total[i];
@@ -203,7 +203,6 @@ int main()
 		cout << "\n";   //一个作用域换一行
 	}
 	*/
-	
 	//检测数组赋值正确性 testcase8
 	/*
 	for (int i = 0; i < total[0].size(); i++) {
@@ -357,11 +356,10 @@ void ConstDef(int index,int block)			   //常量定义
 	for (int pp = 0; pp < matrixLength.size(); pp++) {
 		totalSize = totalSize * matrixLength[pp];
 	}
-	ConstInitVal(index);
 	irCodeType codetype;
 	string b;
 	string constValue = "";
-	if (index == 0) {
+	if (index != 0) {
 		codetype = ALLOC;
 		b = "@";
 	}
@@ -373,9 +371,10 @@ void ConstDef(int index,int block)			   //常量定义
 		int size = total[index].size();
 		constValue = numToString(total[index][size - 1].getIntValue()[0]);
 	}
-	CodeItem citem = CodeItem(codetype, b+name,constValue, numToString(totalSize));
+	CodeItem citem = CodeItem(codetype, b + name, constValue, numToString(totalSize));
 	citem.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem);
+	ConstInitVal(index);
 	//退出循环前均已经预读单词
 	outfile << "<常量定义>" << endl;
 }
@@ -615,6 +614,23 @@ void VarDef(int index,int block)             //变量定义
 	item.setMatrixLength(length);
 	total[index].push_back(item);
 	names[index][name]++;
+	totalSize = 1;
+	for (int pp = 0; pp < length.size(); pp++) {
+		totalSize = totalSize * length[pp];
+	}
+	irCodeType codetype;
+	string b;
+	if (index != 0) {
+		codetype = ALLOC;
+		b = "@";
+	}
+	else {
+		codetype = GLOBAL;
+		b = "%";
+	}
+	CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
+	citem.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem);
 	if (symbol == ASSIGN) {
 		printMessage();   //输出=
 		wordAnalysis.getsym();
@@ -628,26 +644,10 @@ void VarDef(int index,int block)             //变量定义
 		Ndimension = 0;
 		isNesting = 0;
 		isBegin = 0;
-		totalSize = 1;
 		nodeName = name;
-		for (int pp = 0; pp < matrixLength.size(); pp++) {
-			totalSize = totalSize * matrixLength[pp];
-		}
+		
 		InitVal(index);
 	}
-	irCodeType codetype;
-	string b;
-	if (index == 0) {
-		codetype = ALLOC;
-		b = "@";
-	}
-	else {
-		codetype = GLOBAL;
-		b = "%";
-	}
-	CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
-	citem.setFatherBlock(fatherBlock);
-	codetotal[Funcindex].push_back(citem);
 	//退出循环前已经预读单词
 	outfile << "<变量定义>" << endl;
 }
@@ -1582,9 +1582,9 @@ void loopStmt()          //循环语句
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
-	string while_cond_label = "%while.cond_" + numToString(iflabelIndex);
-	string while_body_label = "%while.body_" + numToString(iflabelIndex);
-	string while_end_label = "%while.end_" + numToString(iflabelIndex);
+	string while_cond_label = "%while.cond_" + numToString(whilelabelIndex);
+	string while_body_label = "%while.body_" + numToString(whilelabelIndex);
+	string while_end_label = "%while.end_" + numToString(whilelabelIndex);
 	whilelabelIndex++;
 	CodeItem citem1 = CodeItem(LABEL, while_cond_label, "", "");	//label %while.cond
 	citem1.setFatherBlock(fatherBlock);
@@ -1710,22 +1710,22 @@ void change(int index)	//修改中间代码、符号表
 		string ope1 = b[i].getOperand1();
 		string ope2 = b[i].getOperand2();
 		if (res.size()>0 && res[0] == '%' && (!isdigit(res[1])) ) {  //res必须是变量
-			res.erase(0, 1);  //去掉首字母
 			if (names[index][res] > 1) {
+				res.erase(0, 1);  //去掉首字母
 				symbolTable item = checkTable(res, index, b[i].getFatherBlock());
 				res = "%" + newName(res, item.getblockIndex());
 			}
 		}
 		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res必须是变量
-			ope1.erase(0, 1);  //去掉首字母
 			if (names[index][ope1] > 1) {
+				ope1.erase(0, 1);  //去掉首字母
 				symbolTable item = checkTable(ope1, index, b[i].getFatherBlock());
 				ope1 = "%" + newName(ope1, item.getblockIndex());
 			}
 		}
 		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res必须是变量
-			ope2.erase(0, 1);  //去掉首字母
 			if (names[index][ope2] > 1) {
+				ope2.erase(0, 1);  //去掉首字母
 				symbolTable item = checkTable(ope2, index, b[i].getFatherBlock());
 				ope2 = "%" + newName(ope2, item.getblockIndex());
 			}
