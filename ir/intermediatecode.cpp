@@ -1,13 +1,146 @@
 #include "intermediatecode.h"
 #include <string>
-
-CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2){
+#include <iostream>
+using namespace std;
+string standardLength(string a)
+{
+	while (a.size() < 10) {
+		a = a + " ";
+	}
+	return a;
+}
+string setContent(irCodeType type, string res, string ope1, string ope2)
+{
+	string content = "";
+	switch (type) {
+	case ADD: {
+		content = "add        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case SUB: {
+		content = "sub        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case DIV: {
+		content = "div        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case MUL: {
+		content = "mul        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case REM: {
+		content = "rem        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case AND: {
+		content = "and        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case OR: {
+		content = "or         " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case NOT: {
+		content = "not        " + standardLength(res) + " " + standardLength(ope1);
+		break;
+	}
+	case EQL: {
+		content = "eql        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case NEQ: {
+		content = "neq        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case SGT: {
+		content = "sgt        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case SGE: {
+		content = "sge        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case SLT: {
+		content = "slt        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case SLE: {
+		content = "sle        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case ALLOC: {
+		if (ope1.size() == 0) {
+			ope1 = "_";
+		}
+		content = "alloc      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case STORE: {
+		content = "store      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case LOAD: {
+		content = "load       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case INDEX: {
+		break;
+	}
+	case CALL: {
+		content = "call       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case RET: {
+		content = "ret        " + standardLength(res);
+		break;
+	}
+	case PUSH: {
+		content = "push       " + standardLength(res) + "           " + standardLength(ope2);
+		break;
+	}
+	case POP: {
+		break;
+	}
+	case LABEL: {
+		content = "label      " + standardLength(res);
+		break;
+	}
+	case BR: {
+		if (ope1.size() > 0) {
+			content = "br         " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		}
+		else {
+			content = "br         " + standardLength(res);
+		}
+		break;
+	}
+	case DEFINE: {
+		content = "define     " + standardLength(res) + " " + standardLength(ope1);
+		break;
+	}
+	case PARA: {
+		content = "para       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case GLOBAL: {
+		if (ope1.size() == 0) {
+			ope1 = "_";
+		}
+		content = "global     " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	default:
+		break;
+	}
+	return content;
+}
+CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->codetype = type;
 	this->result = res;
 	this->operand1 = ope1;
 	this->operand2 = ope2;
-	this->content = res + " " + ope1 + " " + ope2;  //需要写一个将enum转换为字符串的函数
-	//setContent(type, res, ope1, ope2);
+	this->content = setContent(type, res, ope1, ope2);
 }
 
 irCodeType CodeItem::getCodetype()
@@ -55,92 +188,11 @@ string CodeItem::getContent()
 
 #define ENUM_TO_STRING(enumName) (#enumName)
 
-string setContent(irCodeType type, string res, string ope1, string ope2) {
-	string res = "";
-	switch (type) {
-		case ADD:{
-			
-			break;
-		}
-		case SUB:{
-			break;
-		}
-		case DIV:{
-			break;
-		}
-		case MUL:{
-			break;
-		}
-		case REM:{
-			break;
-		}
-		case AND:{
-			break;
-		}
-		case OR:{
-			break;
-		}
-		case NOT:{
-			break;
-		}
-		case EQL:{
-			break;
-		}
-		case NEQ:{
-			break;
-		}
-		case SGT:{
-			break;
-		}
-		case SGE:{
-			break;
-		}
-		case SLT:{
-			break;
-		}
-		case SLE:{
-			break;
-		}
-		case ALLOC:{
-			break;
-		}
-		case STORE:{
-			break;
-		}
-		case LOAD:{
-			break;
-		}
-		case INDEX:{
-			break;
-		}
-		case CALL:{
-			break;
-		}
-		case RET:{
-			break;
-		}
-		case PUSH:{
-			break;
-		}
-		case POP:{
-			break;
-		}
-		case LABEL:{
-			break;
-		}
-		case BR:{
-			break;
-		}
-		case DEFINE:{
-			break;
-		}
-		case PARA:{
-			break;
-		}
-		case GLOBAL:{
-			break;
-		}
-		default:
-			break;
-	}
+
+void CodeItem::changeContent(string res, string ope1, string ope2) 
+{
+	this->result = res;
+	this->operand1 = ope1;
+	this->operand2 = ope2;
+	this->content = setContent(this->codetype, res, ope1, ope2);
 }
