@@ -156,8 +156,8 @@
 | 赋值数组             | store  | value  ➡                | address(暂时用name) | offset          |
 | 取内存               | load   | tmpReg  ⬅               | name                | 0               |
 | 取内存               | load   | tmpReg  ⬅               | address(暂时用name) | offset          |
-| 函数调用             | call   | funcName                | retReg              | paraNum         |
-| 函数返回             | ret    | value                   |                     |                 |
+| 函数调用             | call   | funcName                | retReg\|void        | paraNum         |
+| 函数返回             | ret    | value                   | int\|void           |                 |
 | 函数传参             | push   | tmpReg                  |                     | type(int\|int*) |
 | 退栈                 | pop    | tmpReg                  |                     | type(int\|int*) |
 | 标签                 | label  | name                    |                     |                 |
