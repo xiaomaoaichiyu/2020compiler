@@ -134,42 +134,42 @@
 
 临时变量前面是%[0-9]，单个函数内部临时变量编号递增，不同函数之间编号可重新清零。
 
-| 语义                 | op     | result / label /        | operand1            | operand2        |
-| -------------------- | ------ | ----------------------- | ------------------- | --------------- |
-| 加法                 | add    | res                     | ope1                | ope2            |
-| 减法                 | sub    | res                     | ope1                | ope2            |
-| 除法                 | div    | res                     | ope1                | ope2            |
-| 乘法                 | mul    | res                     | ope1                | ope2            |
-| 取余                 | rem    | res                     | ope1                | ope2            |
-| 逻辑与               | and    | res(1=true，其他=false) | ope1                | ope2            |
-| 逻辑或               | or     | res(1=true，其他=false) | ope1                | ope2            |
-| 逻辑非               | not    | res(1=true，其他=false) | ope1                | ope2            |
-| 关系等于             | eql    | res(1=true，其他=false) | ope1                | ope2            |
-| 关系不等             | neq    | res(1=true，其他=false) | ope1                | ope2            |
-| 关系大于(signed)     | sgt    | res(1=true，其他=false) | ope1                | ope2            |
-| 关系大于等于(signed) | sge    | res(1=true，其他=false) | ope1                | ope2            |
-| 关系小于(signed)     | slt    | res(1=true，其他=false) | ope1                | ope2            |
-| 关系小于等于(signed) | sle    | res(1=true，其他=false) | ope1                | ope2            |
-| 局部常量\|变量       | alloc  | variableName            | value               | size            |
-| 全局变量\|常量       | global | variableName            | value               | size            |
-| 赋值单值             | store  | value  ➡                | name                | 0               |
-| 赋值数组             | store  | value  ➡                | address(暂时用name) | offset          |
-| 取内存               | load   | tmpReg  ⬅               | name                | 0               |
-| 取内存               | load   | tmpReg  ⬅               | address(暂时用name) | offset          |
-| 函数调用             | call   | funcName                | retReg\|void        | paraNum         |
-| 函数返回             | ret    | value                   | int\|void           |                 |
-| 函数传参             | push   | tmpReg                  |                     | type(int\|int*) |
-| 退栈                 | pop    | tmpReg                  |                     | type(int\|int*) |
-| 标签                 | label  | name                    |                     |                 |
-| 跳转                 | br     | label \| tmpReg         | label1              | label2          |
-| 函数定义             | define | name                    | funcType            |                 |
-| 函数形参             | para   | name                    | paraType(int\|int*) |                 |
-|                      |        |                         |                     |                 |
-|                      |        |                         |                     |                 |
-|                      |        |                         |                     |                 |
-|                      |        |                         |                     |                 |
-|                      |        |                         |                     |                 |
-|                      |        |                         |                     |                 |
+| 语义                 | op     | result / label /        | operand1            | operand2                |
+| -------------------- | ------ | ----------------------- | ------------------- | ----------------------- |
+| 加法                 | add    | res                     | ope1                | ope2                    |
+| 减法                 | sub    | res                     | ope1                | ope2                    |
+| 除法                 | div    | res                     | ope1                | ope2                    |
+| 乘法                 | mul    | res                     | ope1                | ope2                    |
+| 取余                 | rem    | res                     | ope1                | ope2                    |
+| 逻辑与               | and    | res(1=true，其他=false) | ope1                | ope2                    |
+| 逻辑或               | or     | res(1=true，其他=false) | ope1                | ope2                    |
+| 逻辑非               | not    | res(1=true，其他=false) | ope1                | ope2                    |
+| 关系等于             | eql    | res(1=true，其他=false) | ope1                | ope2                    |
+| 关系不等             | neq    | res(1=true，其他=false) | ope1                | ope2                    |
+| 关系大于(signed)     | sgt    | res(1=true，其他=false) | ope1                | ope2                    |
+| 关系大于等于(signed) | sge    | res(1=true，其他=false) | ope1                | ope2                    |
+| 关系小于(signed)     | slt    | res(1=true，其他=false) | ope1                | ope2                    |
+| 关系小于等于(signed) | sle    | res(1=true，其他=false) | ope1                | ope2                    |
+| 局部常量\|变量       | alloc  | variableName            | value               | size                    |
+| 全局变量\|常量       | global | variableName            | value               | size                    |
+| 赋值单值             | store  | value  ➡                | name                | 0                       |
+| 赋值数组             | store  | value  ➡                | address(暂时用name) | offset                  |
+| 取内存               | load   | tmpReg  ⬅               | name                | 0                       |
+| 取内存               | load   | tmpReg  ⬅               | address(暂时用name) | offset                  |
+| 函数调用             | call   | funcName                | retReg\|void        | paraNum                 |
+| 函数返回             | ret    | value                   | int\|void           |                         |
+| 函数传参             | push   | tmpReg                  |                     | type(int\|int*\|string) |
+| 退栈                 | pop    | tmpReg                  |                     | type(int\|int*)         |
+| 标签                 | label  | name                    |                     |                         |
+| 跳转                 | br     | label \| tmpReg         | label1              | label2                  |
+| 函数定义             | define | name                    | funcType            |                         |
+| 函数形参             | para   | name                    | paraType(int\|int*) |                         |
+|                      |        |                         |                     |                         |
+|                      |        |                         |                     |                         |
+|                      |        |                         |                     |                         |
+|                      |        |                         |                     |                         |
+|                      |        |                         |                     |                         |
+|                      |        |                         |                     |                         |
 
 ***
 
