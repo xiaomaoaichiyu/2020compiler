@@ -159,7 +159,7 @@ bool Word::getsym()   //为后期做准备，可以判断是否读完文件了
 		getmark();
 		if (mark == '=') {
 			catToken();
-			symbol = EQL1;
+			symbol = EQL_WORD;
 		}
 		else {
 			retract();  //回退
@@ -228,7 +228,7 @@ bool Word::getsym()   //为后期做准备，可以判断是否读完文件了
 		else {
 			retract();
 			token += '/' ;
-			symbol = DIV1;
+			symbol = DIV_WORD;
 		}
 	}
 	else if (mark == '%') {
@@ -240,7 +240,7 @@ bool Word::getsym()   //为后期做准备，可以判断是否读完文件了
 		getmark();  //把=读入
 		if (mark == '=') {
 			catToken();
-			symbol = NEQ1;
+			symbol = NEQ_WORD;
 		}
 		else {
 			retract();
@@ -268,13 +268,13 @@ bool Word::getsym()   //为后期做准备，可以判断是否读完文件了
 		catToken();
 		getmark();
 		catToken();
-		symbol = AND1;
+		symbol = AND_WORD;
 	}
 	else if (mark == '|') {
 		catToken();
 		getmark();
 		catToken();
-		symbol = OR1;
+		symbol = OR_WORD;
 	}
 	else if (mark == '(') {
 		catToken();

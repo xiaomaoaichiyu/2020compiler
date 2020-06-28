@@ -9,8 +9,8 @@
 #include<map>
 using namespace std;
 const char* print[25] = {
-	"IDENFR ","INTCON ","PLUS ","MINU ","MULT ","DIV1 ","MOD ","AND1 ","OR1 ",
-	"LSS ","LEQ ","GRE ","GEQ ","EQL1 ","NEQ1 ","REV ","ASSIGN ","SEMICN ","COMMA ",
+	"IDENFR ","INTCON ","PLUS ","MINU ","MULT ","DIV_WORD ","MOD ","AND_WORD ","OR_WORD ",
+	"LSS ","LEQ ","GRE ","GEQ ","EQL_WORD ","NEQ_WORD ","REV ","ASSIGN ","SEMICN ","COMMA ",
 	"LPARENT ","RPARENT ","LBRACK ","RBRACK ","LBRACE ","RBRACE "
 };
 const char* premain[10] = {
@@ -162,7 +162,7 @@ int main()
 		if (size > 0) {
 			if (item[0].getCodetype() == DEFINE && item[0].getOperand1() == "void") {
 				if (item[size - 1].getCodetype() != RET) {
-					CodeItem citem = CodeItem(RET,"","","");
+					CodeItem citem = CodeItem(RET,"","void","");
 					citem.setFatherBlock(fatherBlock);
 					codetotal[i].push_back(citem);
 				}
@@ -361,11 +361,11 @@ void ConstDef(int index,int block)			   //常量定义
 	string constValue = "";
 	if (index != 0) {
 		codetype = ALLOC;
-		b = "@";
+		b = "%";
 	}
 	else {
 		codetype = GLOBAL;
-		b = "%";
+		b = "@";
 	}
 	if (totalSize == 1) {
 		int size = total[index].size();
@@ -400,7 +400,7 @@ int ConstMulExp()
 {
 	int valueL, valueR;
 	valueL = ConstUnaryExp();
-	while (symbol == MULT || symbol == DIV1 || symbol == MOD) {
+	while (symbol == MULT || symbol == DIV_WORD || symbol == MOD) {
 		Memory tag = symbol;
 		printMessage();    //输出*或/信息
 		wordAnalysis.getsym();
@@ -408,7 +408,7 @@ int ConstMulExp()
 		token = wordAnalysis.getToken();//预读
 		valueR = ConstUnaryExp();
 		if (tag == MULT) valueL = valueL * valueR;
-		else if (tag == DIV) valueL = valueL / valueR;
+		else if (tag == DIV_WORD) valueL = valueL / valueR;
 		else valueL = valueL % valueR;
 	}
 	//退出前已经预读
@@ -552,7 +552,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 		else {
 			if (offset <= totalSize) {
 				total[index][size].setIntValue(value, offset - 1); //赋值
-				string offset_string = numToString(offset-1);
+				string offset_string = numToString((offset - 1) * 4);
 				string value_string = numToString(value);
 				string b = "@";
 				symbolTable item = checkItem(nodeName);
@@ -622,11 +622,11 @@ void VarDef(int index,int block)             //变量定义
 	string b;
 	if (index != 0) {
 		codetype = ALLOC;
-		b = "@";
+		b = "%";
 	}
 	else {
 		codetype = GLOBAL;
-		b = "%";
+		b = "@";
 	}
 	CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
 	citem.setFatherBlock(fatherBlock);
@@ -723,7 +723,7 @@ void InitVal(int index)
 		}
 		else {
 			if (offset <= totalSize) {
-				string offset_string = numToString(offset - 1);
+				string offset_string = numToString((offset - 1)*4);
 				string b = "@";
 				symbolTable item = checkItem(nodeName);
 				if (Range != 0) {
@@ -943,7 +943,7 @@ void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 {
 	UnaryExp();
 	string registerL = interRegister;	//获取左计算数
-	while (symbol == MULT || symbol == DIV1 || symbol == MOD) {
+	while (symbol == MULT || symbol == DIV_WORD || symbol == MOD) {
 		Memory symbol_tag = symbol;
 		printMessage();    //输出*或/信息
 		wordAnalysis.getsym();
@@ -956,7 +956,7 @@ void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 			int valueL = stringToNum(registerL);
 			int valueR = stringToNum(registerR);
 			if (symbol_tag == MULT) value = valueL * valueR;
-			else if (symbol_tag == DIV) value = valueL / valueR;
+			else if (symbol_tag == DIV_WORD) value = valueL / valueR;
 			else value = valueL % valueR;
 			interRegister = numToString(value);
 		}
@@ -965,7 +965,7 @@ void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 			Temp++;
 			irCodeType codetype;
 			if (symbol_tag == MULT) codetype = MUL;
-			else if (symbol_tag == DIV) codetype = DIV;
+			else if (symbol_tag == DIV_WORD) codetype = DIV;
 			else codetype = REM;
 			CodeItem citem = CodeItem(codetype, interRegister, registerL, registerR);
 			citem.setFatherBlock(fatherBlock);
@@ -1026,6 +1026,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		}
 		else {  //标识符 {'['表达式']'}
 			symbolTable item = checkItem(name_tag);
+			int range = Range;
 			vector<int> dimenLength = item.getMatrixLength();
 			if (dimenLength.size() > 0 && symbol == LBRACK) {
 				registerA = "0";	//偏移量为0
@@ -1075,10 +1076,22 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				token = wordAnalysis.getToken();//预读
 			}
 			if (item.getDimension() == nowDimenson && nowDimenson > 0) {	//取多维数组的一个元素
+				if (registerA[0] != '@' && registerA[0] != '%') {
+					int index = stringToNum(registerA);
+					registerA = numToString(index * 4);
+				}
+				else {
+					interRegister = "%" + numToString(Temp);
+					Temp++;
+					CodeItem citem = CodeItem(MUL, interRegister, registerA, "4");
+					citem.setFatherBlock(fatherBlock);
+					codetotal[Funcindex].push_back(citem);
+					registerA = interRegister;
+				}
 				interRegister = "%" + numToString(Temp);
 				Temp++;
 				string b = "%";
-				if (Range == 0) {
+				if (range == 0) {
 					b = "@";	//全局变量
 				}
 				CodeItem citem = CodeItem(LOAD, interRegister,b+name_tag,registerA); //数组取值
@@ -1088,7 +1101,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			else if (nowDimenson > 0 && nowDimenson < item.getDimension()) {		//此时只可能是传参，传数组的一部分
 				paraIntNode = 1;
 				string b = "%";
-				if (Range == 0) {
+				if (range == 0) {
 					b = "@";	//全局变量
 				}
 				interRegister = b+name_tag;
@@ -1101,7 +1114,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					interRegister = "%" + numToString(Temp);
 					Temp++;
 					string b = "%";
-					if (Range == 0) {
+					if (range == 0) {
 						b = "@";	//全局变量
 					}
 					CodeItem citem = CodeItem(LOAD, interRegister, b+name_tag, "0"); //一维变量、常量取值
@@ -1348,7 +1361,20 @@ void assignStmt()        //赋值语句 LVal = Exp
 	token = wordAnalysis.getToken();//预读
 	Exp();
 	if (dimenLength.size() > 0) {
-		CodeItem citem = CodeItem(STORE, interRegister, b + name_tag, registerA);		//数组某个变量赋值
+		string tempRegister = interRegister;
+		if (registerA[0] != '@' && registerA[0] != '%') {
+			int index = stringToNum(registerA);
+			registerA = numToString(index * 4);
+		}
+		else {
+			interRegister = "%" + numToString(Temp);
+			Temp++;
+			CodeItem citem = CodeItem(MUL, interRegister, registerA, "4");
+			citem.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem);
+			registerA = interRegister;
+		}
+		CodeItem citem = CodeItem(STORE, tempRegister, b + name_tag, registerA);		//数组某个变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
@@ -1414,7 +1440,7 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 	string registerL, registerR,op;
 	LAndExp();
 	registerL = interRegister;
-	while (symbol == OR1) {
+	while (symbol == OR_WORD) {
 		Memory symbol_tag = symbol;
 		printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
@@ -1450,7 +1476,7 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 	string registerL, registerR, op;
 	EqExp();
 	registerL = interRegister;
-	while (symbol == AND1) {
+	while (symbol == AND_WORD) {
 		Memory symbol_tag = symbol;
 		printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
@@ -1486,7 +1512,7 @@ void EqExp()		  //相等性表达式
 	string registerL, registerR, op;
 	RelExp();
 	registerL = interRegister;
-	while (symbol == EQL1 || symbol == NEQ1) {
+	while (symbol == EQL_WORD || symbol == NEQ_WORD) {
 		Memory symbol_tag = symbol;
 		printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
@@ -1498,7 +1524,7 @@ void EqExp()		  //相等性表达式
 			int value;
 			int valueL = stringToNum(registerL);
 			int valueR = stringToNum(registerR);
-			if (symbol_tag == EQL) {
+			if (symbol_tag == EQL_WORD) {
 				if (valueL == valueR) value = 1;
 				else value = 0;
 			}
@@ -1512,7 +1538,7 @@ void EqExp()		  //相等性表达式
 			interRegister = "%" + numToString(Temp);
 			Temp++;
 			irCodeType codetype;
-			if (symbol_tag == EQL) codetype = EQL;
+			if (symbol_tag == EQL_WORD) codetype = EQL;
 			else codetype = NEQ;
 			CodeItem citem = CodeItem(codetype, interRegister, registerL, registerR);
 			citem.setFatherBlock(fatherBlock);
@@ -1663,12 +1689,12 @@ void returnStmt()        //返回语句
 	token = wordAnalysis.getToken();//预读
 	if (symbol != SEMICN) {
 		Exp();
-		CodeItem citem = CodeItem(RET, interRegister, "","");  //有返回值返回
+		CodeItem citem = CodeItem(RET, interRegister, "int","");  //有返回值返回
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
 	else {
-		CodeItem citem = CodeItem(RET,"","","");
+		CodeItem citem = CodeItem(RET,"","void","");
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
@@ -1710,24 +1736,33 @@ void change(int index)	//修改中间代码、符号表
 		string ope1 = b[i].getOperand1();
 		string ope2 = b[i].getOperand2();
 		if (res.size()>0 && res[0] == '%' && (!isdigit(res[1])) ) {  //res必须是变量
+			res.erase(0, 1);  //去掉首字母
 			if (names[index][res] > 1) {
-				res.erase(0, 1);  //去掉首字母
 				symbolTable item = checkTable(res, index, b[i].getFatherBlock());
 				res = "%" + newName(res, item.getblockIndex());
 			}
+			else {
+				res = "%" + res;
+			}
 		}
 		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res必须是变量
+			ope1.erase(0, 1);  //去掉首字母
 			if (names[index][ope1] > 1) {
-				ope1.erase(0, 1);  //去掉首字母
 				symbolTable item = checkTable(ope1, index, b[i].getFatherBlock());
 				ope1 = "%" + newName(ope1, item.getblockIndex());
 			}
+			else {
+				ope1 = "%" + ope1;
+			}
 		}
 		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res必须是变量
+			ope2.erase(0, 1);  //去掉首字母
 			if (names[index][ope2] > 1) {
-				ope2.erase(0, 1);  //去掉首字母
 				symbolTable item = checkTable(ope2, index, b[i].getFatherBlock());
 				ope2 = "%" + newName(ope2, item.getblockIndex());
+			}
+			else {
+				ope2 = "%" + ope2;
 			}
 		}
 		b[i].changeContent(res, ope1, ope2);
