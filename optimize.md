@@ -29,10 +29,20 @@ r14：函数调用返回地址
 
 r15：PC
 
-
+[寄存器使用](<http://blog.chinaunix.net/uid-69947851-id-5825875.html>)
 
 
 
 ### 改变顺序优化
 
 - arr[i] = getint()：这里可以把数组的索引计算放在getint的后面，就会少使用几个寄存器，保存上下文也相对减轻了负担
+
+
+
+![1593348158143](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593348158143.png)
+
+
+
+### 不同模式下寄存器的使用情况
+
+![1593351432585](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593351432585.png)
