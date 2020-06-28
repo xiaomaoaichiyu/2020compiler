@@ -248,13 +248,15 @@ bool Word::getsym()   //为后期做准备，可以判断是否读完文件了
 		}
 	}
 	else if (mark == '\"') {
+		catToken();
 		getmark();
 		while (mark != '\"') {
 			catToken();
 			getmark();
 		}
+		catToken();
 		//不用回退
-		symbol = IDENFR;   //随便给的
+		symbol = STRING;   //随便给的
  	}
 	else if (mark == ';') {
 		catToken();

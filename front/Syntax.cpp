@@ -8,10 +8,10 @@
 #include<sstream>
 #include<map>
 using namespace std;
-const char* print[25] = {
+const char* print[26] = {
 	"IDENFR ","INTCON ","PLUS ","MINU ","MULT ","DIV_WORD ","MOD ","AND_WORD ","OR_WORD ",
 	"LSS ","LEQ ","GRE ","GEQ ","EQL_WORD ","NEQ_WORD ","REV ","ASSIGN ","SEMICN ","COMMA ",
-	"LPARENT ","RPARENT ","LBRACK ","RBRACK ","LBRACE ","RBRACE "
+	"LPARENT ","RPARENT ","LBRACK ","RBRACK ","LBRACE ","RBRACE ","STRING "
 };
 const char* premain[10] = {
 	"CONSTTK", "INTTK", "VOIDTK", "MAINTK", "IFTK", "ELSETK",
@@ -99,7 +99,7 @@ Word wordAnalysis("testexample.txt");
 void printMessage()
 {
 	string message;
-	if (symbol > 9 && symbol != 35) {
+	if (symbol > 9 && symbol != 36) {
 		token = wordAnalysis.getToken();
 		message = print[symbol - 10] + token;
 	}
@@ -367,14 +367,19 @@ void ConstDef(int index,int block)			   //常量定义
 		codetype = GLOBAL;
 		b = "@";
 	}
-	if (totalSize == 1) {
+	if (matrixLength.size() > 0) {		//如果是数组，constValue没意义，放在ConstInitVal前面可以实现先声明数组后赋值的效果
+		CodeItem citem = CodeItem(codetype, b + name, constValue, numToString(totalSize));
+		citem.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem);
+	}
+	ConstInitVal(index);
+	if (matrixLength.size() <= 0) {   //如果不是数组，必须放在ConstInitVal后面，这样才能知道constValue大小
 		int size = total[index].size();
 		constValue = numToString(total[index][size - 1].getIntValue()[0]);
+		CodeItem citem = CodeItem(codetype, b + name, constValue, numToString(totalSize));
+		citem.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem);
 	}
-	CodeItem citem = CodeItem(codetype, b + name, constValue, numToString(totalSize));
-	citem.setFatherBlock(fatherBlock);
-	codetotal[Funcindex].push_back(citem);
-	ConstInitVal(index);
 	//退出循环前均已经预读单词
 	outfile << "<常量定义>" << endl;
 }
@@ -1075,7 +1080,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
 			}
-			if (item.getDimension() == nowDimenson && nowDimenson > 0) {	//取多维数组的一个元素
+			if (item.getDimension() == nowDimenson && item.getDimension() > 0) {	//取多维数组的一个元素
 				if (registerA[0] != '@' && registerA[0] != '%') {
 					int index = stringToNum(registerA);
 					registerA = numToString(index * 4);
@@ -1088,17 +1093,23 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					codetotal[Funcindex].push_back(citem);
 					registerA = interRegister;
 				}
-				interRegister = "%" + numToString(Temp);
-				Temp++;
-				string b = "%";
-				if (range == 0) {
-					b = "@";	//全局变量
+				if (item.getForm() == CONSTANT && registerA[0] != '@' && registerA[0] != '%') {
+					int offset = stringToNum(registerA) / 4;
+					interRegister = numToString(item.getIntValue()[offset]);
 				}
-				CodeItem citem = CodeItem(LOAD, interRegister,b+name_tag,registerA); //数组取值
-				citem.setFatherBlock(fatherBlock);    //保存当前作用域
-				codetotal[Funcindex].push_back(citem); 
+				else {
+					interRegister = "%" + numToString(Temp);
+					Temp++;
+					string b = "%";
+					if (range == 0) {
+						b = "@";	//全局变量
+					}
+					CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, registerA); //数组取值
+					citem.setFatherBlock(fatherBlock);    //保存当前作用域
+					codetotal[Funcindex].push_back(citem);
+				}
 			}
-			else if (nowDimenson > 0 && nowDimenson < item.getDimension()) {		//此时只可能是传参，传数组的一部分
+			else if (item.getDimension() > 0 && nowDimenson < item.getDimension()) {		//此时只可能是传参，传数组的一部分
 				paraIntNode = 1;
 				string b = "%";
 				if (range == 0) {
@@ -1645,12 +1656,27 @@ void FuncRParams()    //函数实参数表
 	if (symbol == RPARENT) {
 		return;
 	}
-	Exp();//退出前已经预读
+	if (symbol == STRING) {
+		interRegister = wordAnalysis.getToken();
+		wordAnalysis.getsym();
+		symbol = wordAnalysis.getSymbol();
+		token = wordAnalysis.getToken();//预读
+	}
+	else {
+		Exp();//退出前已经预读
+	}
 	paraNum++;
 	if (paraIntNode == 0) {
-		CodeItem citem = CodeItem(PUSH,interRegister,"","int");  //传参
-		citem.setFatherBlock(fatherBlock);
-		codetotal[Funcindex].push_back(citem);
+		if(interRegister[0]=='\"'){
+			CodeItem citem = CodeItem(PUSH, interRegister, "", "string");  //传参
+			citem.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem);
+		}
+		else {
+			CodeItem citem = CodeItem(PUSH, interRegister, "", "int");  //传参
+			citem.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem);
+		}
 	}
 	else {
 		CodeItem citem = CodeItem(PUSH, interRegister, "", "int*");  //传参
