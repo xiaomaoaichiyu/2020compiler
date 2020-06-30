@@ -92,7 +92,7 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		break;
 	}
 	case RET: {
-		content = "ret        " + standardLength(res);
+		content = "ret        " + standardLength(res) + " " + standardLength(ope1);
 		break;
 	}
 	case PUSH: {

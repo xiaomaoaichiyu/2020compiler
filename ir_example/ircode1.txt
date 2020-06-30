@@ -1,0 +1,336 @@
+global     @zzzz      _          100
+store      0          @zzzz      0
+store      1          @zzzz      4
+store      2          @zzzz      8
+store      3          @zzzz      12
+store      4          @zzzz      16
+store      5          @zzzz      20
+store      6          @zzzz      24
+store      7          @zzzz      28
+store      8          @zzzz      32
+store      9          @zzzz      36
+store      10         @zzzz      40
+store      11         @zzzz      44
+store      12         @zzzz      48
+store      13         @zzzz      52
+store      14         @zzzz      56
+store      15         @zzzz      60
+global     @xx        _          100
+store      0          @xx        0
+store      1          @xx        4
+store      2          @xx        8
+store      3          @xx        12
+store      4          @xx        16
+store      5          @xx        20
+store      6          @xx        24
+store      7          @xx        28
+store      8          @xx        32
+store      9          @xx        36
+store      10         @xx        40
+store      11         @xx        44
+store      12         @xx        48
+store      13         @xx        52
+store      14         @xx        56
+store      15         @xx        60
+global     @Ac        -2         1
+global     @am        10         1
+global     @z         _          100
+store      0          @z         0
+store      197        @z         4
+store      198        @z         8
+global     @B         _          1
+
+define     @test      void
+para       %a         int        0
+store      -20        %a         0
+ret                   void
+
+define     @compare   int
+para       %a         int        0
+para       %b         int        0
+load       %0         %a         0
+sub        %1         104        %0
+store      %1         @B         0
+load       %2         %a         0
+load       %3         %b         0
+sgt        %4         %2         %3
+br         %4         %if.then_0 %if.else_0
+label      %if.then_0
+load       %5         %a         0
+ret        %5         int
+br         %if.end_0
+label      %if.else_0
+load       %6         %b         0
+ret        %6         int
+br         %if.end_0
+label      %if.end_0
+
+define     @Factorial int
+para       %n         int        0
+load       %0         %n         0
+eql        %1         %0         1
+br         %1         %if.then_1 %if.else_1
+label      %if.then_1
+ret        1          int
+br         %if.end_1
+label      %if.else_1
+load       %2         %n         0
+load       %3         %n         0
+sub        %4         %3         1
+push       %4                   int
+call       @Factorial %5         1
+mul        %6         %2         %5
+ret        %6         int
+br         %if.end_1
+label      %if.end_1
+
+define     @gets1     int
+para       %var1      int        0
+para       %var2      int        0
+alloc      %change1   _          1
+load       %0         %var1      0
+load       %1         %var2      0
+mul        %2         %0         %1
+store      %2         %change1   0
+load       %3         %change1   0
+ret        %3         int
+
+define     @gets2     int
+para       %var1      int        0
+para       %var2      int        0
+alloc      %change1   _          1
+load       %0         %var1      0
+load       %1         %var2      0
+div        %2         %0         %1
+store      %2         %change1   0
+load       %3         %change1   0
+ret        %3         int
+
+define     @change    int
+para       %Q         int        0
+alloc      %i         _          1
+alloc      %j         _          1
+load       %0         @xx        40
+store      %0         %i         0
+store      0          %j         0
+label      %while.cond_0
+load       %1         %j         0
+load       %2         %i         0
+sle        %3         %1         %2
+br         %3         %while.body_0 %while.end_0
+label      %while.body_0
+load       %4         %Q         0
+load       %5         @xx        8
+div        %6         10         %5
+sub        %7         %4         %6
+add        %8         %7         1
+store      %8         %Q         0
+load       %9         %i         0
+sub        %10        %9         1
+store      %10        %i         0
+load       %11        %j         0
+add        %12        %11        2
+store      %12        %j         0
+br         %while.cond_0
+label      %while.end_0
+load       %13        %Q         0
+ret        %13        int
+global     @alpha     42         1
+global     @a         122        1
+
+define     @main      int
+alloc      %sadf      100        1
+alloc      %ffff      10         1
+alloc      %Total     _          1
+alloc      %i         _          1
+store      10         %Total     0
+alloc      %number1   _          1
+alloc      %number2   _          1
+alloc      %number3   _          1
+push       @z                   int*
+call       @getarray  %0         1
+sub        %1         %0         3
+store      %1         %i         0
+load       %2         @z         4
+store      %2         %number1   0
+load       %3         @z         8
+store      %3         %number2   0
+store      102        %number3   0
+load       %4         %Total     0
+div        %5         %4         2
+add        %6         %5         122
+sub        %7         %6         10
+push       %7                   int
+call       @putint    %8         1
+alloc      %result    _          100
+alloc      %j         _          1
+alloc      %k         _          1
+store      10         %j         0
+load       %9         %i         0
+sub        %10        %9         0
+store      %10        %k         0
+load       %11        %i         0
+sub        %12        0          %11
+div        %13        %12        2
+load       %14        %Total     0
+mul        %15        %14        42
+add        %16        %13        %15
+load       %17        %number3   0
+sub        %18        %16        %17
+store      %18        %result    0
+load       %19        %result    0
+push       %19                  int
+call       @putint    %20        1
+push       32                   int
+call       @putchar   %21        1
+push       -2                   int
+push       10                   int
+call       @gets1     %22        2
+push       10                   int
+push       -2                   int
+call       @gets2     %23        2
+add        %24        %22        %23
+store      %24        %result    4
+load       %25        %result    4
+push       %25                  int
+call       @putint    %26        1
+push       32                   int
+call       @putchar   %27        1
+label      %while.cond_1
+br         1          %while.body_1 %while.end_1
+label      %while.body_1
+load       %28        %k         0
+add        %29        %28        1
+store      %29        %k         0
+load       %30        %k         0
+mul        %31        %30        1
+add        %32        0          %31
+load       %33        %k         0
+push       %33                  int
+call       @change    %34        1
+mul        %35        %32        4
+store      %34        %result    %35
+load       %36        %k         0
+mul        %37        %36        1
+add        %38        0          %37
+mul        %39        %38        4
+load       %40        %result    %39
+sub        %41        0          %40
+push       %41                  int
+call       @change    %42        1
+sle        %43        %42        -2
+br         %43        %if.then_2 %if.else_2
+label      %if.then_2
+br         %while.end_1
+br         %if.end_2
+label      %if.else_2
+br         %if.end_2
+label      %if.end_2
+br         %while.cond_1
+label      %while.end_1
+push       "%d "                string
+load       %44        %k         0
+push       %44                  int
+call       @putf      %45        2
+push       "%d "                string
+load       %46        %result    4
+push       %46                  int
+call       @putf      %47        2
+push       "%d "                string
+load       %48        %result    8
+push       %48                  int
+call       @putf      %49        2
+label      %while.cond_2
+load       %50        %number3   0
+load       %51        %number1   0
+push       %51                  int
+load       %52        %number2   0
+push       %52                  int
+call       @compare   %53        2
+neq        %54        %50        %53
+br         %54        %while.body_2 %while.end_2
+label      %while.body_2
+load       %55        %number3   0
+sub        %56        %55        1
+store      %56        %number3   0
+load       %57        %j         0
+sub        %58        %57        1
+store      %58        %j         0
+load       %59        %j         0
+mul        %60        %59        1
+add        %61        0          %60
+mul        %62        %61        4
+load       %63        %result    %62
+load       %64        %Total     0
+div        %65        %64        2
+load       %66        %k         0
+add        %67        %65        %66
+sgt        %68        %63        %67
+br         %68        %if.then_3 %if.else_3
+label      %if.then_3
+load       %69        %j         0
+mul        %70        %69        1
+add        %71        0          %70
+load       %72        %Total     0
+div        %73        %72        2
+load       %74        %k         0
+add        %75        %73        %74
+mul        %76        %71        4
+store      %75        %result    %76
+br         %if.end_3
+label      %if.else_3
+br         %if.end_3
+label      %if.end_3
+br         %while.cond_2
+label      %while.end_2
+push       "%d "                string
+load       %77        %j         0
+push       %77                  int
+call       @Factorial %78        1
+push       %78                  int
+call       @Factorial %79        2
+alloc      %b         _          1
+load       %80        @B         0
+push       %80                  int
+call       @Factorial %81        1
+store      %81        %b         0
+label      %while.cond_3
+load       %82        @xx        4
+eql        %83        1          %82
+br         %83        %while.body_3 %while.end_3
+label      %while.body_3
+load       %84        %b         0
+sgt        %85        %84        18
+br         %85        %if.then_4 %if.else_4
+label      %if.then_4
+load       %86        %b         0
+sub        %87        %86        10
+store      %87        %b         0
+load       %88        %i         0
+load       %89        %Total     0
+add        %90        %88        %89
+store      %90        %i         0
+br         %if.end_4
+label      %if.else_4
+br         %while.end_3
+br         %if.end_4
+label      %if.end_4
+br         %while.cond_3
+label      %while.end_3
+push       "%d "                string
+load       %91        %i         0
+push       %91                  int
+call       @putf      %92        2
+push       "%d "                string
+load       %93        @B         0
+push       %93                  int
+call       @Factorial %94        1
+load       %95        @B         0
+sub        %96        %95        1
+push       %96                  int
+call       @Factorial %97        1
+rem        %98        %94        %97
+push       %98                  int
+call       @Factorial %99        2
+load       %100       %i         0
+ret        %100       int
