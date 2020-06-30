@@ -6,9 +6,9 @@
 
 class basicBlock {
 public:
-	int number;
-	int start;
-	int end;
+	int number;							// 基本块的编号
+	int start;								// 基本块的起始中间代码
+	int end;								// 基本块的结束中间代码
 	std::set<int> pred;				// 前驱
 	std::set<int> succeeds;			// 后继节点
 	std::set<int> domin;				// 必经节点
