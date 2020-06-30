@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <set>
-#include "intermediatecode.h"
+#include "../ir/intermediatecode.h"
 
 class basicBlock {
 public:
