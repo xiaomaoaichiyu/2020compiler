@@ -1,4 +1,4 @@
-#include "intermediatecode.h"
+﻿#include "intermediatecode.h"
 #include <string>
 #include <iostream>
 using namespace std;
@@ -75,7 +75,7 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		}
 		content = "alloc      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
-	}
+	}  
 	case STORE: {
 		content = "store      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;

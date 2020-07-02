@@ -1,4 +1,4 @@
-#include<string>
+ï»¿#include<string>
 #include<fstream>
 #include "word.h"
 #define MAX_LENGTH 10000
@@ -94,7 +94,7 @@ void Word::transNum16()
 		number = number * 16 + j;
 	}
 }
-bool Word::getsym()   //ÎªºóÆÚ×ö×¼±¸£¬¿ÉÒÔÅĞ¶ÏÊÇ·ñ¶ÁÍêÎÄ¼şÁË
+bool Word::getsym()   //ä¸ºåæœŸåšå‡†å¤‡ï¼Œå¯ä»¥åˆ¤æ–­æ˜¯å¦è¯»å®Œæ–‡ä»¶äº†
 {
 	clearToken();
 	do {
@@ -118,34 +118,34 @@ bool Word::getsym()   //ÎªºóÆÚ×ö×¼±¸£¬¿ÉÒÔÅĞ¶ÏÊÇ·ñ¶ÁÍêÎÄ¼şÁË
 		}
 	}
 	else if (isdigit(mark)) {
-		if (mark == '0') {   //°Ë½øÖÆ»òÕß16½øÖÆ
+		if (mark == '0') {   //å…«è¿›åˆ¶æˆ–è€…16è¿›åˆ¶
 			catToken();
 			getmark();
-			if (mark == 'x' || mark == 'X') {  //16½øÖÆ
+			if (mark == 'x' || mark == 'X') {  //16è¿›åˆ¶
 				while (isdigit(mark) || isalpha(mark)) {
 					catToken();
 					getmark();
 				}
-				retract();  //»ØÍË
+				retract();  //å›é€€
 				transNum16();
 				symbol = INTCON;
 			}
-			else {          //8½øÖÆ
+			else {          //8è¿›åˆ¶
 				while (isdigit(mark)) {
 					catToken();
 					getmark();
 				}
-				retract();  //»ØÍË
+				retract();  //å›é€€
 				transNum8();
 				symbol = INTCON;
 			}
 		}
-		else {			//Ê®½øÖÆ
+		else {			//åè¿›åˆ¶
 			while (isdigit(mark)) {
 				catToken();
 				getmark();
 			}
-			retract();  //»ØÍË
+			retract();  //å›é€€
 			transNum10();
 			symbol = INTCON;
 		}
@@ -162,7 +162,7 @@ bool Word::getsym()   //ÎªºóÆÚ×ö×¼±¸£¬¿ÉÒÔÅĞ¶ÏÊÇ·ñ¶ÁÍêÎÄ¼şÁË
 			symbol = EQL_WORD;
 		}
 		else {
-			retract();  //»ØÍË
+			retract();  //å›é€€
 			symbol = ASSIGN;
 		}
 	}
@@ -237,8 +237,8 @@ bool Word::getsym()   //ÎªºóÆÚ×ö×¼±¸£¬¿ÉÒÔÅĞ¶ÏÊÇ·ñ¶ÁÍêÎÄ¼şÁË
 	}
 	else if (mark == '!') {
 		catToken();
-		getmark();  //°Ñ=¶ÁÈë
-		if (mark == '=') {
+		getmark();  //æŠŠ=è¯»å…¥
+		if (mark == '=') {  
 			catToken();
 			symbol = NEQ_WORD;
 		}
@@ -255,8 +255,8 @@ bool Word::getsym()   //ÎªºóÆÚ×ö×¼±¸£¬¿ÉÒÔÅĞ¶ÏÊÇ·ñ¶ÁÍêÎÄ¼şÁË
 			getmark();
 		}
 		catToken();
-		//²»ÓÃ»ØÍË
-		symbol = STRING;   //Ëæ±ã¸øµÄ
+		//ä¸ç”¨å›é€€
+		symbol = STRING;   //éšä¾¿ç»™çš„
  	}
 	else if (mark == ';') {
 		catToken();
@@ -304,7 +304,7 @@ bool Word::getsym()   //ÎªºóÆÚ×ö×¼±¸£¬¿ÉÒÔÅĞ¶ÏÊÇ·ñ¶ÁÍêÎÄ¼şÁË
 	}
 	else if (file.size() <= fRecord) {
 		symbol = FINISH;
-	}  //ÖÕÖ¹·û
+	}  //ç»ˆæ­¢ç¬¦
 	if (symbol == FINISH) {
 		return false;
 	}
