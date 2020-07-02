@@ -56,9 +56,10 @@
    - slt : <
    - sle : <=
 
-6. if
+6. if、if-else
 
    ```
+   if-else
    //通过关系比较和br来进行转换
    entry:
    	res = icmp (关系比较) ope1, ope2
@@ -67,6 +68,16 @@
    	...
    	br %if.end
    if.else: //preds = %entry
+   	...
+   	br %if.end
+   if.end: //preds = %if.then, %if.else
+   	...
+   	
+   if(no else)
+   entry:
+   	res = icmp (关系比较) ope1, ope2
+   	br res %if.then, %if.end
+   if.then: //preds = %entry
    	...
    	br %if.end
    if.end: //preds = %if.then, %if.else
