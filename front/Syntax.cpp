@@ -1423,19 +1423,24 @@ void ifStmt()            //条件语句
 	CodeItem citem2 = CodeItem(LABEL,if_then_label,"","");	//label if.then
 	citem2.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem2);
+	int nowIndex = codetotal[Funcindex].size() - 2;		//暂存 br 条件 %if.then_1 %if.else_1  下标，可能后续要把%if.else改成 %if.end
 	Stmt();													//stmt1
-	CodeItem citem3 = CodeItem(BR, if_end_label, "", "");   //BR if.end
-	citem3.setFatherBlock(fatherBlock);
-	codetotal[Funcindex].push_back(citem3);
-	CodeItem citem4 = CodeItem(LABEL, if_else_label, "", "");	//label if.else
-	citem4.setFatherBlock(fatherBlock);
-	codetotal[Funcindex].push_back(citem4);
 	if (symbol == ELSETK) {
+		CodeItem citem3 = CodeItem(BR, if_end_label, "", "");   //BR if.end
+		citem3.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem3);
+		CodeItem citem4 = CodeItem(LABEL, if_else_label, "", "");	//label if.else
+		citem4.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem4);
 		printMessage();    //输出else信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 		Stmt();			//stmt2
+	}
+	else {	//只有if  没有else，只需要把br res %if.then, %if.else中的%if.else标签改成%if.end即可
+		string res = codetotal[Funcindex][nowIndex].getResult();
+		codetotal[Funcindex][nowIndex].changeContent(res, if_then_label, if_end_label);
 	}
 	CodeItem citem5 = CodeItem(BR, if_end_label, "", "");   //BR if.end
 	citem5.setFatherBlock(fatherBlock);

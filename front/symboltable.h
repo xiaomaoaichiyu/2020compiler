@@ -9,7 +9,7 @@ enum formType {
 enum valueType {  //ALL代表所有类型，如果是ALL就不需要再检查returnvaluetype了，ALL一般是调用未定义
 	INT,VOID
 };
-class symbolTable
+class symbolTable  
 {
 public:
 	symbolTable();

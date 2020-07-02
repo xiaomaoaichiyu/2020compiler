@@ -84,7 +84,7 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		content = "load       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
-	case INDEX: {
+	case INDEX: {     
 		break;
 	}
 	case CALL: {

@@ -41,7 +41,7 @@ public:
 	void changeContent(string res, string ope1, string ope2);
 	vector<int> getFatherBlock();
 	string getContent();
-private:
+private:   
 	irCodeType codetype;     //中间代码种类
 	string result;				//结果
 	string operand1;			//左操作数

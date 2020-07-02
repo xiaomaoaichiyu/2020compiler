@@ -5,7 +5,7 @@
 symbolTable::symbolTable(formType a, valueType b, string c)
 {
 	this->form = a;
-	this->valuetype = b;
+	this->valuetype = b;  
 	this->name = c;
 }
 symbolTable::symbolTable()

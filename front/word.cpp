@@ -246,7 +246,7 @@ bool Word::getsym()   //为后期做准备，可以判断是否读完文件了
 			retract();
 			symbol = REV;
 		}
-	}
+	}        
 	else if (mark == '\"') {
 		catToken();
 		getmark();
