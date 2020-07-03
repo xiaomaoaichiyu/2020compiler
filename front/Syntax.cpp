@@ -145,6 +145,7 @@ string newName(string name, int blockindex)
 }
 symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock);					//查表：改进中间代码和符号表时使用
 void change(int index);				//修改中间代码、符号表
+void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 
 
 int main()
@@ -169,6 +170,7 @@ int main()
 			}
 		}
 	}
+	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
 	//自动为参数补上第一维大小
 	for (int i = 0; i < total.size(); i++) {
 		vector<symbolTable> item = total[i];
@@ -1816,4 +1818,24 @@ void change(int index)	//修改中间代码、符号表
 		}
 	}
 	total.push_back(a);
+}
+void putAllocGlobalFirst()		//将中间代码中alloc类型前移
+{
+	vector<vector<CodeItem>> temp = codetotal;
+	codetotal.clear();
+	int i, j, k;
+	for (i = 0; i < temp.size(); i++) {
+		vector<CodeItem> a;
+		for (j = 0; j < temp[i].size(); j++) {
+			if (temp[i][j].getCodetype() == DEFINE || temp[i][j].getCodetype() == PARA || temp[i][j].getCodetype() == ALLOC || temp[i][j].getCodetype() == GLOBAL) {
+				a.push_back(temp[i][j]);
+			}
+		}
+		for (j = 0; j < temp[i].size(); j++) {
+			if (temp[i][j].getCodetype() != DEFINE && temp[i][j].getCodetype() != PARA && temp[i][j].getCodetype() != ALLOC && temp[i][j].getCodetype() != GLOBAL) {
+				a.push_back(temp[i][j]);
+			}
+		}
+		codetotal.push_back(a);
+	}
 }
