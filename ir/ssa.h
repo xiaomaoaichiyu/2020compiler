@@ -42,6 +42,14 @@ private:
 	void build_pre_order();										// 前序遍历必经节点树
 	void build_dom_frontier();									// 计算流图必经边界
 	void build_def_use_chain();								// 计算ud链
+	// 测试专用函数
+	void Test_Divide_Basic_Block();	
+	void Test_Build_Dom_Tree();
+	void Test_Build_Idom_Tree();
+	void Test_Build_Reverse_Idom_Tree();
+	void Test_Build_Post_Order();
+	void Test_Build_Pre_Order();
+	void Test_Build_Dom_Frontier();
 public:
 	SSA(std::vector<std::vector<CodeItem>> codetotal) {
 		this->codetotal = codetotal;

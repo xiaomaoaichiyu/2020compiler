@@ -7,6 +7,7 @@
 #include<vector>
 #include<sstream>
 #include<map>
+#include "../ir/ssa.h"
 using namespace std;
 const char* print[26] = {
 	"IDENFR ","INTCON ","PLUS ","MINU ","MULT ","DIV_WORD ","MOD ","AND_WORD ","OR_WORD ",
@@ -224,7 +225,8 @@ int main()
 		cout << "\n";
 	}
 	//优化中间代码
-
+	SSA ssa(codetotal);
+	ssa.generate();
 	//后端运行
 
 
