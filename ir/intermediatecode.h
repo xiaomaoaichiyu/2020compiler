@@ -1,4 +1,4 @@
-#ifndef _INTERMEDIATECODE_H
+ï»¿#ifndef _INTERMEDIATECODE_H
 #define _INTERMEDIATECODE_H
 
 #include <string>
@@ -6,30 +6,30 @@
 
 using namespace std;
 
-//ÖĞ¼ä´úÂëÀàĞÍSSA¸ñÊ½ v1
+//ä¸­é—´ä»£ç ç±»å‹SSAæ ¼å¼ v1
 enum irCodeType {
-	ADD, SUB, DIV, MUL, REM,  		//ËãÊõÔËËã
-	AND, OR, NOT,					//Âß¼­ÔËËã
-	EQL, NEQ, SGT, SGE, SLT, SLE,	//¹ØÏµÔËËã
-	ALLOC,							//Õ»¿Õ¼äÉêÇë
-	STORE,							//´æÖµµ½ÄÚ´æ
-	LOAD,							//´ÓÄÚ´æÈ¡Öµ
-	INDEX,							//Êı×éµÄË÷Òı
-	CALL,							//º¯Êıµ÷ÓÃ
-	RET,							//º¯Êı·µ»Ø
-	PUSH,							//Ñ¹Õ»
-	POP,							//ÍËÕ»
-	LABEL,							//±êÇ©
-	BR,								//Ö±½ÓÌø×ª + Ìõ¼şÌø×ª
-	DEFINE,							//º¯Êı¶¨Òå
-	PARA,							//²ÎÊı¶¨Òå
-	GLOBAL							//È«¾ÖÉùÃ÷£º³£Á¿+±äÁ¿
+	ADD, SUB, DIV, MUL, REM,  		//ç®—æœ¯è¿ç®—
+	AND, OR, NOT,					//é€»è¾‘è¿ç®—
+	EQL, NEQ, SGT, SGE, SLT, SLE,	//å…³ç³»è¿ç®—
+	ALLOC,							//æ ˆç©ºé—´ç”³è¯·
+	STORE,							//å­˜å€¼åˆ°å†…å­˜
+	LOAD,							//ä»å†…å­˜å–å€¼
+	INDEX,							//æ•°ç»„çš„ç´¢å¼•
+	CALL,							//å‡½æ•°è°ƒç”¨
+	RET,							//å‡½æ•°è¿”å›
+	PUSH,							//å‹æ ˆ
+	POP,							//é€€æ ˆ
+	LABEL,							//æ ‡ç­¾
+	BR,								//ç›´æ¥è·³è½¬ + æ¡ä»¶è·³è½¬
+	DEFINE,							//å‡½æ•°å®šä¹‰
+	PARA,							//å‚æ•°å®šä¹‰
+	GLOBAL							//å…¨å±€å£°æ˜ï¼šå¸¸é‡+å˜é‡
 };
 
 class CodeItem
 {
 public:
-	CodeItem(irCodeType type, string res, string ope1, string ope2);
+	CodeItem(irCodeType type, string res, string ope1, string ope2);   
 	irCodeType getCodetype();
 	string getOperand1();
 	string getOperand2();
@@ -37,17 +37,17 @@ public:
 	void setOperand1(string ope1);
 	void setOperand2(string ope2);
 	void setResult(string res);
-	void setFatherBlock(vector<int> a);        //¿ÉÒÔsetµÄÎ»ÖÃ£ºËùÓĞ±äÁ¿¡¢²ÎÊı³öÏÖµÄµØ·½
+	void setFatherBlock(vector<int> a);        //å¯ä»¥setçš„ä½ç½®ï¼šæ‰€æœ‰å˜é‡ã€å‚æ•°å‡ºç°çš„åœ°æ–¹
 	void changeContent(string res, string ope1, string ope2);
 	vector<int> getFatherBlock();
 	string getContent();
-private:
-	irCodeType codetype;     //ÖĞ¼ä´úÂëÖÖÀà
-	string result;				//½á¹û
-	string operand1;			//×ó²Ù×÷Êı
-	string operand2;			//ÓÒ²Ù×÷Êı
-	vector<int> fatherBlock;	//µ±Ç°ÖĞ¼ä´úÂëËùÔÚ×÷ÓÃÓò
-	string content;				//debugÏÔÊ¾ÄÚÈİ£¬¼´ÖĞ¼ä´úÂëÄÚÈİ
+private:   
+	irCodeType codetype;     //ä¸­é—´ä»£ç ç§ç±»
+	string result;				//ç»“æœ
+	string operand1;			//å·¦æ“ä½œæ•°
+	string operand2;			//å³æ“ä½œæ•°
+	vector<int> fatherBlock;	//å½“å‰ä¸­é—´ä»£ç æ‰€åœ¨ä½œç”¨åŸŸ
+	string content;				//debugæ˜¾ç¤ºå†…å®¹ï¼Œå³ä¸­é—´ä»£ç å†…å®¹
 };
 
 #endif 
