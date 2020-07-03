@@ -164,7 +164,7 @@
 | 跳转                 | br     | label \| tmpReg         | label1              | label2                  |
 | 函数定义             | define | name                    | funcType            |                         |
 | 函数形参             | para   | name                    | paraType(int\|int*) |                         |
-|                      |        |                         |                     |                         |
+| 移动                 | MOV    |                         | src                 | dst                     |
 |                      |        |                         |                     |                         |
 |                      |        |                         |                     |                         |
 |                      |        |                         |                     |                         |
