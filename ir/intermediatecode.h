@@ -2,7 +2,7 @@
 #define _INTERMEDIATECODE_H
 
 #include <string>
-#include "symboltable.h"
+#include "../front/symboltable.h"
 
 using namespace std;
 

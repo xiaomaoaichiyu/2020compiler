@@ -3,7 +3,7 @@
 #include<iostream>
 #include "word.h"
 #include "symboltable.h"
-#include "intermediatecode.h"
+#include "../ir/intermediatecode.h"
 #include<vector>
 #include<sstream>
 #include<map>
