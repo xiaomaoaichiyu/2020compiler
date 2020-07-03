@@ -1,20 +1,20 @@
-#include<string>
+ï»¿#include<string>
 #include<vector>
 using namespace std;
 #ifndef _SYMBOLTABLE_H
 #define _SYMBOLTABLE_H
 enum formType {
 	CONSTANT, VARIABLE, PARAMETER, FUNCTION
-};  //³£Á¿¡¢±äÁ¿¡¢²ÎÊı¡¢º¯Êı
-enum valueType {  //ALL´ú±íËùÓĞÀàĞÍ£¬Èç¹ûÊÇALL¾Í²»ĞèÒªÔÙ¼ì²éreturnvaluetypeÁË£¬ALLÒ»°ãÊÇµ÷ÓÃÎ´¶¨Òå
+};  //å¸¸é‡ã€å˜é‡ã€å‚æ•°ã€å‡½æ•°
+enum valueType {  //ALLä»£è¡¨æ‰€æœ‰ç±»å‹ï¼Œå¦‚æœæ˜¯ALLå°±ä¸éœ€è¦å†æ£€æŸ¥returnvaluetypeäº†ï¼ŒALLä¸€èˆ¬æ˜¯è°ƒç”¨æœªå®šä¹‰
 	INT,VOID
 };
-class symbolTable
+class symbolTable  
 {
 public:
 	symbolTable();
-	symbolTable(formType a, valueType b, string c);  //¶¨Òåº¯Êı
-	symbolTable(formType a, valueType b, string c, int d, int e);     //±äÁ¿¡¢³£Á¿¶¨Òå½¨±í£¬cÊÇname£¬dÊÇÎ¬¶È£¬eÊÇblockIndex£¬fÊÇfatherblock
+	symbolTable(formType a, valueType b, string c);  //å®šä¹‰å‡½æ•°
+	symbolTable(formType a, valueType b, string c, int d, int e);     //å˜é‡ã€å¸¸é‡å®šä¹‰å»ºè¡¨ï¼Œcæ˜¯nameï¼Œdæ˜¯ç»´åº¦ï¼Œeæ˜¯blockIndexï¼Œfæ˜¯fatherblock
 	formType getForm();
 	string getName();
 	int getparaLength();
@@ -22,22 +22,22 @@ public:
 	int getblockIndex();
 	int getDimension();
 	void setMatrixLength(vector<int> a);
-	vector<int> getMatrixLength();
+	vector<int> getMatrixLength();   
 	void setIntValue(int a,int offset);
 	void setfirstNodesize(int a);
-	void changeName(string newname);			//ĞŞ¸Ä±äÁ¿Ãû
+	void changeName(string newname);			//ä¿®æ”¹å˜é‡å
 	vector<int> getIntValue();
-	int getvarLength();          //»ñµÃ±äÁ¿×ÜÔªËØ¸öÊı
+	int getvarLength();          //è·å¾—å˜é‡æ€»å…ƒç´ ä¸ªæ•°
 private:
-	formType form;  //·ûºÅ±íĞÎÊ½ÖÖÀà
-	valueType valuetype;  //·ûºÅ±íÖµÖÖÀà£¬³ıÁËº¯Êı¿ÉÄÜÓĞVOIDÊ£ÏÂ¶¼ÊÇINT
-	int paraLength; //¶Ôº¯Êı¶øÑÔ£º²ÎÊı¸öÊı
-	int dimension;  //Êı×éÎ¬¶È
-	vector<int> matrixLength;  //Êı×éÃ¿¸öÎ¬¶È´óĞ¡,matrixLength[i]±íÊ¾µÚiÎ¬³¤¶È
-	vector<int> intValue; //±äÁ¿¡¢³£Á¿¾ßÌåÖµ(ÎŞÂÛ¼¸Î¬¶¼ÕâÃ´´æ)
-	string name;    //Ãû×Ö
-	//string range;   ×÷ÓÃÓò²»ÒªÁË£¬ÒòÎªÊ¹ÓÃ¶ş¼¶vector£¬µÚ¶ş²ãvector´ú±íÒ»¸ö×÷ÓÃÓò
-	int blockIndex;    //µ±Ç°blockºÅ
+	formType form;  //ç¬¦å·è¡¨å½¢å¼ç§ç±»
+	valueType valuetype;  //ç¬¦å·è¡¨å€¼ç§ç±»ï¼Œé™¤äº†å‡½æ•°å¯èƒ½æœ‰VOIDå‰©ä¸‹éƒ½æ˜¯INT
+	int paraLength; //å¯¹å‡½æ•°è€Œè¨€ï¼šå‚æ•°ä¸ªæ•°
+	int dimension;  //æ•°ç»„ç»´åº¦
+	vector<int> matrixLength;  //æ•°ç»„æ¯ä¸ªç»´åº¦å¤§å°,matrixLength[i]è¡¨ç¤ºç¬¬iç»´é•¿åº¦
+	vector<int> intValue; //å˜é‡ã€å¸¸é‡å…·ä½“å€¼(æ— è®ºå‡ ç»´éƒ½è¿™ä¹ˆå­˜)
+	string name;    //åå­—
+	//string range;   ä½œç”¨åŸŸä¸è¦äº†ï¼Œå› ä¸ºä½¿ç”¨äºŒçº§vectorï¼Œç¬¬äºŒå±‚vectorä»£è¡¨ä¸€ä¸ªä½œç”¨åŸŸ
+	int blockIndex;    //å½“å‰blockå·
 };
 
 

@@ -1,4 +1,4 @@
-#include<string>
+ï»¿#include<string>
 #include<fstream>
 #include<iostream>
 #include "word.h"
@@ -17,41 +17,41 @@ const char* premain[10] = {
 	"CONSTTK", "INTTK", "VOIDTK", "MAINTK", "IFTK", "ELSETK",
 	"WHILETK", "BREAKTK", "CONTINUETK", "RETURNTK"
 };
-//¼ÓÈë×Ô¶¨Òåº¯Êı
-string Functionname;	//¼ÇÂ¼µ±Ç°º¯ÊıÃû
+//åŠ å…¥è‡ªå®šä¹‰å‡½æ•°
+string Functionname;	//è®°å½•å½“å‰å‡½æ•°å
 
-//·ûºÅ±íÒıÈë±äÁ¿
-int Funcindex = 0;		//º¯Êı·ûºÅ±íÔÚtableÖĞ×ÜÎ»ÖÃ
-symbolTable searchItem; //²éÕÒµÄ·ûºÅ±í
-vector<symbolTable> table;      //·Ö·ûºÅ±í
-vector<vector<symbolTable>> total;	//×Ü·ûºÅ±í
-vector<int> fatherBlock;	//ËùÓĞ¸¸blockºÅ
-int Blockindex;			//º¯ÊıÖĞµ±Ç°blockºÅ,º¯Êı×îÍâ²ãºÍ²ÎÊıblockºÅÎª1
-vector< map<string, int> > names;	//ËùÓĞ±äÁ¿¡¢³£Á¿¡¢²ÎÊıÃû
+//ç¬¦å·è¡¨å¼•å…¥å˜é‡
+int Funcindex = 0;		//å‡½æ•°ç¬¦å·è¡¨åœ¨tableä¸­æ€»ä½ç½®
+symbolTable searchItem; //æŸ¥æ‰¾çš„ç¬¦å·è¡¨
+vector<symbolTable> table;      //åˆ†ç¬¦å·è¡¨
+vector<vector<symbolTable>> total;	//æ€»ç¬¦å·è¡¨
+vector<int> fatherBlock;	//æ‰€æœ‰çˆ¶blockå·
+int Blockindex;			//å‡½æ•°ä¸­å½“å‰blockå·,å‡½æ•°æœ€å¤–å±‚å’Œå‚æ•°blockå·ä¸º1
+vector< map<string, int> > names;	//æ‰€æœ‰å˜é‡ã€å¸¸é‡ã€å‚æ•°å
 
-//Êı×é¸³ÖµÒıÈë±äÁ¿
-int offset;						//µ±Ç°Î¬¶ÈÏÂÆ«ÒÆÁ¿
-int totalSize;					//×Ü´óĞ¡
-vector<int> matrixLength;		//µ±Ç°Êı×éÃ¿¸öÎ¬¶ÈÖµ
-int Ndimension;					//µ±Ç°Ç¶Ì×Î¬¶È
-string nodeName;				//Êı×éÃû
-int isNesting;                  //ÊÇ·ñÇ¶Ì×£¬¼´{{
-int isBegin;					//ÊÇ·ñ¿ªÍ·£¬×îÇ°ÃæµÄ{²»Ëã
+//æ•°ç»„èµ‹å€¼å¼•å…¥å˜é‡
+int offset;						//å½“å‰ç»´åº¦ä¸‹åç§»é‡
+int totalSize;					//æ€»å¤§å°
+vector<int> matrixLength;		//å½“å‰æ•°ç»„æ¯ä¸ªç»´åº¦å€¼
+int Ndimension;					//å½“å‰åµŒå¥—ç»´åº¦
+string nodeName;				//æ•°ç»„å
+int isNesting;                  //æ˜¯å¦åµŒå¥—ï¼Œå³{{
+int isBegin;					//æ˜¯å¦å¼€å¤´ï¼Œæœ€å‰é¢çš„{ä¸ç®—
 
-int Temp = 0;				//ÖĞ¼ä±äÁ¿ÆğÊ¼±àºÅ
-int iflabelIndex;          //if±êÇ©ÏÂ±ê
-int whilelabelIndex;		//while±êÇ©ÏÂ±ê
-vector<string> whileLabel;      //ÓÃÓÚbreakºÍcontinue¶ÔÓ¦µÄ±êÇ©
-int paraNum;				//µ÷ÓÃº¯ÊıÊ±¼ÇÂ¼²ÎÊı¸öÊı
+int Temp = 0;				//ä¸­é—´å˜é‡èµ·å§‹ç¼–å·
+int iflabelIndex;          //ifæ ‡ç­¾ä¸‹æ ‡
+int whilelabelIndex;		//whileæ ‡ç­¾ä¸‹æ ‡
+vector<string> whileLabel;      //ç”¨äºbreakå’Œcontinueå¯¹åº”çš„æ ‡ç­¾
+int paraNum;				//è°ƒç”¨å‡½æ•°æ—¶è®°å½•å‚æ•°ä¸ªæ•°
 
-int interIndex;          //ÖĞ¼ä´úÂëÏÂ±ê
-string interRegister;        //ÖĞ¼ä±äÁ¿×Ö·û´®
-int interType;				 //ÖĞ¼ä±äÁ¿ÀàĞÍ
+int interIndex;          //ä¸­é—´ä»£ç ä¸‹æ ‡
+string interRegister;        //ä¸­é—´å˜é‡å­—ç¬¦ä¸²
+int interType;				 //ä¸­é—´å˜é‡ç±»å‹
 
-vector<vector<CodeItem>> codetotal;   //×ÜÖĞ¼ä´úÂë
+vector<vector<CodeItem>> codetotal;   //æ€»ä¸­é—´ä»£ç 
 string numToString(int a)
 {
-	stringstream trans;          //Êı×ÖºÍ×Ö·û´®Ïà»¥×ª»¯ÇşµÀ
+	stringstream trans;          //æ•°å­—å’Œå­—ç¬¦ä¸²ç›¸äº’è½¬åŒ–æ¸ é“
 	trans << a;
 	return trans.str();
 }
@@ -63,17 +63,17 @@ int stringToNum(string a)
 	trans >> number;
 	return number;
 }
-int Range;									//×÷ÓÃÓò  0±íÊ¾È«¾Ö   £¾0±íÊ¾¾Ö²¿
-symbolTable checkItem(string checkname)             //²é±í£ºÔÚ´«²ÎÊ±ÅĞ¶Ï±äÁ¿ÊÇ·ñÎªÊı×éÊ±Ê¹ÓÃ
+int Range;									//ä½œç”¨åŸŸ  0è¡¨ç¤ºå…¨å±€   ï¼0è¡¨ç¤ºå±€éƒ¨
+symbolTable checkItem(string checkname)             //æŸ¥è¡¨ï¼šåœ¨ä¼ å‚æ—¶åˆ¤æ–­å˜é‡æ˜¯å¦ä¸ºæ•°ç»„æ—¶ä½¿ç”¨
 {
 	int i, j, checkblock, block;
 	string name;
 	for (j = fatherBlock.size() - 1; j >= 0; j--) {
 		checkblock = fatherBlock[j];
-		for (i = 0; i < total[Funcindex].size(); i++) {   //ÏÈ´Ó±¾º¯Êı×÷ÓÃÓòÕÒ
+		for (i = 0; i < total[Funcindex].size(); i++) {   //å…ˆä»æœ¬å‡½æ•°ä½œç”¨åŸŸæ‰¾
 			name = total[Funcindex][i].getName();
 			block = total[Funcindex][i].getblockIndex();
-			if (name == checkname && block == checkblock) {  //´Ó×î½üµÄ×÷ÓÃÓòÕÒµ½ÁË
+			if (name == checkname && block == checkblock) {  //ä»æœ€è¿‘çš„ä½œç”¨åŸŸæ‰¾åˆ°äº†
 				Range = Funcindex;
 				return total[Funcindex][i];
 			}
@@ -81,19 +81,19 @@ symbolTable checkItem(string checkname)             //²é±í£ºÔÚ´«²ÎÊ±ÅĞ¶Ï±äÁ¿ÊÇ·ñ
 	}
 	for (i = 0; i < total[0].size(); i++) {
 		name = total[0][i].getName();
-		if (name == checkname) {  //´Ó×î½üµÄ×÷ÓÃÓòÕÒµ½ÁË
+		if (name == checkname) {  //ä»æœ€è¿‘çš„ä½œç”¨åŸŸæ‰¾åˆ°äº†
 			Range = 0;
 			return total[0][i];
 		}
 	}
 }
-//Éú³ÉÄ¿±êÓïÑÔÒıÈë±äÁ¿
-int paraIntNode = 0;		  //¼ÇÂ¼Êı×éÊÇ·ñ×÷Îª²ÎÊı
-string matrixName;			  //¼ÇÂ¼Êı×éÃû
+//ç”Ÿæˆç›®æ ‡è¯­è¨€å¼•å…¥å˜é‡
+int paraIntNode = 0;		  //è®°å½•æ•°ç»„æ˜¯å¦ä½œä¸ºå‚æ•°
+string matrixName;			  //è®°å½•æ•°ç»„å
 
-//´Ê·¨¡¢Óï·¨·ÖÎöÒıÈë±äÁ¿
-string token;   //·ÖÎö³öÀ´µÄµ¥´Ê
-enum Memory symbol;  //·ÖÎö³öÀ´µÄµ¥´ÊÀà±ğ
+//è¯æ³•ã€è¯­æ³•åˆ†æå¼•å…¥å˜é‡
+string token;   //åˆ†æå‡ºæ¥çš„å•è¯
+enum Memory symbol;  //åˆ†æå‡ºæ¥çš„å•è¯ç±»åˆ«
 ofstream outfile;
 Word wordAnalysis("testexample.txt");
 void printMessage()
@@ -108,54 +108,55 @@ void printMessage()
 	}
 	outfile << message << endl;
 }
-void CompUnit();			   //±àÒëµ¥Ôª
-void ConstDecl(int index,int block);		       //³£Á¿ËµÃ÷
-void ConstDef(int index,int block);			   //³£Á¿¶¨Òå
-void VarDecl(int index,int block);			   //±äÁ¿ËµÃ÷
-void VarDef(int index,int block);             //±äÁ¿¶¨Òå
-void InitVal(int index);				//±äÁ¿³õÖµ
-void valueFuncDef();    //ÓĞ·µ»ØÖµº¯Êı¶¨Òå
-void novalueFuncDef();  //ÎŞ·µ»ØÖµº¯Êı¶¨Òå
-void Block();      //¸´ºÏÓï¾ä
-int ConstExp();			//³£Á¿±í´ïÊ½         ¾Í²»Ö±½ÓÊ¹ÓÃ±í´ïÊ½ÁË
-int ConstMulExp();			//³£Á¿Ïî
-int ConstUnaryExp();			//³£Á¿Òò×Ó
-void ConstInitVal(int index);      //³£Á¿³õÖµ£¬·µ»ØÎ¬¶ÈÖµ
-void FuncFParams();         //²ÎÊı±í
-void FuncFParam();         //º¯ÊıĞÎ²Î
-void Exp();					    //±í´ïÊ½(¼Ó¼õ±í´ïÊ½)
-void MulExp();					//³Ë³ıÄ£±í´ïÊ½
-void UnaryExp();					//Ò»Ôª±í´ïÊ½
-void Stmt();              //Óï¾ä
-void assignStmt();        //¸³ÖµÓï¾ä
-void ifStmt();            //Ìõ¼şÓï¾ä
-void Cond();              //Ìõ¼ş±í´ïÊ½(Âß¼­»ò±í´ïÊ½)
-void loopStmt();          //Ñ­»·Óï¾ä
-void FuncRParams();		  //Öµ²ÎÊı±í
-void returnStmt();        //·µ»ØÓï¾ä
-void LAndExp();			  //Âß¼­Óë±í´ïÊ½
-void EqExp();			  //ÏàµÈĞÔ±í´ïÊ½
-void RelExp();			  //¹ØÏµ±í´ïÊ½
+void CompUnit();			   //ç¼–è¯‘å•å…ƒ
+void ConstDecl(int index,int block);		       //å¸¸é‡è¯´æ˜
+void ConstDef(int index,int block);			   //å¸¸é‡å®šä¹‰
+void VarDecl(int index,int block);			   //å˜é‡è¯´æ˜
+void VarDef(int index,int block);             //å˜é‡å®šä¹‰
+void InitVal(int index);				//å˜é‡åˆå€¼
+void valueFuncDef();    //æœ‰è¿”å›å€¼å‡½æ•°å®šä¹‰
+void novalueFuncDef();  //æ— è¿”å›å€¼å‡½æ•°å®šä¹‰
+void Block();      //å¤åˆè¯­å¥
+int ConstExp();			//å¸¸é‡è¡¨è¾¾å¼         å°±ä¸ç›´æ¥ä½¿ç”¨è¡¨è¾¾å¼äº†
+int ConstMulExp();			//å¸¸é‡é¡¹
+int ConstUnaryExp();			//å¸¸é‡å› å­
+void ConstInitVal(int index);      //å¸¸é‡åˆå€¼ï¼Œè¿”å›ç»´åº¦å€¼
+void FuncFParams();         //å‚æ•°è¡¨
+void FuncFParam();         //å‡½æ•°å½¢å‚
+void Exp();					    //è¡¨è¾¾å¼(åŠ å‡è¡¨è¾¾å¼)
+void MulExp();					//ä¹˜é™¤æ¨¡è¡¨è¾¾å¼
+void UnaryExp();					//ä¸€å…ƒè¡¨è¾¾å¼
+void Stmt();              //è¯­å¥
+void assignStmt();        //èµ‹å€¼è¯­å¥
+void ifStmt();            //æ¡ä»¶è¯­å¥
+void Cond();              //æ¡ä»¶è¡¨è¾¾å¼(é€»è¾‘æˆ–è¡¨è¾¾å¼)
+void loopStmt();          //å¾ªç¯è¯­å¥
+void FuncRParams();		  //å€¼å‚æ•°è¡¨
+void returnStmt();        //è¿”å›è¯­å¥
+void LAndExp();			  //é€»è¾‘ä¸è¡¨è¾¾å¼
+void EqExp();			  //ç›¸ç­‰æ€§è¡¨è¾¾å¼
+void RelExp();			  //å…³ç³»è¡¨è¾¾å¼
 
 string newName(string name, int blockindex)
 {
-	stringstream trans;          //Êı×ÖºÍ×Ö·û´®Ïà»¥×ª»¯ÇşµÀ
+	stringstream trans;          //æ•°å­—å’Œå­—ç¬¦ä¸²ç›¸äº’è½¬åŒ–æ¸ é“
 	trans << blockindex;
 	return name + "-" + trans.str();
 }
-symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock);					//²é±í£º¸Ä½øÖĞ¼ä´úÂëºÍ·ûºÅ±íÊ±Ê¹ÓÃ
-void change(int index);				//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
+symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock);					//æŸ¥è¡¨ï¼šæ”¹è¿›ä¸­é—´ä»£ç å’Œç¬¦å·è¡¨æ—¶ä½¿ç”¨
+void change(int index);				//ä¿®æ”¹ä¸­é—´ä»£ç ã€ç¬¦å·è¡¨
+void putAllocGlobalFirst();		//å°†ä¸­é—´ä»£ç ä¸­allocç±»å‹å‰ç§»
 
 
 int main()
 {
 	outfile.open("output.txt");
-	//ÏÈ¶ÁÒ»¸öµ¥´ÊÈ»ºó½øÈë·ÖÎö³ÌĞò
-	wordAnalysis.getsym();   //ÕâÀï²»ĞèÒªÊ¹ÓÃÆä·µ»ØµÄboolÀàĞÍÖµ
+	//å…ˆè¯»ä¸€ä¸ªå•è¯ç„¶åè¿›å…¥åˆ†æç¨‹åº
+	wordAnalysis.getsym();   //è¿™é‡Œä¸éœ€è¦ä½¿ç”¨å…¶è¿”å›çš„boolç±»å‹å€¼
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
 	CompUnit();
-	//ÎªËùÓĞVOIDÀàĞÍº¯Êı×îºóÃ»ÓĞreturnÓï¾äµÄÌí¼Óreturn
+	//ä¸ºæ‰€æœ‰VOIDç±»å‹å‡½æ•°æœ€åæ²¡æœ‰returnè¯­å¥çš„æ·»åŠ return
 	for (int i = 0; i < codetotal.size(); i++) {
 		vector<CodeItem> item = codetotal[i];
 		int size = item.size();
@@ -169,7 +170,8 @@ int main()
 			}
 		}
 	}
-	//×Ô¶¯Îª²ÎÊı²¹ÉÏµÚÒ»Î¬´óĞ¡
+	putAllocGlobalFirst();		//å°†ä¸­é—´ä»£ç ä¸­allocã€globalç±»å‹å‰ç§»
+	//è‡ªåŠ¨ä¸ºå‚æ•°è¡¥ä¸Šç¬¬ä¸€ç»´å¤§å°
 	for (int i = 0; i < total.size(); i++) {
 		vector<symbolTable> item = total[i];
 		for (int j = 0; j < item.size(); j++) {
@@ -179,7 +181,7 @@ int main()
 			}
 		}
 	}
-	//·ûºÅ±í¶ÔÃû×Ö¼Ó"@"ºÍ"%"
+	//ç¬¦å·è¡¨å¯¹åå­—åŠ "@"å’Œ"%"
 	for (int i = 0; i < total.size(); i++) {
 		string b = "%";
 		if (i == 0) b = "@";
@@ -187,9 +189,9 @@ int main()
 			total[i][j].changeName(b + total[i][j].getName());
 		}
 	}
-	//¼ì²â·ûºÅ±íÄÚÈİ
+	//æ£€æµ‹ç¬¦å·è¡¨å†…å®¹
 	/*
-	cout << "Ãû×Ö " << "BlockÏÂ±ê " << "ÖÖÀà 0Con 1Var 2Para 3Func " << "Î¬¶È " << endl;
+	cout << "åå­— " << "Blockä¸‹æ ‡ " << "ç§ç±» 0Con 1Var 2Para 3Func " << "ç»´åº¦ " << endl;
 	for (int i = 0; i < total.size(); i++) {
 		vector<symbolTable> item = total[i];
 		for (int j = 0; j < item.size(); j++) {
@@ -200,10 +202,10 @@ int main()
 				cout << item[j].getName() << " " << item[j].getblockIndex() << " " << item[j].getForm() << " " << item[j].getDimension() << endl;
 			}
 		}
-		cout << "\n";   //Ò»¸ö×÷ÓÃÓò»»Ò»ĞĞ
+		cout << "\n";   //ä¸€ä¸ªä½œç”¨åŸŸæ¢ä¸€è¡Œ
 	}
 	*/
-	//¼ì²âÊı×é¸³ÖµÕıÈ·ĞÔ testcase8
+	//æ£€æµ‹æ•°ç»„èµ‹å€¼æ­£ç¡®æ€§ testcase8
 	/*
 	for (int i = 0; i < total[0].size(); i++) {
 		vector<int> values = total[0][i].getIntValue();
@@ -213,7 +215,7 @@ int main()
 		cout << "\n";
 	}
 	*/
-	//¼ì²âÖĞ¼ä´úÂëÕıÈ·ĞÔ
+	//æ£€æµ‹ä¸­é—´ä»£ç æ­£ç¡®æ€§
 	for (int i = 0; i < codetotal.size(); i++) {
 		vector<CodeItem> item = codetotal[i];
 		for (int j = 0; j < item.size(); j++) {
@@ -221,9 +223,9 @@ int main()
 		}
 		cout << "\n";
 	}
-	//ÓÅ»¯ÖĞ¼ä´úÂë
+	//ä¼˜åŒ–ä¸­é—´ä»£ç 
 
-	//ºó¶ËÔËĞĞ
+	//åç«¯è¿è¡Œ
 
 
 	outfile.close();
@@ -238,22 +240,22 @@ void CompUnit()
 	map<string, int> globalll;
 	names.push_back(globalll);
 	while (symbol == INTTK or symbol == CONSTTK or symbol == VOIDTK) {
-		if (symbol == CONSTTK) {    //³£Á¿ÉùÃ÷
+		if (symbol == CONSTTK) {    //å¸¸é‡å£°æ˜
 			ConstDecl(0,0);
 		}
-		else {   //±äÁ¿ÉùÃ÷»òÕßº¯ÊıÉùÃ÷                
+		else {   //å˜é‡å£°æ˜æˆ–è€…å‡½æ•°å£°æ˜                
 			if (symbol == INTTK) {
 				Memory sym_tag = symbol;
 				string token_tag = wordAnalysis.getToken();
 				int record_tag = wordAnalysis.getfRecord();
-				wordAnalysis.getsym();   //±êÊ¶·û
-				wordAnalysis.getsym();   //ÊÇ(ÔòÎªÓĞ·µ»ØÖµº¯Êı¶¨Òå
+				wordAnalysis.getsym();   //æ ‡è¯†ç¬¦
+				wordAnalysis.getsym();   //æ˜¯(åˆ™ä¸ºæœ‰è¿”å›å€¼å‡½æ•°å®šä¹‰
 				symbol = wordAnalysis.getSymbol();
-				//»Ö¸´³ö³§ÉèÖÃ
+				//æ¢å¤å‡ºå‚è®¾ç½®
 				wordAnalysis.setfRecord(record_tag);
 				wordAnalysis.setSymbol(sym_tag);
 				wordAnalysis.setToken(token_tag);
-				if (symbol == LPARENT) {   //º¯ÊıÉùÃ÷
+				if (symbol == LPARENT) {   //å‡½æ•°å£°æ˜
 					symbol = sym_tag;
 					Funcindex++;
 					Temp = 0;
@@ -264,7 +266,7 @@ void CompUnit()
 					map<string, int> item2;
 					names.push_back(item2);
 					valueFuncDef();
-					change(Funcindex);		//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
+					change(Funcindex);		//ä¿®æ”¹ä¸­é—´ä»£ç ã€ç¬¦å·è¡¨
 				}
 				else {
 					symbol = sym_tag;
@@ -281,71 +283,71 @@ void CompUnit()
 				map<string, int> item2;
 				names.push_back(item2);
 				novalueFuncDef();
-				change(Funcindex);			//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
+				change(Funcindex);			//ä¿®æ”¹ä¸­é—´ä»£ç ã€ç¬¦å·è¡¨
 			}
 		}
 	}
-	outfile<<"<±àÒëµ¥Ôª>"<<endl;
+	outfile<<"<ç¼–è¯‘å•å…ƒ>"<<endl;
 }
-void ConstDecl(int index,int block) 		   //³£Á¿ËµÃ÷
+void ConstDecl(int index,int block) 		   //å¸¸é‡è¯´æ˜
 {
-	printMessage();    //Êä³öconstĞÅÏ¢
-	//ÅĞ¶Ïsymbol==CONSTTK
+	printMessage();    //è¾“å‡ºconstä¿¡æ¯
+	//åˆ¤æ–­symbol==CONSTTK
 	wordAnalysis.getsym();  
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();    //Êä³öintĞÅÏ¢
+	printMessage();    //è¾“å‡ºintä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken(); //Ô¤¶Á
-	ConstDef(index,block);  //³£Á¿¶¨Òå
-	//ÅĞ¶Ïsymbol=;
+	token = wordAnalysis.getToken(); //é¢„è¯»
+	ConstDef(index,block);  //å¸¸é‡å®šä¹‰
+	//åˆ¤æ–­symbol=;
 	while (symbol == COMMA) {
-		printMessage();   //Êä³ö,ĞÅÏ¢
+		printMessage();   //è¾“å‡º,ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
-		ConstDef(index,block);  //³£Á¿¶¨Òå
+		ConstDef(index,block);  //å¸¸é‡å®šä¹‰
 	}
-	printMessage();    //Êä³ö£»ĞÅÏ¢
+	printMessage();    //è¾“å‡ºï¼›ä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken(); //Ô¤¶Á
-	//ÍË³öÑ­»·Ç°ÒÑ¾­Ô¤¶Áµ¥´Ê
-	outfile << "<³£Á¿ËµÃ÷>" << endl;
+	token = wordAnalysis.getToken(); //é¢„è¯»
+	//é€€å‡ºå¾ªç¯å‰å·²ç»é¢„è¯»å•è¯
+	outfile << "<å¸¸é‡è¯´æ˜>" << endl;
 }
-void ConstDef(int index,int block)			   //³£Á¿¶¨Òå
+void ConstDef(int index,int block)			   //å¸¸é‡å®šä¹‰
 {
 	int value;
-	vector<int> length; //¼ÇÂ¼Ã¿¸öÎ¬¶È´óĞ¡
-	printMessage();   //Êä³ö±êÊ¶·ûĞÅÏ¢
-	string name = token;	//±£´æ³£Á¿Ãû
+	vector<int> length; //è®°å½•æ¯ä¸ªç»´åº¦å¤§å°
+	printMessage();   //è¾“å‡ºæ ‡è¯†ç¬¦ä¿¡æ¯
+	string name = token;	//ä¿å­˜å¸¸é‡å
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken(); //Ô¤¶Á
+	token = wordAnalysis.getToken(); //é¢„è¯»
 	int dimenson = 0;
 	while (symbol == LBRACK) {
 		dimenson++;
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();  //Ô¤¶Á
-		length.push_back(ConstExp());   //¼ÇÂ¼³£Á¿Î¬¶È
-		printMessage();   //Êä³ö]ĞÅÏ¢
+		token = wordAnalysis.getToken();  //é¢„è¯»
+		length.push_back(ConstExp());   //è®°å½•å¸¸é‡ç»´åº¦
+		printMessage();   //è¾“å‡º]ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken(); //Ô¤¶Á
+		token = wordAnalysis.getToken(); //é¢„è¯»
 	}
 	symbolTable item = symbolTable(CONSTANT, INT, name,dimenson,block);
 	item.setMatrixLength(length);
 	total[index].push_back(item);
 	names[index][name]++;
-	printMessage();   //Êä³ö=ĞÅÏ¢
+	printMessage();   //è¾“å‡º=ä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken(); //Ô¤¶Á
+	token = wordAnalysis.getToken(); //é¢„è¯»
 
 	
-	//³£Á¿¸³ÖµÇ°×öºÃ±äÁ¿³õÊ¼»¯Ïà¹Ø¹¤×÷
+	//å¸¸é‡èµ‹å€¼å‰åšå¥½å˜é‡åˆå§‹åŒ–ç›¸å…³å·¥ä½œ
 	offset = 0;
 	matrixLength = length;
 	Ndimension = 0;
@@ -367,38 +369,38 @@ void ConstDef(int index,int block)			   //³£Á¿¶¨Òå
 		codetype = GLOBAL;
 		b = "@";
 	}
-	if (matrixLength.size() > 0) {		//Èç¹ûÊÇÊı×é£¬constValueÃ»ÒâÒå£¬·ÅÔÚConstInitValÇ°Ãæ¿ÉÒÔÊµÏÖÏÈÉùÃ÷Êı×éºó¸³ÖµµÄĞ§¹û
+	if (matrixLength.size() > 0) {		//å¦‚æœæ˜¯æ•°ç»„ï¼ŒconstValueæ²¡æ„ä¹‰ï¼Œæ”¾åœ¨ConstInitValå‰é¢å¯ä»¥å®ç°å…ˆå£°æ˜æ•°ç»„åèµ‹å€¼çš„æ•ˆæœ
 		CodeItem citem = CodeItem(codetype, b + name, constValue, numToString(totalSize));
 		citem.setFatherBlock(fatherBlock);
-		codetotal[Funcindex].push_back(citem);
+		codetotal[index].push_back(citem);
 	}
 	ConstInitVal(index);
-	if (matrixLength.size() <= 0) {   //Èç¹û²»ÊÇÊı×é£¬±ØĞë·ÅÔÚConstInitValºóÃæ£¬ÕâÑù²ÅÄÜÖªµÀconstValue´óĞ¡
+	if (matrixLength.size() <= 0) {   //å¦‚æœä¸æ˜¯æ•°ç»„ï¼Œå¿…é¡»æ”¾åœ¨ConstInitValåé¢ï¼Œè¿™æ ·æ‰èƒ½çŸ¥é“constValueå¤§å°
 		int size = total[index].size();
 		constValue = numToString(total[index][size - 1].getIntValue()[0]);
 		CodeItem citem = CodeItem(codetype, b + name, constValue, numToString(totalSize));
 		citem.setFatherBlock(fatherBlock);
-		codetotal[Funcindex].push_back(citem);
+		codetotal[index].push_back(citem);
 	}
-	//ÍË³öÑ­»·Ç°¾ùÒÑ¾­Ô¤¶Áµ¥´Ê
-	outfile << "<³£Á¿¶¨Òå>" << endl;
+	//é€€å‡ºå¾ªç¯å‰å‡å·²ç»é¢„è¯»å•è¯
+	outfile << "<å¸¸é‡å®šä¹‰>" << endl;
 }
 int ConstExp()
 {
 	int valueL, valueR;
-	valueL= ConstMulExp();  //ÍË³öÇ°¶ÁÁËÒ»¸öµ¥´Ê
+	valueL= ConstMulExp();  //é€€å‡ºå‰è¯»äº†ä¸€ä¸ªå•è¯
 	while (symbol == PLUS || symbol == MINU) {
 		Memory tag = symbol;
-		printMessage();    //Êä³ö+»ò-ĞÅÏ¢
+		printMessage();    //è¾“å‡º+æˆ–-ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		valueR = ConstMulExp();
 		if (tag == PLUS) valueL = valueL + valueR;
 		else valueL = valueL - valueR;
 	}
-	//ÍË³öÇ°ÒÑ¾­Ô¤¶Á
-	outfile << "<³£Á¿±í´ïÊ½>" << endl;
+	//é€€å‡ºå‰å·²ç»é¢„è¯»
+	outfile << "<å¸¸é‡è¡¨è¾¾å¼>" << endl;
 	return valueL;
 }
 int ConstMulExp()
@@ -407,39 +409,39 @@ int ConstMulExp()
 	valueL = ConstUnaryExp();
 	while (symbol == MULT || symbol == DIV_WORD || symbol == MOD) {
 		Memory tag = symbol;
-		printMessage();    //Êä³ö*»ò/ĞÅÏ¢
+		printMessage();    //è¾“å‡º*æˆ–/ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		valueR = ConstUnaryExp();
 		if (tag == MULT) valueL = valueL * valueR;
 		else if (tag == DIV_WORD) valueL = valueL / valueR;
 		else valueL = valueL % valueR;
 	}
-	//ÍË³öÇ°ÒÑ¾­Ô¤¶Á
-	outfile << "<³£Á¿Ïî>" << endl;
+	//é€€å‡ºå‰å·²ç»é¢„è¯»
+	outfile << "<å¸¸é‡é¡¹>" << endl;
 	return valueL;
 }
 int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' | +|- UnaryExp 			
-{				//Ident '(' [FuncRParams] ')'²»¿ÉÄÜÓĞ
+{				//Ident '(' [FuncRParams] ')'ä¸å¯èƒ½æœ‰
 	int value;
 	if (symbol == LPARENT) {  //'(' Exp ')'
 		printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken(); //Ô¤¶Á
+		token = wordAnalysis.getToken(); //é¢„è¯»
 		value = ConstExp();
-		printMessage();			//Êä³ö)
+		printMessage();			//è¾“å‡º)
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken(); //Ô¤¶Á
+		token = wordAnalysis.getToken(); //é¢„è¯»
 	}
 	else if(symbol==INTCON){      //symbol == INTCON
-		value = wordAnalysis.getNumber();   //»ñÈ¡ÊıÖµ
+		value = wordAnalysis.getNumber();   //è·å–æ•°å€¼
 		printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken(); //Ô¤¶Á
+		token = wordAnalysis.getToken(); //é¢„è¯»
 	}
 	else if (symbol == PLUS || symbol == MINU) {  //+|- UnaryExp
 		int flag = 1;
@@ -447,56 +449,56 @@ int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' 
 		printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken(); //Ô¤¶Á
+		token = wordAnalysis.getToken(); //é¢„è¯»
 		value = flag * ConstUnaryExp();
 	}
-	else {	//Ident{'[' Exp ']'}  ÒªÇó1.IdentÒ»¶¨ÊÇ³£Á¿ 2.ÄÜÖ±½ÓÇóÖµ(Ó¦¸ÃÊÇConstExp) 
+	else {	//Ident{'[' Exp ']'}  è¦æ±‚1.Identä¸€å®šæ˜¯å¸¸é‡ 2.èƒ½ç›´æ¥æ±‚å€¼(åº”è¯¥æ˜¯ConstExp) 
 		string name_tag = wordAnalysis.getToken();
 		wordAnalysis.getsym();
 		int totaloffset = 0;
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		symbolTable item = checkItem(name_tag);
 		vector<int> dimenLength = item.getMatrixLength();
 		int nowDimenson = 0;
 		while (symbol == LBRACK) {
 			nowDimenson++;
-			printMessage();//Êä³ö[ĞÅÏ¢
+			printMessage();//è¾“å‡º[ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
+			token = wordAnalysis.getToken();//é¢„è¯»
 			value = ConstExp();
 			int offset = 1;
 			for (int j = nowDimenson; j < dimenLength.size(); j++) {
 				offset = offset * dimenLength[j];
 			}
 			totaloffset += value*offset;
-			printMessage();//Êä³ö]ĞÅÏ¢
+			printMessage();//è¾“å‡º]ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
+			token = wordAnalysis.getToken();//é¢„è¯»
 		}
 		value = item.getIntValue()[totaloffset];
 	}
-	outfile << "<³£Á¿Òò×Ó>" << endl;
+	outfile << "<å¸¸é‡å› å­>" << endl;
 	return value;
 }
 void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } ] '}'  
 {
 	/*
-	matrixLength;		//µ±Ç°Êı×éÃ¿¸öÎ¬¶È´óĞ¡
-	offset;				//Æ«ÒÆÁ¿
-	Ndimension;			//µ±Ç°Î¬¶È
+	matrixLength;		//å½“å‰æ•°ç»„æ¯ä¸ªç»´åº¦å¤§å°
+	offset;				//åç§»é‡
+	Ndimension;			//å½“å‰ç»´åº¦
 	*/
-	//positionRecordÓĞÁ½ÖÖÇé¿ö¿ÉÒÔÔö¼Ó£¬1ÊÇ¶Áµ½}£¬2ÊÇ¶Áµ½{ offset!=0
+	//positionRecordæœ‰ä¸¤ç§æƒ…å†µå¯ä»¥å¢åŠ ï¼Œ1æ˜¯è¯»åˆ°}ï¼Œ2æ˜¯è¯»åˆ°{ offset!=0
 	int value;
 	int flag = 0;
 	if (symbol == LBRACE) {
-		int mod = 1;     //Æ«ÒÆÁ¿
+		int mod = 1;     //åç§»é‡
 		if(isNesting == 1){
 			isNesting = 1;
 			Ndimension++;
-			for (int pp = Ndimension; pp < matrixLength.size();pp++) {   //¼ÆËãµ±Ç°Î¬¶ÈÆ«ÒÆÁ¿mod
+			for (int pp = Ndimension; pp < matrixLength.size();pp++) {   //è®¡ç®—å½“å‰ç»´åº¦åç§»é‡mod
 				mod = mod * matrixLength[pp];
 			}
 		}else{
@@ -506,7 +508,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 			}else{
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size();pp++) {   //¼ÆËãµ±Ç°Î¬¶ÈÆ«ÒÆÁ¿mod
+			for (int pp = 1; pp < matrixLength.size();pp++) {   //è®¡ç®—å½“å‰ç»´åº¦åç§»é‡mod
 				mod = mod * matrixLength[pp];
 			}
 			Ndimension = 1;
@@ -518,32 +520,32 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 		printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken(); //Ô¤¶Á
+		token = wordAnalysis.getToken(); //é¢„è¯»
 		if (symbol != RBRACE) {
 			ConstInitVal(index);
-			while (symbol == COMMA) {   //¶Áµ½¶ººÅĞèÒªÅĞ¶Ï×óÓÒÁ½¸öÊıµÄÎ¬¶È
+			while (symbol == COMMA) {   //è¯»åˆ°é€—å·éœ€è¦åˆ¤æ–­å·¦å³ä¸¤ä¸ªæ•°çš„ç»´åº¦
 				isNesting = 0;
 				printMessage();
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
-				token = wordAnalysis.getToken(); //Ô¤¶Á
+				token = wordAnalysis.getToken(); //é¢„è¯»
 				ConstInitVal(index);
 			}
 		}
-		else {    //¿ÕÇé¿ö
+		else {    //ç©ºæƒ…å†µ
 			flag = 1;
 		}
-		if (flag == 1) offset += mod;						//{}£¬Ö±½Ó¼Óµ±Ç°Î¬¶È´óĞ¡
-		else {												//²¹Æëµ±Ç°Î¬¶È
+		if (flag == 1) offset += mod;						//{}ï¼Œç›´æ¥åŠ å½“å‰ç»´åº¦å¤§å°
+		else {												//è¡¥é½å½“å‰ç»´åº¦
 			while (offset % mod != 0) {           
 				offset++;
 			}
 		}
-		printMessage();   //Êä³ö } ĞÅÏ¢
-		//Ã¿´Î¶Áµ½ } £¬Æ«ÒÆÁ¿offset±ä³ÉlastDimension±¶Êı¼´¿É
+		printMessage();   //è¾“å‡º } ä¿¡æ¯
+		//æ¯æ¬¡è¯»åˆ° } ï¼Œåç§»é‡offsetå˜æˆlastDimensionå€æ•°å³å¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken(); //Ô¤¶Á
+		token = wordAnalysis.getToken(); //é¢„è¯»
 	}
 	else {
 		isNesting = 0;
@@ -552,11 +554,11 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 		int size = total[index].size() - 1;
 		//cout << value << endl;
 		if (matrixLength.size() == 0) {
-			total[index][size].setIntValue(value, offset - 1); //¸³Öµ
+			total[index][size].setIntValue(value, offset - 1); //èµ‹å€¼
 		}
 		else {
 			if (offset <= totalSize) {
-				total[index][size].setIntValue(value, offset - 1); //¸³Öµ
+				total[index][size].setIntValue(value, offset - 1); //èµ‹å€¼
 				string offset_string = numToString((offset - 1) * 4);
 				string value_string = numToString(value);
 				string b = "@";
@@ -566,54 +568,54 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 				}
 				CodeItem citem = CodeItem(STORE, value_string, b+nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
-				codetotal[Funcindex].push_back(citem);
+				codetotal[index].push_back(citem);
 			}
 		}
 	}
-	outfile << "<³£Á¿³õÖµ>" << endl;
+	outfile << "<å¸¸é‡åˆå€¼>" << endl;
 }
-void VarDecl(int index,int block)			   //±äÁ¿ËµÃ÷
+void VarDecl(int index,int block)			   //å˜é‡è¯´æ˜
 {
-	printMessage();   //Êä³öintĞÅÏ¢
+	printMessage();   //è¾“å‡ºintä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á 
-	VarDef(index,block);   //ÒÑ¾­Ô¤¶ÁÒ»¸öµ¥´Ê£¬Ö±½Ó½øÈë¼´¿É
+	token = wordAnalysis.getToken();//é¢„è¯» 
+	VarDef(index,block);   //å·²ç»é¢„è¯»ä¸€ä¸ªå•è¯ï¼Œç›´æ¥è¿›å…¥å³å¯
 	while (symbol == COMMA) {
-		printMessage();    //Êä³ö,ĞÅÏ¢
+		printMessage();    //è¾“å‡º,ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á 
-		VarDef(index,block);   //ÒÑ¾­Ô¤¶ÁÒ»¸öµ¥´Ê£¬Ö±½Ó½øÈë¼´¿É
+		token = wordAnalysis.getToken();//é¢„è¯» 
+		VarDef(index,block);   //å·²ç»é¢„è¯»ä¸€ä¸ªå•è¯ï¼Œç›´æ¥è¿›å…¥å³å¯
 	}
-	printMessage();    //Êä³ö£»ĞÅÏ¢
+	printMessage();    //è¾“å‡ºï¼›ä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á 
-	//ÍË³öÑ­»·Ç°¾ùÒÑ¾­Ô¤¶Áµ¥´Ê
-	outfile << "<±äÁ¿ËµÃ÷>" << endl;
+	token = wordAnalysis.getToken();//é¢„è¯» 
+	//é€€å‡ºå¾ªç¯å‰å‡å·²ç»é¢„è¯»å•è¯
+	outfile << "<å˜é‡è¯´æ˜>" << endl;
 }
-void VarDef(int index,int block)             //±äÁ¿¶¨Òå
+void VarDef(int index,int block)             //å˜é‡å®šä¹‰
 {
 	int value;
-	vector<int> length; //¼ÇÂ¼Ã¿¸öÎ¬¶È´óĞ¡
-	printMessage();	//Êä³ö±äÁ¿ÃûĞÅÏ¢
-	string name = token;	//¼ÇÂ¼±äÁ¿Ãû
+	vector<int> length; //è®°å½•æ¯ä¸ªç»´åº¦å¤§å°
+	printMessage();	//è¾“å‡ºå˜é‡åä¿¡æ¯
+	string name = token;	//è®°å½•å˜é‡å
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();  //Ô¤¶Á
-	int dimenson = 0;			//Î¬¶ÈĞÅÏ¢
+	token = wordAnalysis.getToken();  //é¢„è¯»
+	int dimenson = 0;			//ç»´åº¦ä¿¡æ¯
 	while (symbol == LBRACK) {
 		dimenson++;
-		printMessage();   //Êä³ö[
+		printMessage();   //è¾“å‡º[
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
-		length.push_back(ConstExp());   //¼ÇÂ¼³£Á¿Î¬¶È
-		printMessage();   //Êä³ö]
+		token = wordAnalysis.getToken();//é¢„è¯»
+		length.push_back(ConstExp());   //è®°å½•å¸¸é‡ç»´åº¦
+		printMessage();   //è¾“å‡º]
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
 	symbolTable item = symbolTable(VARIABLE, INT, name,dimenson,block);
 	item.setMatrixLength(length);
@@ -635,15 +637,15 @@ void VarDef(int index,int block)             //±äÁ¿¶¨Òå
 	}
 	CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
 	citem.setFatherBlock(fatherBlock);
-	codetotal[Funcindex].push_back(citem);
+	codetotal[index].push_back(citem);
 	if (symbol == ASSIGN) {
-		printMessage();   //Êä³ö=
+		printMessage();   //è¾“å‡º=
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 
 
-		//±äÁ¿¸³ÖµÇ°×öºÃ±äÁ¿³õÊ¼»¯Ïà¹Ø¹¤×÷
+		//å˜é‡èµ‹å€¼å‰åšå¥½å˜é‡åˆå§‹åŒ–ç›¸å…³å·¥ä½œ
 		offset = 0;
 		matrixLength = length;
 		Ndimension = 0;
@@ -653,8 +655,8 @@ void VarDef(int index,int block)             //±äÁ¿¶¨Òå
 		
 		InitVal(index);
 	}
-	//ÍË³öÑ­»·Ç°ÒÑ¾­Ô¤¶Áµ¥´Ê
-	outfile << "<±äÁ¿¶¨Òå>" << endl;
+	//é€€å‡ºå¾ªç¯å‰å·²ç»é¢„è¯»å•è¯
+	outfile << "<å˜é‡å®šä¹‰>" << endl;
 }
 void InitVal(int index)
 {
@@ -664,7 +666,7 @@ void InitVal(int index)
 		if(isNesting == 1){
 			isNesting = 1;
 			Ndimension++;
-			for (int pp = Ndimension; pp < matrixLength.size();pp++) {   //¼ÆËãµ±Ç°Î¬¶ÈÆ«ÒÆÁ¿mod
+			for (int pp = Ndimension; pp < matrixLength.size();pp++) {   //è®¡ç®—å½“å‰ç»´åº¦åç§»é‡mod
 				mod = mod * matrixLength[pp];
 			}
 		}else{
@@ -674,7 +676,7 @@ void InitVal(int index)
 			}else{
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size();pp++) {   //¼ÆËãµ±Ç°Î¬¶ÈÆ«ÒÆÁ¿mod
+			for (int pp = 1; pp < matrixLength.size();pp++) {   //è®¡ç®—å½“å‰ç»´åº¦åç§»é‡mod
 				mod = mod * matrixLength[pp];
 			}
 			Ndimension = 1;
@@ -683,22 +685,22 @@ void InitVal(int index)
 				mod = mod / matrixLength[Ndimension-1];
 			}
 		}
-		printMessage();   //Êä³ö{
+		printMessage();   //è¾“å‡º{
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		if (symbol != RBRACE) {
 			InitVal(index);
 			while (symbol == COMMA) {
 				isNesting = 0;
-				printMessage();   //Êä³ö,
+				printMessage();   //è¾“å‡º,
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
-				token = wordAnalysis.getToken();//Ô¤¶Á
+				token = wordAnalysis.getToken();//é¢„è¯»
 				InitVal(index);
 			}
 		}
-		else {    //¿ÕÇé¿ö
+		else {    //ç©ºæƒ…å†µ
 			flag = 1;
 		}
 		if (flag == 1) offset += mod;
@@ -707,10 +709,10 @@ void InitVal(int index)
 				offset++;
 			}
 		}
-		printMessage();   //Êä³ö}
+		printMessage();   //è¾“å‡º}
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
 	else {
 		isNesting = 0;
@@ -722,9 +724,9 @@ void InitVal(int index)
 			if (Range != 0) {
 				b = "%";
 			}
-			CodeItem citem = CodeItem(STORE,interRegister,b+nodeName,"0");	//¸³Öµµ¥Öµ
+			CodeItem citem = CodeItem(STORE,interRegister,b+nodeName,"0");	//èµ‹å€¼å•å€¼
 			citem.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem);
+			codetotal[index].push_back(citem);
 		}
 		else {
 			if (offset <= totalSize) {
@@ -736,20 +738,20 @@ void InitVal(int index)
 				}
 				CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
-				codetotal[Funcindex].push_back(citem);
+				codetotal[index].push_back(citem);
 			}
 		}
 	}
-	outfile << "<±äÁ¿³õÖµ>" << endl;
+	outfile << "<å˜é‡åˆå€¼>" << endl;
 }
-void valueFuncDef()    //ÓĞ·µ»ØÖµº¯Êı¶¨Òå
+void valueFuncDef()    //æœ‰è¿”å›å€¼å‡½æ•°å®šä¹‰
 {
-	printMessage();    //Êä³öintĞÅÏ¢
+	printMessage();    //è¾“å‡ºintä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	string name = token;   //»ñÈ¡º¯ÊıÃû
-	printMessage();   //»ñµÃ±êÊ¶·û²¢Êä³ö
+	string name = token;   //è·å–å‡½æ•°å
+	printMessage();   //è·å¾—æ ‡è¯†ç¬¦å¹¶è¾“å‡º
 	symbolTable item(FUNCTION, INT, name);
 	total[Funcindex].push_back(item);
 	CodeItem citem(DEFINE, "@"+name,"int","");           //define @foo int
@@ -757,72 +759,72 @@ void valueFuncDef()    //ÓĞ·µ»ØÖµº¯Êı¶¨Òå
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //»ñµÃ(²¢Êä³ö
+	printMessage();   //è·å¾—(å¹¶è¾“å‡º
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
-	if (symbol == RPARENT) {  //²ÎÊı±íÎª¿Õ
-		total[Funcindex][0].setparaLength(0);   //º¯Êı²ÎÊıÎª0
-		outfile << "<²ÎÊı±í>" << endl;
-		printMessage();    //Êä³ö)ĞÅÏ¢
+	token = wordAnalysis.getToken();//é¢„è¯»
+	if (symbol == RPARENT) {  //å‚æ•°è¡¨ä¸ºç©º
+		total[Funcindex][0].setparaLength(0);   //å‡½æ•°å‚æ•°ä¸º0
+		outfile << "<å‚æ•°è¡¨>" << endl;
+		printMessage();    //è¾“å‡º)ä¿¡æ¯
 	}
 	else {
-		FuncFParams();  //½øÈëÇ°ÒÑ¾­Ô¤¶Á
-		printMessage();    //Êä³ö)ĞÅÏ¢
-		//ÅĞ¶Ïsymbol=)
+		FuncFParams();  //è¿›å…¥å‰å·²ç»é¢„è¯»
+		printMessage();    //è¾“å‡º)ä¿¡æ¯
+		//åˆ¤æ–­symbol=)
 	}
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken(); //Ô¤¶Á
+	token = wordAnalysis.getToken(); //é¢„è¯»
 	Blockindex = 0;
 	Block();
-	outfile << "<ÓĞ·µ»ØÖµº¯Êı¶¨Òå>" << endl;
+	outfile << "<æœ‰è¿”å›å€¼å‡½æ•°å®šä¹‰>" << endl;
 }
-void novalueFuncDef()  //ÎŞ·µ»ØÖµº¯Êı¶¨Òå
+void novalueFuncDef()  //æ— è¿”å›å€¼å‡½æ•°å®šä¹‰
 {
-	printMessage();    //Êä³övoidĞÅÏ¢
+	printMessage();    //è¾“å‡ºvoidä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//»ñµÃ±êÊ¶·û
-	string name = token;  //±£´æº¯ÊıÃû
+	token = wordAnalysis.getToken();//è·å¾—æ ‡è¯†ç¬¦
+	string name = token;  //ä¿å­˜å‡½æ•°å
 	symbolTable item(FUNCTION, VOID, name);
 	total[Funcindex].push_back(item);
 	CodeItem citem(DEFINE, "@" + name, "void", "");           //define @foo int
 	codetotal[Funcindex].push_back(citem);
-	printMessage();   //Êä³ö±êÊ¶·û
+	printMessage();   //è¾“å‡ºæ ‡è¯†ç¬¦
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //»ñµÃ(²¢Êä³ö
+	printMessage();   //è·å¾—(å¹¶è¾“å‡º
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	if (symbol == RPARENT) {
-		total[Funcindex][0].setparaLength(0);   //º¯Êı²ÎÊıÎª0
-		outfile << "<²ÎÊı±í>" << endl;
-		printMessage();    //ÏÈÊä³ö²ÎÊı±íºóÊä³ö)ĞÅÏ¢
+		total[Funcindex][0].setparaLength(0);   //å‡½æ•°å‚æ•°ä¸º0
+		outfile << "<å‚æ•°è¡¨>" << endl;
+		printMessage();    //å…ˆè¾“å‡ºå‚æ•°è¡¨åè¾“å‡º)ä¿¡æ¯
 	}
 	else {
 		FuncFParams();
-		printMessage();    //Êä³ö)ĞÅÏ¢
-		//ÅĞ¶Ï)
+		printMessage();    //è¾“å‡º)ä¿¡æ¯
+		//åˆ¤æ–­)
 	}
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	Blockindex = 0;
 	Block();
-	outfile << "<ÎŞ·µ»ØÖµº¯Êı¶¨Òå>" << endl;
+	outfile << "<æ— è¿”å›å€¼å‡½æ•°å®šä¹‰>" << endl;
 }
-void Block()      //Óï¾ä¿é
+void Block()      //è¯­å¥å—
 {
 	Blockindex++;
 	fatherBlock.push_back(Blockindex);
 	int block = Blockindex;
-	printMessage();    //Êä³ö{ĞÅÏ¢
+	printMessage();    //è¾“å‡º{ä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	while (symbol != RBRACE) {
 		if (symbol == CONSTTK) {
 			ConstDecl(Funcindex,block);
@@ -834,64 +836,64 @@ void Block()      //Óï¾ä¿é
 			Stmt();
 		}
 	}
-	printMessage();    //Êä³ö}ĞÅÏ¢
-	fatherBlock.pop_back();    //É¾³ıÄ©Î²ÔªËØ
+	printMessage();    //è¾“å‡º}ä¿¡æ¯
+	fatherBlock.pop_back();    //åˆ é™¤æœ«å°¾å…ƒç´ 
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
-	outfile << "<Óï¾ä¿é>" << endl;
+	token = wordAnalysis.getToken();//é¢„è¯»
+	outfile << "<è¯­å¥å—>" << endl;
 }
-void FuncFParams()         //²ÎÊı±í
+void FuncFParams()         //å‚æ•°è¡¨
 {
-	int paraLength = 1;//²ÎÊı¸öÊı   
+	int paraLength = 1;//å‚æ•°ä¸ªæ•°   
 	FuncFParam();
 	while (symbol == COMMA) {
 		paraLength++;
-		printMessage();    //Êä³ö,ĞÅÏ¢
+		printMessage();    //è¾“å‡º,ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
 		FuncFParam();
 	}
 	total[Funcindex][0].setparaLength(paraLength);
-	//ÍË³öÇ°ÒÑ¾­Ô¤¶Á
-	outfile << "<º¯ÊıĞÎ²Î±í>" << endl;
+	//é€€å‡ºå‰å·²ç»é¢„è¯»
+	outfile << "<å‡½æ•°å½¢å‚è¡¨>" << endl;
 }
 void FuncFParam()
 {
-	vector<int> length; //¼ÇÂ¼Ã¿¸öÎ¬¶È´óĞ¡
-	printMessage();    //Êä³öintĞÅÏ¢
+	vector<int> length; //è®°å½•æ¯ä¸ªç»´åº¦å¤§å°
+	printMessage();    //è¾“å‡ºintä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	string name = token;   //±£´æ²ÎÊıÃû
-	printMessage();    //Êä³ö±äÁ¿ÃûĞÅÏ¢
+	string name = token;   //ä¿å­˜å‚æ•°å
+	printMessage();    //è¾“å‡ºå˜é‡åä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
 	int dimenson = 0;
 	if (symbol == LBRACK) {
 		dimenson++;
-		printMessage();    //Êä³ö[ĞÅÏ¢
+		printMessage();    //è¾“å‡º[ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
-		printMessage();    //Êä³ö]ĞÅÏ¢
+		printMessage();    //è¾“å‡º]ä¿¡æ¯
 		length.push_back(0);
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
 		while (symbol == LBRACK) {
 			dimenson++;
-			printMessage();    //Êä³ö[ĞÅÏ¢
+			printMessage();    //è¾“å‡º[ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
+			token = wordAnalysis.getToken();//é¢„è¯»
 			length.push_back(ConstExp());
-			printMessage();    //Êä³ö]ĞÅÏ¢
+			printMessage();    //è¾“å‡º]ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();  //Ô¤¶Á
+			token = wordAnalysis.getToken();  //é¢„è¯»
 		}
 	}
 	symbolTable item = symbolTable(PARAMETER, INT, name, dimenson,1);
@@ -902,23 +904,23 @@ void FuncFParam()
 	if (dimenson > 0) {
 		b = "int*";
 	}
-	CodeItem citem = CodeItem(PARA,"%"+name,b,numToString(dimenson));//º¯ÊıĞÎ²Î
+	CodeItem citem = CodeItem(PARA,"%"+name,b,numToString(dimenson));//å‡½æ•°å½¢å‚
 	citem.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem);
-	outfile << "<º¯ÊıĞÎ²Î>" << endl;
+	outfile << "<å‡½æ•°å½¢å‚>" << endl;
 }
 void Exp()	//MulExp{('+'|'-')MulExp}
 {
 	Memory symbol_tag;
 	string registerL, registerR;
-	MulExp();  //ÍË³öÇ°¶ÁÁËÒ»¸öµ¥´Ê
+	MulExp();  //é€€å‡ºå‰è¯»äº†ä¸€ä¸ªå•è¯
 	registerL = interRegister;
 	while (symbol == PLUS || symbol == MINU) {
 		symbol_tag = symbol;
-		printMessage();    //Êä³ö+»ò-ĞÅÏ¢
+		printMessage();    //è¾“å‡º+æˆ–-ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		MulExp();
 		registerR = interRegister;
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
@@ -940,22 +942,22 @@ void Exp()	//MulExp{('+'|'-')MulExp}
 		}
 		registerL = interRegister;
 	}
-	//ÍË³öÇ°ÒÑ¾­Ô¤¶Á
-	outfile << "<±í´ïÊ½>" << endl;
+	//é€€å‡ºå‰å·²ç»é¢„è¯»
+	outfile << "<è¡¨è¾¾å¼>" << endl;
 	return ;
 }
 void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 {
 	UnaryExp();
-	string registerL = interRegister;	//»ñÈ¡×ó¼ÆËãÊı
+	string registerL = interRegister;	//è·å–å·¦è®¡ç®—æ•°
 	while (symbol == MULT || symbol == DIV_WORD || symbol == MOD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //Êä³ö*»ò/ĞÅÏ¢
+		printMessage();    //è¾“å‡º*æˆ–/ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		UnaryExp();
-		string registerR = interRegister;	//»ñÈ¡ÓÒ¼ÆËãÊı£¬´Ó´Ë¿ªÊ¼
+		string registerR = interRegister;	//è·å–å³è®¡ç®—æ•°ï¼Œä»æ­¤å¼€å§‹
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
 			int value;
 			int valueL = stringToNum(registerL);
@@ -978,79 +980,79 @@ void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 		}
 		registerL = interRegister;
 	}
-	//ÍË³öÇ°ÒÑ¾­Ô¤¶Á
-	outfile << "<Ïî>" << endl;
+	//é€€å‡ºå‰å·²ç»é¢„è¯»
+	outfile << "<é¡¹>" << endl;
 }
 void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' | +|-|! UnaryExp 
 {
 	if (symbol == LPARENT) {   //'(' Exp ')'
-		printMessage();    //Êä³ö(ĞÅÏ¢
+		printMessage();    //è¾“å‡º(ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		Exp();
-		printMessage();    //Êä³ö)ĞÅÏ¢
+		printMessage();    //è¾“å‡º)ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
 	else if (symbol == INTCON){  //number
 		printMessage();
-		interRegister = numToString(wordAnalysis.getNumber());		//½«ÊıÖµ×ª»»³É×Ö·û´®Ä£Ê½
+		interRegister = numToString(wordAnalysis.getNumber());		//å°†æ•°å€¼è½¬æ¢æˆå­—ç¬¦ä¸²æ¨¡å¼
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
-	else if (symbol == IDENFR) {  //±êÊ¶·û (º¯ÊıÊµ²Î±í) | ±êÊ¶·û {'['±í´ïÊ½']'}
-		printMessage();    //Êä³ö±äÁ¿ĞÅÏ¢
+	else if (symbol == IDENFR) {  //æ ‡è¯†ç¬¦ (å‡½æ•°å®å‚è¡¨) | æ ‡è¯†ç¬¦ {'['è¡¨è¾¾å¼']'}
+		printMessage();    //è¾“å‡ºå˜é‡ä¿¡æ¯
 		string name_tag = wordAnalysis.getToken();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		string registerL,registerR,registerA,registerC;
 		int typeL,typeR,typeA,typeC;
-		if (symbol == LPARENT) {  //±êÊ¶·û (º¯ÊıÊµ²Î±í)
+		if (symbol == LPARENT) {  //æ ‡è¯†ç¬¦ (å‡½æ•°å®å‚è¡¨)
 			paraNum = 0;
 			Functionname = name_tag;
-			printMessage();    //Êä³ö(ĞÅÏ¢
+			printMessage();    //è¾“å‡º(ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
+			token = wordAnalysis.getToken();//é¢„è¯»
 			if (symbol != RPARENT) {
 				FuncRParams();
 			}
-			printMessage();    //Êä³ö)ĞÅÏ¢
+			printMessage();    //è¾“å‡º)ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
-			interRegister = "%" + numToString(Temp);		//´æº¯Êı·µ»Ø½á¹û
+			token = wordAnalysis.getToken();//é¢„è¯»
+			interRegister = "%" + numToString(Temp);		//å­˜å‡½æ•°è¿”å›ç»“æœ
 			Temp++;
 			CodeItem citem = CodeItem(CALL,"@"+Functionname,interRegister,numToString(paraNum));          //call @foo %3 3
 			citem.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem);//º¯ÊıÒıÓÃ
+			codetotal[Funcindex].push_back(citem);//å‡½æ•°å¼•ç”¨
 		}
-		else {  //±êÊ¶·û {'['±í´ïÊ½']'}
+		else {  //æ ‡è¯†ç¬¦ {'['è¡¨è¾¾å¼']'}
 			symbolTable item = checkItem(name_tag);
 			int range = Range;
 			vector<int> dimenLength = item.getMatrixLength();
 			if (dimenLength.size() > 0 && symbol == LBRACK) {
-				registerA = "0";	//Æ«ÒÆÁ¿Îª0
+				registerA = "0";	//åç§»é‡ä¸º0
 			}
-			int nowDimenson = 0;   //¼ÇÂ¼µ±Ç°Î¬¶È
+			int nowDimenson = 0;   //è®°å½•å½“å‰ç»´åº¦
 			while (symbol == LBRACK) {
 				nowDimenson++;
-				printMessage();    //Êä³ö[ĞÅÏ¢
+				printMessage();    //è¾“å‡º[ä¿¡æ¯
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
-				token = wordAnalysis.getToken();//Ô¤¶Á
+				token = wordAnalysis.getToken();//é¢„è¯»
 				Exp();		//q[n][m]
-				registerL = interRegister;   //registerL = "n"	£¬¸ÃÎ¬¶ÈÆ«ÒÆÁ¿
+				registerL = interRegister;   //registerL = "n"	ï¼Œè¯¥ç»´åº¦åç§»é‡
 				int offset = 1;
 				for (int j = nowDimenson; j < dimenLength.size(); j++) {
 					offset = offset * dimenLength[j];
 				}
-				registerR = numToString(offset);		//¸ÃÎ¬¶ÈÖµÎª1Ê±´óĞ¡
-				if (registerL[0] != '@' && registerL[0] != '%') {   //¸ÃÎ¬¶È×Ü´óĞ¡£¬´æÔÚregisterCÖĞ
+				registerR = numToString(offset);		//è¯¥ç»´åº¦å€¼ä¸º1æ—¶å¤§å°
+				if (registerL[0] != '@' && registerL[0] != '%') {   //è¯¥ç»´åº¦æ€»å¤§å°ï¼Œå­˜åœ¨registerCä¸­
 					int valueL = stringToNum(registerL);
 					valueL = valueL * offset;
 					registerC = numToString(valueL);
@@ -1062,7 +1064,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					citem.setFatherBlock(fatherBlock);
 					codetotal[Funcindex].push_back(citem);
 				}
-				if (registerC[0] != '@' && registerC[0] != '%' && registerA[0] != '@' && registerA[0] != '%') {	//µ±Ç°Æ«ÒÆÁ¿registerA + ¸ÃÎ¬¶È×ÜÆ«ÒÆÁ¿registerC
+				if (registerC[0] != '@' && registerC[0] != '%' && registerA[0] != '@' && registerA[0] != '%') {	//å½“å‰åç§»é‡registerA + è¯¥ç»´åº¦æ€»åç§»é‡registerC
 					int valueC = stringToNum(registerC);
 					int valueA = stringToNum(registerA);
 					registerA = numToString(valueC + valueA);
@@ -1075,12 +1077,12 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					codetotal[Funcindex].push_back(citem);
 					registerA = interRegister;
 				}
-				printMessage();    //Êä³ö]ĞÅÏ¢
+				printMessage();    //è¾“å‡º]ä¿¡æ¯
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
-				token = wordAnalysis.getToken();//Ô¤¶Á
+				token = wordAnalysis.getToken();//é¢„è¯»
 			}
-			if (item.getDimension() == nowDimenson && item.getDimension() > 0) {	//È¡¶àÎ¬Êı×éµÄÒ»¸öÔªËØ
+			if (item.getDimension() == nowDimenson && item.getDimension() > 0) {	//å–å¤šç»´æ•°ç»„çš„ä¸€ä¸ªå…ƒç´ 
 				if (registerA[0] != '@' && registerA[0] != '%') {
 					int index = stringToNum(registerA);
 					registerA = numToString(index * 4);
@@ -1102,33 +1104,33 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					Temp++;
 					string b = "%";
 					if (range == 0) {
-						b = "@";	//È«¾Ö±äÁ¿
+						b = "@";	//å…¨å±€å˜é‡
 					}
-					CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, registerA); //Êı×éÈ¡Öµ
-					citem.setFatherBlock(fatherBlock);    //±£´æµ±Ç°×÷ÓÃÓò
+					CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, registerA); //æ•°ç»„å–å€¼
+					citem.setFatherBlock(fatherBlock);    //ä¿å­˜å½“å‰ä½œç”¨åŸŸ
 					codetotal[Funcindex].push_back(citem);
 				}
 			}
-			else if (item.getDimension() > 0 && nowDimenson < item.getDimension()) {		//´ËÊ±Ö»¿ÉÄÜÊÇ´«²Î£¬´«Êı×éµÄÒ»²¿·Ö
+			else if (item.getDimension() > 0 && nowDimenson < item.getDimension()) {		//æ­¤æ—¶åªå¯èƒ½æ˜¯ä¼ å‚ï¼Œä¼ æ•°ç»„çš„ä¸€éƒ¨åˆ†
 				paraIntNode = 1;
 				string b = "%";
 				if (range == 0) {
-					b = "@";	//È«¾Ö±äÁ¿
+					b = "@";	//å…¨å±€å˜é‡
 				}
 				interRegister = b+name_tag;
 			}
 			else {
 				if (item.getForm() == CONSTANT) {
-					interRegister = numToString(item.getIntValue()[0]);		//½«ÊıÖµ×ª»»³É×Ö·û´®Ä£Ê½
+					interRegister = numToString(item.getIntValue()[0]);		//å°†æ•°å€¼è½¬æ¢æˆå­—ç¬¦ä¸²æ¨¡å¼
 				}
 				else {
 					interRegister = "%" + numToString(Temp);
 					Temp++;
 					string b = "%";
 					if (range == 0) {
-						b = "@";	//È«¾Ö±äÁ¿
+						b = "@";	//å…¨å±€å˜é‡
 					}
-					CodeItem citem = CodeItem(LOAD, interRegister, b+name_tag, "0"); //Ò»Î¬±äÁ¿¡¢³£Á¿È¡Öµ
+					CodeItem citem = CodeItem(LOAD, interRegister, b+name_tag, "0"); //ä¸€ç»´å˜é‡ã€å¸¸é‡å–å€¼
 					citem.setFatherBlock(fatherBlock);
 					codetotal[Funcindex].push_back(citem);
 				}
@@ -1139,17 +1141,17 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		string op,registerL,registerR;
 		int typeL,typeR;
 		if (symbol == PLUS){
-			printMessage();    //Êä³ö+ĞÅÏ¢
+			printMessage();    //è¾“å‡º+ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
+			token = wordAnalysis.getToken();//é¢„è¯»
 			UnaryExp();
 		}
 		else if (symbol == MINU) {
-			printMessage();    //Êä³ö-ĞÅÏ¢
+			printMessage();    //è¾“å‡º-ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
+			token = wordAnalysis.getToken();//é¢„è¯»
 			UnaryExp();
 			registerR = interRegister;
 			if (registerR[0] == '%' || registerR[0] == '@') {
@@ -1165,10 +1167,10 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			}
 		}
 		else {
-			printMessage();    //Êä³ö!ĞÅÏ¢
+			printMessage();    //è¾“å‡º!ä¿¡æ¯
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();//Ô¤¶Á
+			token = wordAnalysis.getToken();//é¢„è¯»
 			UnaryExp();
 			registerL = interRegister;
 			if (registerL[0] == '%' || registerL[0] == '@') {
@@ -1190,60 +1192,60 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			}
 		}
 	}
-	//ÍË³öÇ°ÒÑ¾­Ô¤¶Á
-	outfile << "<Òò×Ó>" << endl;
+	//é€€å‡ºå‰å·²ç»é¢„è¯»
+	outfile << "<å› å­>" << endl;
 }
-void Stmt()              //Óï¾ä
+void Stmt()              //è¯­å¥
 {
-	if (symbol == IFTK) {  //£¼Ìõ¼şÓï¾ä£¾
+	if (symbol == IFTK) {  //ï¼œæ¡ä»¶è¯­å¥ï¼
 		ifStmt();
 	}
-	else if (symbol == WHILETK) {  //<Ñ­»·Óï¾ä>
+	else if (symbol == WHILETK) {  //<å¾ªç¯è¯­å¥>
 		loopStmt();
 	}
 	else if (symbol == BREAKTK) {	//break ;
-		printMessage();    //Êä³öbreakĞÅÏ¢
+		printMessage();    //è¾“å‡ºbreakä¿¡æ¯
 		CodeItem citem = CodeItem(BR, whileLabel[whileLabel.size() - 2], "", ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
-		printMessage();    //Êä³ö;ĞÅÏ¢
+		token = wordAnalysis.getToken();//é¢„è¯»
+		printMessage();    //è¾“å‡º;ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
 	else if (symbol == CONTINUETK) {	//continue ;
-		printMessage();    //Êä³öcontinueĞÅÏ¢
+		printMessage();    //è¾“å‡ºcontinueä¿¡æ¯
 		CodeItem citem = CodeItem(BR, whileLabel[whileLabel.size() - 1], "", ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
-		printMessage();    //Êä³ö;ĞÅÏ¢
+		token = wordAnalysis.getToken();//é¢„è¯»
+		printMessage();    //è¾“å‡º;ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
-	else if (symbol == LBRACE) { //'{'£ûÉùÃ÷|Óï¾ä£ı'}'
+	else if (symbol == LBRACE) { //'{'ï½›å£°æ˜|è¯­å¥ï½'}'
 		Block();
 	}
-	else if (symbol == RETURNTK) { //£¼·µ»ØÓï¾ä£¾;
+	else if (symbol == RETURNTK) { //ï¼œè¿”å›è¯­å¥ï¼;
 		returnStmt();
-		printMessage();    //Êä³ö;ĞÅÏ¢
-		//ÅĞ¶Ïsymbol=;
+		printMessage();    //è¾“å‡º;ä¿¡æ¯
+		//åˆ¤æ–­symbol=;
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
 	else if (symbol == SEMICN) {
-		printMessage();    //Êä³ö;ĞÅÏ¢
-		//ÅĞ¶Ïsymbol=;
+		printMessage();    //è¾“å‡º;ä¿¡æ¯
+		//åˆ¤æ–­symbol=;
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
 	else if (symbol == IDENFR) {
 		Memory sym_tag = symbol;
@@ -1251,92 +1253,92 @@ void Stmt()              //Óï¾ä
 		int record_tag = wordAnalysis.getfRecord();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();  //Ô¤¶Á
-		if (symbol == LPARENT) {	//¸ÃÓï¾äÎªµ÷ÓÃÎŞ·µ»ØÖµº¯Êı£»
+		token = wordAnalysis.getToken();  //é¢„è¯»
+		if (symbol == LPARENT) {	//è¯¥è¯­å¥ä¸ºè°ƒç”¨æ— è¿”å›å€¼å‡½æ•°ï¼›
 			wordAnalysis.setfRecord(record_tag);
 			wordAnalysis.setSymbol(sym_tag);
 			wordAnalysis.setToken(token_tag);
 			symbol = sym_tag;
-			Exp();					//CALLº¯ÊıÔÚEXPÖĞ´æÔÚ
-			printMessage();  //Êä³ö·ÖºÅ
+			Exp();					//CALLå‡½æ•°åœ¨EXPä¸­å­˜åœ¨
+			printMessage();  //è¾“å‡ºåˆ†å·
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
-			token = wordAnalysis.getToken();  //Ô¤¶Á
+			token = wordAnalysis.getToken();  //é¢„è¯»
 		}
 		else {
 			while (symbol != SEMICN and symbol != ASSIGN) {
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 			}
-			//»Ö¸´³ö³§ÉèÖÃ
+			//æ¢å¤å‡ºå‚è®¾ç½®
 			wordAnalysis.setfRecord(record_tag);
 			wordAnalysis.setSymbol(sym_tag);
 			wordAnalysis.setToken(token_tag);
 			if (symbol == ASSIGN) {  	//LVal = Exp; 
 				symbol = sym_tag;
 				assignStmt();
-				printMessage();    //Êä³ö;ĞÅÏ¢
+				printMessage();    //è¾“å‡º;ä¿¡æ¯
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
-				token = wordAnalysis.getToken();//Ô¤¶Á
+				token = wordAnalysis.getToken();//é¢„è¯»
 			}
-			else {		//Exp ;  ÕâÀïÖ±½ÓÌø¹ı
+			else {		//Exp ;  è¿™é‡Œç›´æ¥è·³è¿‡
 				while (symbol != SEMICN) {
 					wordAnalysis.getsym();
 					symbol = wordAnalysis.getSymbol();
 				}
-				printMessage();    //Êä³ö;ĞÅÏ¢
+				printMessage();    //è¾“å‡º;ä¿¡æ¯
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
-				token = wordAnalysis.getToken();//Ô¤¶Á
+				token = wordAnalysis.getToken();//é¢„è¯»
 			}
 		}
 	}
-	else {						//Exp ; ÕâÀïÖ±½ÓÌø¹ı£¬Ã»Ó°Ïì
+	else {						//Exp ; è¿™é‡Œç›´æ¥è·³è¿‡ï¼Œæ²¡å½±å“
 		while (symbol != SEMICN) {
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 		}
-		printMessage();    //Êä³ö;ĞÅÏ¢
+		printMessage();    //è¾“å‡º;ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
-	//ÍË³öÇ°¾ùÔ¤¶Á
-	outfile << "<Óï¾ä>" << endl;
+	//é€€å‡ºå‰å‡é¢„è¯»
+	outfile << "<è¯­å¥>" << endl;
 }
-void assignStmt()        //¸³ÖµÓï¾ä LVal = Exp
+void assignStmt()        //èµ‹å€¼è¯­å¥ LVal = Exp
 {
-	printMessage();    //Êä³ö±äÁ¿ĞÅÏ¢
-	string name_tag = wordAnalysis.getToken();		//±äÁ¿Ãû
+	printMessage();    //è¾“å‡ºå˜é‡ä¿¡æ¯
+	string name_tag = wordAnalysis.getToken();		//å˜é‡å
 	string registerL, registerR, registerA, registerC;
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	symbolTable item = checkItem(name_tag);
 	vector<int> dimenLength = item.getMatrixLength();
 	string b = "%";
 	if (Range == 0) {
-		b = "@";	//È«¾Ö±äÁ¿
+		b = "@";	//å…¨å±€å˜é‡
 	}
 	if (dimenLength.size() > 0) {
 		registerA = "0";
 	}
-	int nowDimenson = 0;   //¼ÇÂ¼µ±Ç°Î¬¶È
+	int nowDimenson = 0;   //è®°å½•å½“å‰ç»´åº¦
 	while (symbol == LBRACK) {
 		nowDimenson++;
-		printMessage();    //Êä³ö[ĞÅÏ¢
+		printMessage();    //è¾“å‡º[ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		Exp();
-		registerL = interRegister;		//¸ÃÎ¬¶ÈÆ«ÒÆÁ¿
+		registerL = interRegister;		//è¯¥ç»´åº¦åç§»é‡
 		int offset = 1;
 		for (int j = nowDimenson; j < dimenLength.size(); j++) {
 			offset = offset * dimenLength[j];
 		}
-		registerR = numToString(offset);		//¸ÃÎ¬¶ÈÖµÎª1Ê±´óĞ¡
-		if (registerL[0] != '@' && registerL[0] != '%') {   //¸ÃÎ¬¶È×Ü´óĞ¡£¬´æÔÚregisterCÖĞ
+		registerR = numToString(offset);		//è¯¥ç»´åº¦å€¼ä¸º1æ—¶å¤§å°
+		if (registerL[0] != '@' && registerL[0] != '%') {   //è¯¥ç»´åº¦æ€»å¤§å°ï¼Œå­˜åœ¨registerCä¸­
 			int valueL = stringToNum(registerL);
 			valueL = valueL * offset;
 			registerC = numToString(valueL);
@@ -1348,7 +1350,7 @@ void assignStmt()        //¸³ÖµÓï¾ä LVal = Exp
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
-		if (registerC[0] != '@' && registerC[0] != '%' && registerA[0] != '@' && registerA[0] != '%') {	//µ±Ç°Æ«ÒÆÁ¿registerA + ¸ÃÎ¬¶È×ÜÆ«ÒÆÁ¿registerC
+		if (registerC[0] != '@' && registerC[0] != '%' && registerA[0] != '@' && registerA[0] != '%') {	//å½“å‰åç§»é‡registerA + è¯¥ç»´åº¦æ€»åç§»é‡registerC
 			int valueC = stringToNum(registerC);
 			int valueA = stringToNum(registerA);
 			registerA = numToString(valueC + valueA);
@@ -1361,15 +1363,15 @@ void assignStmt()        //¸³ÖµÓï¾ä LVal = Exp
 			codetotal[Funcindex].push_back(citem);
 			registerA = interRegister;
 		}
-		printMessage();    //Êä³ö]ĞÅÏ¢
+		printMessage();    //è¾“å‡º]ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
-	printMessage();    //Êä³ö=ĞÅÏ¢
+	printMessage();    //è¾“å‡º=ä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	Exp();
 	if (dimenLength.size() > 0) {
 		string tempRegister = interRegister;
@@ -1385,57 +1387,62 @@ void assignStmt()        //¸³ÖµÓï¾ä LVal = Exp
 			codetotal[Funcindex].push_back(citem);
 			registerA = interRegister;
 		}
-		CodeItem citem = CodeItem(STORE, tempRegister, b + name_tag, registerA);		//Êı×éÄ³¸ö±äÁ¿¸³Öµ
+		CodeItem citem = CodeItem(STORE, tempRegister, b + name_tag, registerA);		//æ•°ç»„æŸä¸ªå˜é‡èµ‹å€¼
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
 	else {
-		CodeItem citem = CodeItem(STORE, interRegister, b+name_tag, "0");		//¸øÒ»Î¬±äÁ¿¸³Öµ
+		CodeItem citem = CodeItem(STORE, interRegister, b+name_tag, "0");		//ç»™ä¸€ç»´å˜é‡èµ‹å€¼
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
-	outfile << "<¸³ÖµÓï¾ä>" << endl;
+	outfile << "<èµ‹å€¼è¯­å¥>" << endl;
 }
-void ifStmt()            //Ìõ¼şÓï¾ä
+void ifStmt()            //æ¡ä»¶è¯­å¥
 {
-	printMessage();    //Êä³öifĞÅÏ¢
-	//ÅĞ¶Ïsymbol=if
+	printMessage();    //è¾“å‡ºifä¿¡æ¯
+	//åˆ¤æ–­symbol=if
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //»ñµÃ(²¢Êä³ö
+	printMessage();   //è·å¾—(å¹¶è¾“å‡º
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken(); //Ô¤¶Á
+	token = wordAnalysis.getToken(); //é¢„è¯»
 	Cond();
-	printMessage();    //Êä³ö)ĞÅÏ¢
-	//ÅĞ¶Ïsymbol=)
+	printMessage();    //è¾“å‡º)ä¿¡æ¯
+	//åˆ¤æ–­symbol=)
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	string if_then_label = "%if.then_" + numToString(iflabelIndex);
 	string if_else_label = "%if.else_" + numToString(iflabelIndex);
 	string if_end_label = "%if.end_" + numToString(iflabelIndex);
 	iflabelIndex++;
-	CodeItem citem = CodeItem(BR,interRegister,if_then_label,if_else_label); //br Ìõ¼ş %if.then_1 %if.else_1 
+	CodeItem citem = CodeItem(BR,interRegister,if_then_label,if_else_label); //br æ¡ä»¶ %if.then_1 %if.else_1 
 	citem.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem);
 	CodeItem citem2 = CodeItem(LABEL,if_then_label,"","");	//label if.then
 	citem2.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem2);
+	int nowIndex = codetotal[Funcindex].size() - 2;		//æš‚å­˜ br æ¡ä»¶ %if.then_1 %if.else_1  ä¸‹æ ‡ï¼Œå¯èƒ½åç»­è¦æŠŠ%if.elseæ”¹æˆ %if.end
 	Stmt();													//stmt1
-	CodeItem citem3 = CodeItem(BR, if_end_label, "", "");   //BR if.end
-	citem3.setFatherBlock(fatherBlock);
-	codetotal[Funcindex].push_back(citem3);
-	CodeItem citem4 = CodeItem(LABEL, if_else_label, "", "");	//label if.else
-	citem4.setFatherBlock(fatherBlock);
-	codetotal[Funcindex].push_back(citem4);
 	if (symbol == ELSETK) {
-		printMessage();    //Êä³öelseĞÅÏ¢
+		CodeItem citem3 = CodeItem(BR, if_end_label, "", "");   //BR if.end
+		citem3.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem3);
+		CodeItem citem4 = CodeItem(LABEL, if_else_label, "", "");	//label if.else
+		citem4.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem4);
+		printMessage();    //è¾“å‡ºelseä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		Stmt();			//stmt2
+	}
+	else {	//åªæœ‰if  æ²¡æœ‰elseï¼Œåªéœ€è¦æŠŠbr res %if.then, %if.elseä¸­çš„%if.elseæ ‡ç­¾æ”¹æˆ%if.endå³å¯
+		string res = codetotal[Funcindex][nowIndex].getResult();
+		codetotal[Funcindex][nowIndex].changeContent(res, if_then_label, if_end_label);
 	}
 	CodeItem citem5 = CodeItem(BR, if_end_label, "", "");   //BR if.end
 	citem5.setFatherBlock(fatherBlock);
@@ -1443,20 +1450,20 @@ void ifStmt()            //Ìõ¼şÓï¾ä
 	CodeItem citem6 = CodeItem(LABEL, if_end_label, "", "");	//label if.else
 	citem6.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem6);
-	//ÍË³öÇ°Stmt¾ùÔ¤¶Á
-	outfile << "<Ìõ¼şÓï¾ä>" << endl;
+	//é€€å‡ºå‰Stmtå‡é¢„è¯»
+	outfile << "<æ¡ä»¶è¯­å¥>" << endl;
 }
-void Cond()              //Ìõ¼ş±í´ïÊ½(Âß¼­»ò±í´ïÊ½)  LAndExp { '||' LAndExp}
+void Cond()              //æ¡ä»¶è¡¨è¾¾å¼(é€»è¾‘æˆ–è¡¨è¾¾å¼)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR,op;
 	LAndExp();
 	registerL = interRegister;
 	while (symbol == OR_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //Êä³öÂß¼­ÔËËã·û
+		printMessage();    //è¾“å‡ºé€»è¾‘è¿ç®—ç¬¦
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		LAndExp();
 		registerR = interRegister;
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
@@ -1480,19 +1487,19 @@ void Cond()              //Ìõ¼ş±í´ïÊ½(Âß¼­»ò±í´ïÊ½)  LAndExp { '||' LAndExp}
 		}
 		registerL = interRegister;
 	}
-	outfile << "<Ìõ¼ş>" << endl;
+	outfile << "<æ¡ä»¶>" << endl;
 }
-void LAndExp()			  //Âß¼­Óë±í´ïÊ½   EqExp{'&&' EqExp }
+void LAndExp()			  //é€»è¾‘ä¸è¡¨è¾¾å¼   EqExp{'&&' EqExp }
 {
 	string registerL, registerR, op;
 	EqExp();
 	registerL = interRegister;
 	while (symbol == AND_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //Êä³öÂß¼­ÔËËã·û
+		printMessage();    //è¾“å‡ºé€»è¾‘è¿ç®—ç¬¦
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		EqExp();
 		registerR = interRegister;
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
@@ -1518,17 +1525,17 @@ void LAndExp()			  //Âß¼­Óë±í´ïÊ½   EqExp{'&&' EqExp }
 	}
 }
 
-void EqExp()		  //ÏàµÈĞÔ±í´ïÊ½
+void EqExp()		  //ç›¸ç­‰æ€§è¡¨è¾¾å¼
 {
 	string registerL, registerR, op;
 	RelExp();
 	registerL = interRegister;
 	while (symbol == EQL_WORD || symbol == NEQ_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //Êä³öÂß¼­ÔËËã·û
+		printMessage();    //è¾“å‡ºé€»è¾‘è¿ç®—ç¬¦
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		RelExp();
 		registerR = interRegister;
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
@@ -1558,17 +1565,17 @@ void EqExp()		  //ÏàµÈĞÔ±í´ïÊ½
 		registerL = interRegister;
 	}
 }
-void RelExp()			  //¹ØÏµ±í´ïÊ½
+void RelExp()			  //å…³ç³»è¡¨è¾¾å¼
 {
 	string registerL, registerR, op;
 	Exp();
 	registerL = interRegister;
 	while (symbol == LSS || symbol == LEQ||symbol==GRE||symbol==GEQ){
 		Memory symbol_tag = symbol;
-		printMessage();    //Êä³öÂß¼­ÔËËã·û
+		printMessage();    //è¾“å‡ºé€»è¾‘è¿ç®—ç¬¦
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		Exp();
 		registerR = interRegister;
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
@@ -1608,17 +1615,17 @@ void RelExp()			  //¹ØÏµ±í´ïÊ½
 		registerL = interRegister;
 	}
 }
-void loopStmt()          //Ñ­»·Óï¾ä
+void loopStmt()          //å¾ªç¯è¯­å¥
 {
-	//?while '('£¼Ìõ¼ş£¾')'£¼Óï¾ä£¾
-	printMessage();    //Êä³öwhileĞÅÏ¢
+	//?while '('ï¼œæ¡ä»¶ï¼')'ï¼œè¯­å¥ï¼
+	printMessage();    //è¾“å‡ºwhileä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //»ñµÃ(²¢Êä³öĞÅÏ¢
+	printMessage();   //è·å¾—(å¹¶è¾“å‡ºä¿¡æ¯
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	string while_cond_label = "%while.cond_" + numToString(whilelabelIndex);
 	string while_body_label = "%while.body_" + numToString(whilelabelIndex);
 	string while_end_label = "%while.end_" + numToString(whilelabelIndex);
@@ -1627,8 +1634,8 @@ void loopStmt()          //Ñ­»·Óï¾ä
 	citem1.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem1);
 	Cond();						//cond
-	printMessage();    //Êä³ö)ĞÅÏ¢
-	CodeItem citem2 = CodeItem(BR, interRegister, while_body_label, while_end_label); //br Ìõ¼ş %while.body %while.end  
+	printMessage();    //è¾“å‡º)ä¿¡æ¯
+	CodeItem citem2 = CodeItem(BR, interRegister, while_body_label, while_end_label); //br æ¡ä»¶ %while.body %while.end  
 	citem2.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem2);
 	CodeItem citem3 = CodeItem(LABEL, while_body_label, "", "");	//label %while.body
@@ -1638,7 +1645,7 @@ void loopStmt()          //Ñ­»·Óï¾ä
 	whileLabel.push_back(while_cond_label);
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	Stmt();
 	whileLabel.pop_back();
 	whileLabel.pop_back();
@@ -1648,10 +1655,10 @@ void loopStmt()          //Ñ­»·Óï¾ä
 	CodeItem citem5 = CodeItem(LABEL, while_end_label, "", "");	//label %while.end
 	citem5.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem5);
-	//ÍË³öÇ°¾ùÔ¤¶Á
-	outfile << "<Ñ­»·Óï¾ä>" << endl;
+	//é€€å‡ºå‰å‡é¢„è¯»
+	outfile << "<å¾ªç¯è¯­å¥>" << endl;
 }
-void FuncRParams()    //º¯ÊıÊµ²ÎÊı±í
+void FuncRParams()    //å‡½æ•°å®å‚æ•°è¡¨
 {
 	if (symbol == RPARENT) {
 		return;
@@ -1660,62 +1667,62 @@ void FuncRParams()    //º¯ÊıÊµ²ÎÊı±í
 		interRegister = wordAnalysis.getToken();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 	}
 	else {
-		Exp();//ÍË³öÇ°ÒÑ¾­Ô¤¶Á
+		Exp();//é€€å‡ºå‰å·²ç»é¢„è¯»
 	}
 	paraNum++;
 	if (paraIntNode == 0) {
 		if(interRegister[0]=='\"'){
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "string");  //´«²Î
+			CodeItem citem = CodeItem(PUSH, interRegister, "", "string");  //ä¼ å‚
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "int");  //´«²Î
+			CodeItem citem = CodeItem(PUSH, interRegister, "", "int");  //ä¼ å‚
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 	}
 	else {
-		CodeItem citem = CodeItem(PUSH, interRegister, "", "int*");  //´«²Î
+		CodeItem citem = CodeItem(PUSH, interRegister, "", "int*");  //ä¼ å‚
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		paraIntNode = 0;
 	}
 	while (symbol == COMMA) {
-		printMessage();    //Êä³ö,ĞÅÏ¢
+		printMessage();    //è¾“å‡º,ä¿¡æ¯
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
-		token = wordAnalysis.getToken();//Ô¤¶Á
+		token = wordAnalysis.getToken();//é¢„è¯»
 		Exp();
 		paraNum++;
 		if (paraIntNode == 0) {
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "int");  //´«²Î
+			CodeItem citem = CodeItem(PUSH, interRegister, "", "int");  //ä¼ å‚
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "int*");  //´«²Î
+			CodeItem citem = CodeItem(PUSH, interRegister, "", "int*");  //ä¼ å‚
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 			paraIntNode = 0;
 		}
 	}
-	//ÍË³öÑ­»·Ç°ÒÑ¾­Ô¤¶Á
-	outfile << "<º¯ÊıÊµ²ÎÊı±í>" << endl;
+	//é€€å‡ºå¾ªç¯å‰å·²ç»é¢„è¯»
+	outfile << "<å‡½æ•°å®å‚æ•°è¡¨>" << endl;
 }
-void returnStmt()        //·µ»ØÓï¾ä
+void returnStmt()        //è¿”å›è¯­å¥
 {
-	printMessage();    //Êä³öreturnĞÅÏ¢
-	//ÅĞ¶Ïsymbol=return
+	printMessage();    //è¾“å‡ºreturnä¿¡æ¯
+	//åˆ¤æ–­symbol=return
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
-	token = wordAnalysis.getToken();//Ô¤¶Á
+	token = wordAnalysis.getToken();//é¢„è¯»
 	if (symbol != SEMICN) {
 		Exp();
-		CodeItem citem = CodeItem(RET, interRegister, "int","");  //ÓĞ·µ»ØÖµ·µ»Ø
+		CodeItem citem = CodeItem(RET, interRegister, "int","");  //æœ‰è¿”å›å€¼è¿”å›
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
@@ -1724,33 +1731,33 @@ void returnStmt()        //·µ»ØÓï¾ä
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
-	outfile << "<·µ»ØÓï¾ä>" << endl;
+	outfile << "<è¿”å›è¯­å¥>" << endl;
 }
-symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock)  //function_numberÎªº¯ÊıÏÂ±ê,fatherBlockÎª´úÂëËùÔÚ×÷ÓÃÓò             
+symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock)  //function_numberä¸ºå‡½æ•°ä¸‹æ ‡,fatherBlockä¸ºä»£ç æ‰€åœ¨ä½œç”¨åŸŸ             
 {
 	int i, j, checkblock, block;
 	string name;
 	for (j = fatherBlock.size() - 1; j >= 0; j--) {
 		checkblock = fatherBlock[j];
-		for (i = 0; i < total[function_number].size(); i++) {   //ÏÈ´Ó±¾º¯Êı×÷ÓÃÓòÕÒ
+		for (i = 0; i < total[function_number].size(); i++) {   //å…ˆä»æœ¬å‡½æ•°ä½œç”¨åŸŸæ‰¾
 			name = total[function_number][i].getName();
 			block = total[function_number][i].getblockIndex();
-			if (name == checkname && block == checkblock) {  //´Ó×î½üµÄ×÷ÓÃÓòÕÒµ½ÁË
+			if (name == checkname && block == checkblock) {  //ä»æœ€è¿‘çš„ä½œç”¨åŸŸæ‰¾åˆ°äº†
 				return total[function_number][i];
 			}
 		}
 	}
 	for (i = 0; i < total[0].size(); i++) {
 		name = total[0][i].getName();
-		if (name == checkname) {  //´Ó×î½üµÄ×÷ÓÃÓòÕÒµ½ÁË
+		if (name == checkname) {  //ä»æœ€è¿‘çš„ä½œç”¨åŸŸæ‰¾åˆ°äº†
 			return total[0][i];
 		}
 	}
 }
-void change(int index)	//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
+void change(int index)	//ä¿®æ”¹ä¸­é—´ä»£ç ã€ç¬¦å·è¡¨
 {
 	int i, j, k;
-	//ÏÈĞŞ¸ÄÖĞ¼ä´úÂë
+	//å…ˆä¿®æ”¹ä¸­é—´ä»£ç 
 	vector<CodeItem> b = codetotal[index];
 	codetotal.pop_back();
 	for (i = 0; i < b.size(); i++) {
@@ -1761,8 +1768,8 @@ void change(int index)	//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
 		string res = b[i].getResult();
 		string ope1 = b[i].getOperand1();
 		string ope2 = b[i].getOperand2();
-		if (res.size()>0 && res[0] == '%' && (!isdigit(res[1])) ) {  //res±ØĞëÊÇ±äÁ¿
-			res.erase(0, 1);  //È¥µôÊ××ÖÄ¸
+		if (res.size()>0 && res[0] == '%' && (!isdigit(res[1])) ) {  //reså¿…é¡»æ˜¯å˜é‡
+			res.erase(0, 1);  //å»æ‰é¦–å­—æ¯
 			if (names[index][res] > 1) {
 				symbolTable item = checkTable(res, index, b[i].getFatherBlock());
 				res = "%" + newName(res, item.getblockIndex());
@@ -1771,8 +1778,8 @@ void change(int index)	//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
 				res = "%" + res;
 			}
 		}
-		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res±ØĞëÊÇ±äÁ¿
-			ope1.erase(0, 1);  //È¥µôÊ××ÖÄ¸
+		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //reså¿…é¡»æ˜¯å˜é‡
+			ope1.erase(0, 1);  //å»æ‰é¦–å­—æ¯
 			if (names[index][ope1] > 1) {
 				symbolTable item = checkTable(ope1, index, b[i].getFatherBlock());
 				ope1 = "%" + newName(ope1, item.getblockIndex());
@@ -1781,8 +1788,8 @@ void change(int index)	//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
 				ope1 = "%" + ope1;
 			}
 		}
-		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res±ØĞëÊÇ±äÁ¿
-			ope2.erase(0, 1);  //È¥µôÊ××ÖÄ¸
+		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //reså¿…é¡»æ˜¯å˜é‡
+			ope2.erase(0, 1);  //å»æ‰é¦–å­—æ¯
 			if (names[index][ope2] > 1) {
 				symbolTable item = checkTable(ope2, index, b[i].getFatherBlock());
 				ope2 = "%" + newName(ope2, item.getblockIndex());
@@ -1795,7 +1802,7 @@ void change(int index)	//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
 	}
 	codetotal.push_back(b);
 
-	//ÔÙĞŞ¸Ä·ûºÅ±í
+	//å†ä¿®æ”¹ç¬¦å·è¡¨
 	vector<symbolTable> a = total[index];
 	total.pop_back();
 	for (i = 0; i < a.size(); i++) {
@@ -1804,11 +1811,31 @@ void change(int index)	//ĞŞ¸ÄÖĞ¼ä´úÂë¡¢·ûºÅ±í
 		}
 		else {
 			string name = a[i].getName();
-			if (names[index][name] > 1) {       //Ä³Ò»±äÁ¿ÔÚº¯Êı×÷ÓÃÓòÄÚ³öÏÖ´ÎÊı´óÓÚ1£¬ĞèÒª¸ÄÃû
+			if (names[index][name] > 1) {       //æŸä¸€å˜é‡åœ¨å‡½æ•°ä½œç”¨åŸŸå†…å‡ºç°æ¬¡æ•°å¤§äº1ï¼Œéœ€è¦æ”¹å
 				string newname = newName(name, a[i].getblockIndex());
 				a[i].changeName(newname);
 			}
 		}
 	}
 	total.push_back(a);
+}
+void putAllocGlobalFirst()		//å°†ä¸­é—´ä»£ç ä¸­allocç±»å‹å‰ç§»
+{
+	vector<vector<CodeItem>> temp = codetotal;
+	codetotal.clear();
+	int i, j, k;
+	for (i = 0; i < temp.size(); i++) {
+		vector<CodeItem> a;
+		for (j = 0; j < temp[i].size(); j++) {
+			if (temp[i][j].getCodetype() == DEFINE || temp[i][j].getCodetype() == PARA || temp[i][j].getCodetype() == ALLOC || temp[i][j].getCodetype() == GLOBAL) {
+				a.push_back(temp[i][j]);
+			}
+		}
+		for (j = 0; j < temp[i].size(); j++) {
+			if (temp[i][j].getCodetype() != DEFINE && temp[i][j].getCodetype() != PARA && temp[i][j].getCodetype() != ALLOC && temp[i][j].getCodetype() != GLOBAL) {
+				a.push_back(temp[i][j]);
+			}
+		}
+		codetotal.push_back(a);
+	}
 }

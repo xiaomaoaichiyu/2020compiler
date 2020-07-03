@@ -1,14 +1,14 @@
-#include <string>
+ï»¿#include <string>
 using namespace std;
 #ifndef _WORD_H
 #define _WORD_H
 #define keyword 10
 enum Memory {
 	CONSTTK, INTTK, VOIDTK, MAINTK, IFTK, ELSETK,
-	WHILETK, BREAKTK, CONTINUETK, RETURNTK,
+	WHILETK, BREAKTK, CONTINUETK, RETURNTK,  
 	IDENFR, INTCON, PLUS, MINU, MULT, DIV_WORD,MOD,AND_WORD,OR_WORD,
 	LSS, LEQ, GRE, GEQ, EQL_WORD, NEQ_WORD,REV, ASSIGN, SEMICN, COMMA,
-	LPARENT, RPARENT, LBRACK, RBRACK, LBRACE, RBRACE, STRING,FINISH
+	LPARENT, RPARENT, LBRACK, RBRACK, LBRACE, RBRACE, STRING,FINISH   
 };
 const string remain[keyword] = {
 	"const","int","void","main","if","else","while",
@@ -28,22 +28,22 @@ public:
 	int getfRecord();
 private:
 	enum Memory symbol;
-	char mark;   //µ±Ç°¶ÁµÄ×Ö·û
-	string file;  //Íâ½çÎÄ¼şĞÅÏ¢
-	int fRecord;   //ÎÄ¼şÏÂ±ê
-	string token;  //µ±Ç°¶ÁµÄµ¥´Ê
+	char mark;   //å½“å‰è¯»çš„å­—ç¬¦
+	string file;  //å¤–ç•Œæ–‡ä»¶ä¿¡æ¯
+	int fRecord;   //æ–‡ä»¶ä¸‹æ ‡
+	string token;  //å½“å‰è¯»çš„å•è¯
 	int number;   
 	void getmark();
 	void clearToken();
-	void catToken();  //Æ´½Ó 
-	void retract();   //»ØÍË
+	void catToken();  //æ‹¼æ¥ 
+	void retract();   //å›é€€
 	void transNum10(); 
 	void transNum16();
 	void transNum8();
-	//ÓÃ×Ô´øatoiº¯Êı´úÌæÒ²¿ÉÒÔ 
+	//ç”¨è‡ªå¸¦atoiå‡½æ•°ä»£æ›¿ä¹Ÿå¯ä»¥ 
 };
 
-//±ğµÄÎÄ¼ş²»»áÒıÓÃµÄº¯ÊıÉèÖÃÎªprivateÀàĞÍµÄº¯Êı
+//åˆ«çš„æ–‡ä»¶ä¸ä¼šå¼•ç”¨çš„å‡½æ•°è®¾ç½®ä¸ºprivateç±»å‹çš„å‡½æ•°
 
 
 
