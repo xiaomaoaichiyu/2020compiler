@@ -31,6 +31,10 @@ r15：PC
 
 [寄存器使用](<http://blog.chinaunix.net/uid-69947851-id-5825875.html>)
 
+#### on-the-fly
+
+
+
 
 
 ### 改变顺序优化
@@ -46,3 +50,11 @@ r15：PC
 ### 不同模式下寄存器的使用情况
 
 ![1593351432585](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593351432585.png)
+
+
+
+#### SSA的$\phi$函数
+
+> [Rice University](https://zh.wikipedia.org/w/index.php?title=Rice_University&action=edit&redlink=1)的Keith D. Cooper、Timothy J. Harvey及 Ken Kennedy在他们的文章*A Simple, Fast Dominance Algorithm*.[[2\]](https://zh.wikipedia.org/wiki/%E9%9D%99%E6%80%81%E5%8D%95%E8%B5%8B%E5%80%BC%E5%BD%A2%E5%BC%8F#cite_note-Cooper_2001-2)中所描述，这个算法使用了精心设计的数据结构来改进效能。
+
+![1593619071719](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593619071719.png)
