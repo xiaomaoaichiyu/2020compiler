@@ -241,7 +241,7 @@ void CompUnit()
 	codetotal.push_back(global1);
 	map<string, int> globalll;
 	names.push_back(globalll);
-	while (symbol == INTTK or symbol == CONSTTK or symbol == VOIDTK) {
+	while (symbol == INTTK || symbol == CONSTTK || symbol == VOIDTK) {
 		if (symbol == CONSTTK) {    //常量声明
 			ConstDecl(0,0);
 		}
