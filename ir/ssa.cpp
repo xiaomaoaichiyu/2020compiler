@@ -371,11 +371,11 @@ void SSA::build_def_use_chain() {
 					break;
 				case ALLOC: case GLOBAL:
 					break;
-				case STORE:
+				case STORE: case STOREARR:
 					use_insert(i, j, ci.getResult());
 					def_insert(i, j, ci.getOperand1());			// 变量名或者数组名
 					break;
-				case LOAD:
+				case LOAD: case LOADARR:
 					use_insert(i, j, ci.getOperand1());			// 变量名或者数组名
 					def_insert(i, j, ci.getResult());
 					break;
