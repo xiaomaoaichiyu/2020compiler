@@ -58,3 +58,23 @@ r15：PC
 > [Rice University](https://zh.wikipedia.org/w/index.php?title=Rice_University&action=edit&redlink=1)的Keith D. Cooper、Timothy J. Harvey及 Ken Kennedy在他们的文章*A Simple, Fast Dominance Algorithm*.[[2\]](https://zh.wikipedia.org/wiki/%E9%9D%99%E6%80%81%E5%8D%95%E8%B5%8B%E5%80%BC%E5%BD%A2%E5%BC%8F#cite_note-Cooper_2001-2)中所描述，这个算法使用了精心设计的数据结构来改进效能。
 
 ![1593619071719](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593619071719.png)
+
+#### 线性扫描
+
+![1593765755972](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593765755972.png)
+
+![1593766578443](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593766578443.png)
+
+
+
+
+
+### 到达定义分析 & 活跃变量分析
+
+#### 到达定义：
+
+> 这个用来做什么
+
+#### 活跃变量分析：
+
+> 寄存器分配

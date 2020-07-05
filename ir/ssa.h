@@ -41,7 +41,7 @@ private:
 	void pre_order(int funNum, int node);
 	void build_pre_order();										// 前序遍历必经节点树
 	void build_dom_frontier();									// 计算流图必经边界
-	void build_def_use_chain();								// 计算ud链
+	void build_def_use_chain();									// 计算ud链
 	// 测试专用函数
 	void Test_Divide_Basic_Block();	
 	void Test_Build_Dom_Tree();
