@@ -176,7 +176,7 @@
 | 函数定义             | define | name                    | funcType            |                         |
 | 函数形参             | para   | name                    | paraType(int\|int*) |                         |
 | 移动                 | MOV    |                         | src                 | dst                     |
-|                      |        |                         |                     |                         |
+| 注释                 | NOTE   |                         | 注释内容            |                         |
 |                      |        |                         |                     |                         |
 |                      |        |                         |                     |                         |
 |                      |        |                         |                     |                         |
