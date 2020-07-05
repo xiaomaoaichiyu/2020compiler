@@ -199,10 +199,11 @@ void SSA::build_idom_tree() {
 		// tmp(n) := Domin(n) - {n}
 		int size2 = blockCore[i].size();
 		for (j = 0; j < size2; j++) {
-			set<int> tmp1, tmp2;
+			set<int> tmp1, tmp2, tmp3;
 			tmp1.insert(j);
 			set_difference(blockCore[i][j].domin.begin(), blockCore[i][j].domin.end(), tmp1.begin(), tmp1.end(), inserter(tmp2, tmp2.begin()));;
 			blockCore[i][j].tmpIdom = tmp2;
+			blockCore[i][j].idom = tmp3;
 		}
 		// foreach n
 		for (j = 1; j < size2; j++) {
@@ -224,7 +225,9 @@ void SSA::build_idom_tree() {
 			blockCore[i][j].tmpIdom = tmp3;
 		}
 		// foreach n
-		for (j = 1; j < size2; j++) blockCore[i][j].idom.insert(*(blockCore[i][j].tmpIdom.begin()));
+		for (j = 1; j < size2; j++) 
+			if (!blockCore[i][j].tmpIdom.empty()) 
+				blockCore[i][j].idom.insert(*(blockCore[i][j].tmpIdom.begin()));
 	}
 }
 
@@ -304,21 +307,78 @@ void SSA::build_dom_frontier() {
 	}
 }
 
+// 在基本块的use链中插入变量名称
+void SSA::use_insert(int funNum, int blkNum, string varName) {
+	if (varName == "") return;
+	if (ifTempVariable(varName)) return;							// 不加入临时变量
+	blockCore[funNum][blkNum].use.insert(varName);
+}
+
+// 在基本块的def链中插入变量名称
+void SSA::def_insert(int funNum, int blkNum, string varName) {
+	if (varName == "") return;
+	if (ifTempVariable(varName)) return;							// 不加入临时变量
+	blockCore[funNum][blkNum].def.insert(varName);
+}
+
+// 计算ud链
+void SSA::build_def_use_chain() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		int size2 = blockCore[i].size();
+		for (j = 0; j < size2; j++) {	// 申请空间
+			set<string> s1; blockCore[i][j].use = s1;
+			set<string> s2; blockCore[i][j].def = s2;
+		}
+		for (j = 1; j < size2; j++) {		// 遍历基本块
+			for (k = blockCore[i][j].start; k <= blockCore[i][j].end; k++) {
+				if (k - 1 < 0 || k - 1 >= codetotal[i].size()) continue;
+				CodeItem ci = codetotal[i][k - 1];
+				switch (ci.getCodetype())
+				{
+				case ADD: case SUB: case MUL: case DIV: case REM:
+					use_insert(i, j, ci.getOperand1());
+					use_insert(i, j, ci.getOperand2());
+					def_insert(i, j, ci.getResult());
+					break;
+				case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
+
+					break;
+				case STORE:
+					break;
+				case LOAD:
+					break;
+				case CALL:
+					break;
+				case RET:
+					break;
+				case ALLOC: case GLOBAL:
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+}
+
 // 入口函数
 void SSA::generate() {
-	divide_basic_block();
+	// Test_* 函数用于对每个函数进行测试，输出相关信息
+	divide_basic_block();							// 为每个函数划分基本块
 	Test_Divide_Basic_Block();
-	build_dom_tree();
+	build_dom_tree();								// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	Test_Build_Dom_Tree();
-	build_idom_tree();
+	build_idom_tree();								// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
 	Test_Build_Idom_Tree();
-	build_reverse_idom_tree();
+	build_reverse_idom_tree();				// 根据直接必经节点找到必经节点树中每个节点的后序节点
 	Test_Build_Reverse_Idom_Tree();
-	build_post_order();
+	build_post_order();								// 后序遍历必经节点树
 	Test_Build_Post_Order();
-	build_pre_order();
+	build_pre_order();								// 前序遍历必经节点树
 	Test_Build_Pre_Order();
-	build_dom_frontier();
+	build_dom_frontier();							// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
 	Test_Build_Dom_Frontier();
 }
 

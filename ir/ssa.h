@@ -16,6 +16,8 @@ public:
 	std::set<int> reverse_idom;	// 直接必经节点反
 	std::set<int> tmpIdom;			// 计算直接必经节点算法中需要的数据结构
 	std::set<int> df;					// 必经边界
+	std::set<std::string> use;		// 该基本块中的use变量
+	std::set<std::string> def;		// 该基本块中的def变量
 	basicBlock(int number, int start, int end, std::set<int> pred, std::set<int> succeeds) {
 		this->number = number;
 		this->start = start;
@@ -41,7 +43,9 @@ private:
 	void pre_order(int funNum, int node);
 	void build_pre_order();										// 前序遍历必经节点树
 	void build_dom_frontier();									// 计算流图必经边界
-	void build_def_use_chain();									// 计算ud链
+	void use_insert(int funNum, int blkNum, std::string varName);
+	void def_insert(int funNum, int blkNum, std::string varName);
+	void build_def_use_chain();								// 计算ud链
 	// 测试专用函数
 	void Test_Divide_Basic_Block();	
 	void Test_Build_Dom_Tree();
