@@ -1097,7 +1097,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					codetotal[Funcindex].push_back(citem);
 					registerA = interRegister;
 				}
-				if (item.getForm() == CONSTANT && registerA[0] != '@' && registerA[0] != '%') {
+				if (item.getForm() == CONSTANT && registerA[0] != '@' && registerA[0] != '%') {	//偏移量是常值而且数组也是常量数组，可以直接取值
 					int offset = stringToNum(registerA) / 4;
 					interRegister = numToString(item.getIntValue()[offset]);
 				}
@@ -1268,7 +1268,7 @@ void Stmt()              //语句
 			token = wordAnalysis.getToken();  //预读
 		}
 		else {
-			while (symbol != SEMICN and symbol != ASSIGN) {
+			while (symbol != SEMICN && symbol != ASSIGN) {
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 			}
