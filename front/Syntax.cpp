@@ -1020,6 +1020,11 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
+			string noteFuncBegin = "func " + Functionname + "() begin";
+			string noteFuncEnd = "func " + Functionname + "() end";
+			CodeItem citem1 = CodeItem(NOTE, "",noteFuncBegin , "");          //call @foo %3 3
+			citem1.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem1);//函数开始注释
 			if (symbol != RPARENT) {
 				FuncRParams();
 			}
@@ -1029,9 +1034,12 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			token = wordAnalysis.getToken();//预读
 			interRegister = "%" + numToString(Temp);		//存函数返回结果
 			Temp++;
-			CodeItem citem = CodeItem(CALL,"@"+Functionname,interRegister,numToString(paraNum));          //call @foo %3 3
-			citem.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem);//函数引用
+			CodeItem citem2 = CodeItem(CALL,"@"+Functionname,interRegister,numToString(paraNum));          //call @foo %3 3
+			citem2.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem2);//函数引用
+			CodeItem citem3 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3
+			citem3.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem3);//函数结束注释
 		}
 		else {  //标识符 {'['表达式']'}
 			symbolTable item = checkItem(name_tag);
@@ -1720,21 +1728,21 @@ void FuncRParams()    //函数实参数表
 	else {
 		Exp();//退出前已经预读
 	}
-	paraNum++;
+	int paranum = 1;
 	if (paraIntNode == 0) {
 		if(interRegister[0]=='\"'){
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paraNum), "string");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "string");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paraNum), "int");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 	}
 	else {
-		CodeItem citem = CodeItem(PUSH, interRegister, numToString(paraNum), "int*");  //传参
+		CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int*");  //传参
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		paraIntNode = 0;
@@ -1745,19 +1753,20 @@ void FuncRParams()    //函数实参数表
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 		Exp();
-		paraNum++;
+		paranum++;
 		if (paraIntNode == 0) {
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paraNum), "int");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paraNum), "int*");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int*");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 			paraIntNode = 0;
 		}
 	}
+	paraNum = paranum;
 	//退出循环前已经预读
 	outfile << "<函数实参数表>" << endl;
 }
@@ -1810,7 +1819,7 @@ void change(int index)	//修改中间代码、符号表
 	codetotal.pop_back();
 	for (i = 0; i < b.size(); i++) {
 		irCodeType codetype = b[i].getCodetype();
-		if (codetype == LABEL || codetype == GLOBAL || codetype == CALL || codetype == BR || codetype == DEFINE) {
+		if (codetype == LABEL || codetype == GLOBAL || codetype == CALL || codetype == BR || codetype == DEFINE || codetype == NOTE) {
 			continue;
 		}
 		string res = b[i].getResult();

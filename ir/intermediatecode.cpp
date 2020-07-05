@@ -138,6 +138,14 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		content = "global     " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
+	case MOV: {
+		content = "mov                  "+standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case NOTE: {
+		content = "note                 " + standardLength(ope1);
+		break;
+	}
 	default:
 		break;
 	}

@@ -25,7 +25,9 @@ enum irCodeType {
 	BR,								//直接跳转 + 条件跳转
 	DEFINE,							//函数定义
 	PARA,							//参数定义
-	GLOBAL							//全局声明：常量+变量
+	GLOBAL,							//全局声明：常量+变量
+	NOTE,							//注释
+	MOV								//移动
 };
 
 class CodeItem
