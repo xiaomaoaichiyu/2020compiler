@@ -568,7 +568,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 				if (Range != 0) {
 					b = "%";
 				}
-				CodeItem citem = CodeItem(STORE, value_string, b+nodeName, offset_string);
+				CodeItem citem = CodeItem(STOREARR, value_string, b+nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
 			}
@@ -726,7 +726,7 @@ void InitVal(int index)
 			if (Range != 0) {
 				b = "%";
 			}
-			CodeItem citem = CodeItem(STORE,interRegister,b+nodeName,"0");	//赋值单值
+			CodeItem citem = CodeItem(STORE,interRegister,b+nodeName,"");	//赋值单值
 			citem.setFatherBlock(fatherBlock);
 			codetotal[index].push_back(citem);
 		}
@@ -738,7 +738,7 @@ void InitVal(int index)
 				if (Range != 0) {
 					b = "%";
 				}
-				CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, offset_string);
+				CodeItem citem = CodeItem(STOREARR, interRegister, b + nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
 			}
@@ -1020,6 +1020,11 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
+			string noteFuncBegin = "func " + Functionname + "() begin";
+			string noteFuncEnd = "func " + Functionname + "() end";
+			CodeItem citem1 = CodeItem(NOTE, "",noteFuncBegin , "");          //call @foo %3 3
+			citem1.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem1);//函数开始注释
 			if (symbol != RPARENT) {
 				FuncRParams();
 			}
@@ -1029,9 +1034,12 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			token = wordAnalysis.getToken();//预读
 			interRegister = "%" + numToString(Temp);		//存函数返回结果
 			Temp++;
-			CodeItem citem = CodeItem(CALL,"@"+Functionname,interRegister,numToString(paraNum));          //call @foo %3 3
-			citem.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem);//函数引用
+			CodeItem citem2 = CodeItem(CALL,"@"+Functionname,interRegister,numToString(paraNum));          //call @foo %3 3
+			citem2.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem2);//函数引用
+			CodeItem citem3 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3
+			citem3.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem3);//函数结束注释
 		}
 		else {  //标识符 {'['表达式']'}
 			symbolTable item = checkItem(name_tag);
@@ -1097,7 +1105,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					codetotal[Funcindex].push_back(citem);
 					registerA = interRegister;
 				}
-				if (item.getForm() == CONSTANT && registerA[0] != '@' && registerA[0] != '%') {	//偏移量是常值而且数组也是常量数组，可以直接取值
+				if (item.getForm() == CONSTANT && registerA[0] != '@' && registerA[0] != '%') {
 					int offset = stringToNum(registerA) / 4;
 					interRegister = numToString(item.getIntValue()[offset]);
 				}
@@ -1108,7 +1116,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					if (range == 0) {
 						b = "@";	//全局变量
 					}
-					CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, registerA); //数组取值
+					CodeItem citem = CodeItem(LOADARR, interRegister, b + name_tag, registerA); //数组取值
 					citem.setFatherBlock(fatherBlock);    //保存当前作用域
 					codetotal[Funcindex].push_back(citem);
 				}
@@ -1132,7 +1140,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					if (range == 0) {
 						b = "@";	//全局变量
 					}
-					CodeItem citem = CodeItem(LOAD, interRegister, b+name_tag, "0"); //一维变量、常量取值
+					CodeItem citem = CodeItem(LOAD, interRegister, b+name_tag, ""); //一维变量、常量取值
 					citem.setFatherBlock(fatherBlock);
 					codetotal[Funcindex].push_back(citem);
 				}
@@ -1389,12 +1397,12 @@ void assignStmt()        //赋值语句 LVal = Exp
 			codetotal[Funcindex].push_back(citem);
 			registerA = interRegister;
 		}
-		CodeItem citem = CodeItem(STORE, tempRegister, b + name_tag, registerA);		//数组某个变量赋值
+		CodeItem citem = CodeItem(STOREARR, tempRegister, b + name_tag, registerA);		//数组某个变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
 	else {
-		CodeItem citem = CodeItem(STORE, interRegister, b+name_tag, "0");		//给一维变量赋值
+		CodeItem citem = CodeItem(STORE, interRegister, b+name_tag, "");		//给一维变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
@@ -1458,8 +1466,13 @@ void ifStmt()            //条件语句
 void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR,op;
+	int nowSize = codetotal[Funcindex].size();
+	int flag = 0;	//flag为1说明多个||的条件中某个条件真值为1，中间代码不必要出现，可直接删除
 	LAndExp();
 	registerL = interRegister;
+	if (registerL == "1") {
+		flag = 1;
+	}
 	while (symbol == OR_WORD) {
 		Memory symbol_tag = symbol;
 		printMessage();    //输出逻辑运算符
@@ -1468,6 +1481,9 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 		token = wordAnalysis.getToken();//预读
 		LAndExp();
 		registerR = interRegister;
+		if (registerL == "1" || registerR == "1") {
+			flag = 1;
+		}
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
 			int value;
 			int valueL = stringToNum(registerL);
@@ -1481,21 +1497,41 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 			interRegister = numToString(value);
 		}
 		else {
-			interRegister = "%" + numToString(Temp);
-			Temp++;
-			CodeItem citem = CodeItem(OR, interRegister, registerL, registerR);
-			citem.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem);
+			if (registerL == "0") {
+				interRegister = registerR;
+				registerL = registerR;
+			}
+			else if (registerR == "0") {
+				interRegister = registerL;
+			}
+			else {
+				interRegister = "%" + numToString(Temp);
+				Temp++;
+				CodeItem citem = CodeItem(OR, interRegister, registerL, registerR);
+				citem.setFatherBlock(fatherBlock);
+				codetotal[Funcindex].push_back(citem);
+			}
 		}
 		registerL = interRegister;
+	}
+	if (flag == 1) {
+		while (codetotal[Funcindex].size() > nowSize) {
+			codetotal[Funcindex].pop_back();
+		}
+		interRegister = numToString(1);
 	}
 	outfile << "<条件>" << endl;
 }
 void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 {
 	string registerL, registerR, op;
+	int nowSize = codetotal[Funcindex].size();
+	int flag = 0;	//flag为1说明多个&&的条件中某个条件真值为0，中间代码不必要出现，可直接删除
 	EqExp();
 	registerL = interRegister;
+	if (registerL == "0") {
+		flag = 1;
+	}
 	while (symbol == AND_WORD) {
 		Memory symbol_tag = symbol;
 		printMessage();    //输出逻辑运算符
@@ -1504,6 +1540,9 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		token = wordAnalysis.getToken();//预读
 		EqExp();
 		registerR = interRegister;
+		if (registerL == "0" || registerR == "0") {
+			flag = 1;
+		}
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
 			int value;
 			int valueL = stringToNum(registerL);
@@ -1517,13 +1556,28 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 			interRegister = numToString(value);
 		}
 		else {
-			interRegister = "%" + numToString(Temp);
-			Temp++;
-			CodeItem citem = CodeItem(AND, interRegister, registerL, registerR);
-			citem.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem);
+			if (registerL == "1") {
+				interRegister = registerR;
+				registerL = registerR;
+			}
+			else if (registerR == "1") {
+				interRegister = registerL;
+			}
+			else {
+				interRegister = "%" + numToString(Temp);
+				Temp++;
+				CodeItem citem = CodeItem(AND, interRegister, registerL, registerR);
+				citem.setFatherBlock(fatherBlock);
+				codetotal[Funcindex].push_back(citem);
+			}
 		}
 		registerL = interRegister;
+	}
+	if (flag == 1) {
+		while (codetotal[Funcindex].size() > nowSize) {
+			codetotal[Funcindex].pop_back();
+		}
+		interRegister = numToString(0);
 	}
 }
 
@@ -1674,21 +1728,21 @@ void FuncRParams()    //函数实参数表
 	else {
 		Exp();//退出前已经预读
 	}
-	paraNum++;
+	int paranum = 1;
 	if (paraIntNode == 0) {
 		if(interRegister[0]=='\"'){
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "string");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "string");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "int");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 	}
 	else {
-		CodeItem citem = CodeItem(PUSH, interRegister, "", "int*");  //传参
+		CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int*");  //传参
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		paraIntNode = 0;
@@ -1699,19 +1753,20 @@ void FuncRParams()    //函数实参数表
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 		Exp();
-		paraNum++;
+		paranum++;
 		if (paraIntNode == 0) {
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "int");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, "", "int*");  //传参
+			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int*");  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 			paraIntNode = 0;
 		}
 	}
+	paraNum = paranum;
 	//退出循环前已经预读
 	outfile << "<函数实参数表>" << endl;
 }
@@ -1764,7 +1819,7 @@ void change(int index)	//修改中间代码、符号表
 	codetotal.pop_back();
 	for (i = 0; i < b.size(); i++) {
 		irCodeType codetype = b[i].getCodetype();
-		if (codetype == LABEL || codetype == GLOBAL || codetype == CALL || codetype == BR || codetype == DEFINE) {
+		if (codetype == LABEL || codetype == GLOBAL || codetype == CALL || codetype == BR || codetype == DEFINE || codetype == NOTE) {
 			continue;
 		}
 		string res = b[i].getResult();

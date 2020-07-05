@@ -12,8 +12,10 @@ enum irCodeType {
 	AND, OR, NOT,					//逻辑运算
 	EQL, NEQ, SGT, SGE, SLT, SLE,	//关系运算
 	ALLOC,							//栈空间申请
-	STORE,							//存值到内存
-	LOAD,							//从内存取值
+	STORE,							//存值到变量
+	STOREARR,						//赋值数组
+	LOAD,							//从变量取值
+	LOADARR,						//从数组取值
 	INDEX,							//数组的索引
 	CALL,							//函数调用
 	RET,							//函数返回
@@ -23,7 +25,9 @@ enum irCodeType {
 	BR,								//直接跳转 + 条件跳转
 	DEFINE,							//函数定义
 	PARA,							//参数定义
-	GLOBAL							//全局声明：常量+变量
+	GLOBAL,							//全局声明：常量+变量
+	NOTE,							//注释
+	MOV								//移动
 };
 
 class CodeItem
