@@ -169,7 +169,7 @@
 | 取内存               | loadArr  | tmpReg  ⬅               | address(暂时用name) | offset                  |
 | 函数调用             | call     | funcName                | retReg\|void        | paraNum                 |
 | 函数返回             | ret      | value                   | int\|void           |                         |
-| 函数传参             | push     | tmpReg                  |                     | type(int\|int*\|string) |
+| 函数传参             | push     | tmpReg                  | num(第几个)         | type(int\|int*\|string) |
 | 退栈                 | pop      | tmpReg                  |                     | type(int\|int*)         |
 | 标签                 | label    | name                    |                     |                         |
 | 跳转                 | br       | label \| tmpReg         | label1              | label2                  |
