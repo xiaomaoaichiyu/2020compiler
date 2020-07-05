@@ -77,11 +77,19 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		break;
 	}  
 	case STORE: {
-		content = "store      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "store      " + standardLength(res) + " " + standardLength(ope1) ;
+		break;
+	}
+	case STOREARR: {
+		content = "storearr      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case LOAD: {
-		content = "load       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "load       " + standardLength(res) + " " + standardLength(ope1) ;
+		break;
+	}
+	case LOADARR: {
+		content = "loadarr       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case INDEX: {     
@@ -96,7 +104,7 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		break;
 	}
 	case PUSH: {
-		content = "push       " + standardLength(res) + "           " + standardLength(ope2);
+		content = "push       " + standardLength(res) + " "+standardLength(ope1) +" "+ standardLength(ope2);
 		break;
 	}
 	case POP: {
