@@ -18,6 +18,8 @@ public:
 	std::set<int> df;					// 必经边界
 	std::set<std::string> use;		// 该基本块中的use变量
 	std::set<std::string> def;		// 该基本块中的def变量
+	std::set<std::string> in;		// 该基本块中的in集合
+	std::set<std::string> out;		// 该基本块中的out集合
 	basicBlock(int number, int start, int end, std::set<int> pred, std::set<int> succeeds) {
 		this->number = number;
 		this->start = start;
@@ -46,6 +48,7 @@ private:
 	void use_insert(int funNum, int blkNum, std::string varName);
 	void def_insert(int funNum, int blkNum, std::string varName);
 	void build_def_use_chain();								// 计算ud链
+	void active_var_analyse();									// 活跃变量分析，生成in、out集合
 	// 测试专用函数
 	void Test_Divide_Basic_Block();	
 	void Test_Build_Dom_Tree();
@@ -54,6 +57,8 @@ private:
 	void Test_Build_Post_Order();
 	void Test_Build_Pre_Order();
 	void Test_Build_Dom_Frontier();
+	void Test_Build_Def_Use_Chain();
+	void Test_Active_Var_Analyse();
 public:
 	SSA(std::vector<std::vector<CodeItem>> codetotal) {
 		this->codetotal = codetotal;
