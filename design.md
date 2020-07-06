@@ -151,14 +151,13 @@
       求 a[i][i]
       //index count begin
       load       %0         %i        
-      mul        %1         %0         2         
+      mul        %1         %0         8         
       add        %2         0          %1        
       load       %3         %i        
-      mul        %4         %3         1         
-      add        %5         %2         %4        
-      mul        %6         %5         4         
+      mul        %4         %3         4         
+      add        %5         %2         %4               
       //index count end
-      loadArr    %7 		  @a         %6
+      loadArr    %6 		  @a         %5
       ```
 
       

@@ -1,15 +1,18 @@
 ﻿#include "syntax.h"
 
 using namespace std;
+
 const char* print[26] = {
 	"IDENFR ","INTCON ","PLUS ","MINU ","MULT ","DIV_WORD ","MOD ","AND_WORD ","OR_WORD ",
 	"LSS ","LEQ ","GRE ","GEQ ","EQL_WORD ","NEQ_WORD ","REV ","ASSIGN ","SEMICN ","COMMA ",
 	"LPARENT ","RPARENT ","LBRACK ","RBRACK ","LBRACE ","RBRACE ","STRING "
 };
+
 const char* premain[10] = {
 	"CONSTTK", "INTTK", "VOIDTK", "MAINTK", "IFTK", "ELSETK",
 	"WHILETK", "BREAKTK", "CONTINUETK", "RETURNTK"
 };
+
 //加入自定义函数
 string Functionname;	//记录当前函数名
 
@@ -102,10 +105,10 @@ void printMessage()
 	outfile << message << endl;
 }
 void CompUnit();			   //编译单元
-void ConstDecl(int index,int block);		       //常量说明
-void ConstDef(int index,int block);			   //常量定义
-void VarDecl(int index,int block);			   //变量说明
-void VarDef(int index,int block);             //变量定义
+void ConstDecl(int index, int block);		       //常量说明
+void ConstDef(int index, int block);			   //常量定义
+void VarDecl(int index, int block);			   //变量说明
+void VarDef(int index, int block);             //变量定义
 void InitVal(int index);				//变量初值
 void valueFuncDef();    //有返回值函数定义
 void novalueFuncDef();  //无返回值函数定义
@@ -141,6 +144,10 @@ void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 
 
+//=============================================================================================================
+//        以上为全局变量定义以及函数定义
+//=============================================================================================================
+
 int frontExecute()
 {
 	outfile.open("output.txt");
@@ -156,7 +163,7 @@ int frontExecute()
 		if (size > 0) {
 			if (item[0].getCodetype() == DEFINE && item[0].getOperand1() == "void") {
 				if (item[size - 1].getCodetype() != RET) {
-					CodeItem citem = CodeItem(RET,"","void","");
+					CodeItem citem = CodeItem(RET, "", "void", "");
 					citem.setFatherBlock(fatherBlock);
 					codetotal[i].push_back(citem);
 				}
@@ -209,21 +216,19 @@ int frontExecute()
 	}
 	*/
 	//检测中间代码正确性
-	
-	ofstream irtxt("ir.txt");
 	for (int i = 0; i < codetotal.size(); i++) {
 		vector<CodeItem> item = codetotal[i];
 		for (int j = 0; j < item.size(); j++) {
 			cout << item[j].getContent() << endl;
-			irtxt << item[j].getContent() << endl;
 		}
 		cout << "\n";
-		irtxt << "\n";
 	}
-
+	
 	outfile.close();
 	return 0;
 }
+
+
 void CompUnit()
 {
 	vector<symbolTable> global;
@@ -1040,6 +1045,11 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				registerA = "0";	//偏移量为0
 			}
 			int nowDimenson = 0;   //记录当前维度
+			string indexBegin = "index count begin";
+			string indexEnd = "index count end";
+			CodeItem citem1 = CodeItem(NOTE, "", indexBegin, "");
+			citem1.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem1);
 			while (symbol == LBRACK) {
 				nowDimenson++;
 				printMessage();    //输出[信息
@@ -1052,7 +1062,8 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				for (int j = nowDimenson; j < dimenLength.size(); j++) {
 					offset = offset * dimenLength[j];
 				}
-				registerR = numToString(offset);		//该维度值为1时大小
+				offset = offset * 4;	//偏移量直接乘4，这样最后就少乘1个4
+				registerR = numToString(offset);		//该维度值为1时大小(已乘4)
 				if (registerL[0] != '@' && registerL[0] != '%') {   //该维度总大小，存在registerC中
 					int valueL = stringToNum(registerL);
 					valueL = valueL * offset;
@@ -1083,19 +1094,16 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
 			}
+			int nowSize = codetotal[Funcindex].size();
+			if (codetotal[Funcindex][nowSize - 1].getOperand1() == indexBegin) {	//计算偏移的注释没用
+				codetotal[Funcindex].pop_back();
+			}
+			else {
+				CodeItem citem2 = CodeItem(NOTE, "", indexEnd, "");
+				citem2.setFatherBlock(fatherBlock);
+				codetotal[Funcindex].push_back(citem2);
+			}
 			if (item.getDimension() == nowDimenson && item.getDimension() > 0) {	//取多维数组的一个元素
-				if (registerA[0] != '@' && registerA[0] != '%') {
-					int index = stringToNum(registerA);
-					registerA = numToString(index * 4);
-				}
-				else {
-					interRegister = "%" + numToString(Temp);
-					Temp++;
-					CodeItem citem = CodeItem(MUL, interRegister, registerA, "4");
-					citem.setFatherBlock(fatherBlock);
-					codetotal[Funcindex].push_back(citem);
-					registerA = interRegister;
-				}
 				if (item.getForm() == CONSTANT && registerA[0] != '@' && registerA[0] != '%') {
 					int offset = stringToNum(registerA) / 4;
 					interRegister = numToString(item.getIntValue()[offset]);
@@ -1120,7 +1128,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				}
 				interRegister = b+name_tag;
 			}
-			else {
+			else {		//此时是正常变量，不是数组变量
 				if (item.getForm() == CONSTANT) {
 					interRegister = numToString(item.getIntValue()[0]);		//将数值转换成字符串模式
 				}
@@ -1326,6 +1334,11 @@ void assignStmt()        //赋值语句 LVal = Exp
 		registerA = "0";
 	}
 	int nowDimenson = 0;   //记录当前维度
+	string indexBegin = "index count begin";
+	string indexEnd = "index count end";
+	CodeItem citem1 = CodeItem(NOTE, "", indexBegin, "");
+	citem1.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem1);
 	while (symbol == LBRACK) {
 		nowDimenson++;
 		printMessage();    //输出[信息
@@ -1338,7 +1351,8 @@ void assignStmt()        //赋值语句 LVal = Exp
 		for (int j = nowDimenson; j < dimenLength.size(); j++) {
 			offset = offset * dimenLength[j];
 		}
-		registerR = numToString(offset);		//该维度值为1时大小
+		offset = offset * 4;   //偏移量直接乘4(后面就不用乘了)
+		registerR = numToString(offset);		//该维度值为1时大小(已乘4)
 		if (registerL[0] != '@' && registerL[0] != '%') {   //该维度总大小，存在registerC中
 			int valueL = stringToNum(registerL);
 			valueL = valueL * offset;
@@ -1373,21 +1387,18 @@ void assignStmt()        //赋值语句 LVal = Exp
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
+	int nowSize = codetotal[Funcindex].size();
+	if (codetotal[Funcindex][nowSize - 1].getOperand1() == indexBegin) {	//计算偏移的注释没用
+		codetotal[Funcindex].pop_back();
+	}
+	else {
+		CodeItem citem1 = CodeItem(NOTE, "", indexEnd, "");
+		citem1.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem1);
+	}
 	Exp();
 	if (dimenLength.size() > 0) {
 		string tempRegister = interRegister;
-		if (registerA[0] != '@' && registerA[0] != '%') {
-			int index = stringToNum(registerA);
-			registerA = numToString(index * 4);
-		}
-		else {
-			interRegister = "%" + numToString(Temp);
-			Temp++;
-			CodeItem citem = CodeItem(MUL, interRegister, registerA, "4");
-			citem.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem);
-			registerA = interRegister;
-		}
 		CodeItem citem = CodeItem(STOREARR, tempRegister, b + name_tag, registerA);		//数组某个变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
