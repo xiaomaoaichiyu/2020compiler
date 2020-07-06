@@ -81,7 +81,7 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		break;
 	}
 	case STOREARR: {
-		content = "storearr      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "storearr   " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case LOAD: {
@@ -89,7 +89,7 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		break;
 	}
 	case LOADARR: {
-		content = "loadarr       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "loadarr    " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case INDEX: {     
