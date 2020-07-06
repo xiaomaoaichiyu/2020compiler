@@ -1,13 +1,5 @@
-﻿#include<string>
-#include<fstream>
-#include<iostream>
-#include "word.h"
-#include "symboltable.h"
-#include "../ir/intermediatecode.h"
-#include<vector>
-#include<sstream>
-#include<map>
-#include "../ir/ssa.h"
+﻿#include "syntax.h"
+
 using namespace std;
 const char* print[26] = {
 	"IDENFR ","INTCON ","PLUS ","MINU ","MULT ","DIV_WORD ","MOD ","AND_WORD ","OR_WORD ",
@@ -149,7 +141,7 @@ void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 
 
-int main()
+int frontExecute()
 {
 	outfile.open("output.txt");
 	//先读一个单词然后进入分析程序
@@ -224,11 +216,6 @@ int main()
 		}
 		cout << "\n";
 	}
-	//优化中间代码
-	SSA ssa(codetotal, total);	// 传入中间代码和符号表
-	ssa.generate();
-	//后端运行
-
 
 	outfile.close();
 	return 0;

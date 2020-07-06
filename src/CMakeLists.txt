@@ -18,5 +18,6 @@ aux_source_directory(. DIR_SRCS)
 add_executable (compiler ${DIR_SRCS})
 
 target_link_libraries(compiler front gen ir util)
+
 # TODO: 如有需要，请添加测试并安装目标。
 SET(CMAKE_CXX_STANDARD 17)

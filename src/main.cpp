@@ -10,7 +10,7 @@ int main()
 	frontExecute();
 
 	//运行优化
-	SSA ssa(codetotal);
+	SSA ssa(codetotal, total);
 	ssa.generate();
 
 	//运行后端，生成arm代码
