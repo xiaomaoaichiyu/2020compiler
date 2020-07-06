@@ -1,4 +1,4 @@
-#include "ssa.h"
+ï»¿#include "ssa.h"
 #include <regex>
 #include <algorithm>
 #include <set>
@@ -8,9 +8,9 @@ using namespace std;
 ofstream debug_ssa;
 
 void SSA::Test_SSA() {
-	// ´ò¿ªÎÄ¼ş£¬½«²âÊÔÊä³öĞÅÏ¢Êä³öµ½¸ÃÎÄ¼ş
+	// æ‰“å¼€æ–‡ä»¶ï¼Œå°†æµ‹è¯•è¾“å‡ºä¿¡æ¯è¾“å‡ºåˆ°è¯¥æ–‡ä»¶
 	debug_ssa.open("debug_ssa.txt");
-	/* Test_* º¯ÊıÓÃÓÚ¶ÔÃ¿¸öº¯Êı½øĞĞ²âÊÔ£¬Êä³öÏà¹ØĞÅÏ¢ */
+	/* Test_* å‡½æ•°ç”¨äºå¯¹æ¯ä¸ªå‡½æ•°è¿›è¡Œæµ‹è¯•ï¼Œè¾“å‡ºç›¸å…³ä¿¡æ¯ */
 	Test_Divide_Basic_Block();
 	Test_Build_Dom_Tree();
 	Test_Build_Idom_Tree();
@@ -21,31 +21,31 @@ void SSA::Test_SSA() {
 	Test_Build_Def_Use_Chain();
 	Test_Active_Var_Analyse();
 	Test_Build_Var_Chain();
-	// ¹Ø±ÕÎÄ¼ş
+	// å…³é—­æ–‡ä»¶
 	debug_ssa.close();
 }
 
-// ²âÊÔº¯Êı£ºÊä³öËùÓĞµÄ»ù±¾¿éĞÅÏ¢
+// æµ‹è¯•å‡½æ•°ï¼šè¾“å‡ºæ‰€æœ‰çš„åŸºæœ¬å—ä¿¡æ¯
 void SSA::Test_Divide_Basic_Block() {
 	debug_ssa << "---------------- basic block -----------------" << endl;
 	vector<vector<basicBlock>> v = blockCore;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
-		// ÒÀ´ÎÊä³ö¸Ãº¯ÊıÏÂËùÓĞµÄ»ù±¾¿éĞÅÏ¢
-		debug_ssa << "»ù±¾¿é±àºÅ" << "\t\t" << "Èë¿ÚÖĞ¼ä´úÂë" << "\t\t" << "½áÊøÖĞ¼ä´úÂë" << "\t\t" << "Ç°Ğò½Úµã" << "\t\t" << "ºóĞò½Úµã" << "\t\t" << endl;
+		// ä¾æ¬¡è¾“å‡ºè¯¥å‡½æ•°ä¸‹æ‰€æœ‰çš„åŸºæœ¬å—ä¿¡æ¯
+		debug_ssa << "åŸºæœ¬å—ç¼–å·" << "\t\t" << "å…¥å£ä¸­é—´ä»£ç " << "\t\t" << "ç»“æŸä¸­é—´ä»£ç " << "\t\t" << "å‰åºèŠ‚ç‚¹" << "\t\t" << "ååºèŠ‚ç‚¹" << "\t\t" << endl;
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << v[i][j].number << "\t\t";	// »ù±¾¿é±àºÅ
-			debug_ssa << v[i][j].start << "\t\t";		// Èë¿ÚÖĞ¼ä´úÂë
-			debug_ssa << v[i][j].end << "\t\t";		// ½áÊøÖĞ¼ä´úÂë
+			debug_ssa << v[i][j].number << "\t\t";	// åŸºæœ¬å—ç¼–å·
+			debug_ssa << v[i][j].start << "\t\t";		// å…¥å£ä¸­é—´ä»£ç 
+			debug_ssa << v[i][j].end << "\t\t";		// ç»“æŸä¸­é—´ä»£ç 
 			set<int>::iterator iter;
-			// ¼´¿ÉÒÔÌø×ªµ½¸Ã»ù±¾¿éµÄ»ù±¾¿éĞòºÅ
+			// å³å¯ä»¥è·³è½¬åˆ°è¯¥åŸºæœ¬å—çš„åŸºæœ¬å—åºå·
 			debug_ssa << "{ ";
 			for (iter = v[i][j].pred.begin(); iter != v[i][j].pred.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << "\t\t";
-			// ¼´Í¨¹ı¸Ã»ù±¾¿é¿ÉÒÔÌø×ªµ½µÄ»ù±¾¿éĞòºÅ
+			// å³é€šè¿‡è¯¥åŸºæœ¬å—å¯ä»¥è·³è½¬åˆ°çš„åŸºæœ¬å—åºå·
 			debug_ssa << "{ ";
 			for (iter = v[i][j].succeeds.begin(); iter != v[i][j].succeeds.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
@@ -53,102 +53,102 @@ void SSA::Test_Divide_Basic_Block() {
 	}
 }
 
-// ²âÊÔº¯Êı£ºÊä³ö¹¹½¨µÄ±Ø¾­½Úµã
+// æµ‹è¯•å‡½æ•°ï¼šè¾“å‡ºæ„å»ºçš„å¿…ç»èŠ‚ç‚¹
 void SSA::Test_Build_Dom_Tree() {
 	debug_ssa << "---------------- dom tree -----------------" << endl;
 	vector<vector<basicBlock>> v = blockCore;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "¸Ã»ù±¾¿é±àºÅ: " << v[i][j].number << "\t\t";
-			debug_ssa << "¸Ã»ù±¾¿éµÄ±Ø¾­½Úµã: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—ç¼–å·: " << v[i][j].number << "\t\t";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„å¿…ç»èŠ‚ç‚¹: {  ";
 			for (set<int>::iterator iter = v[i][j].domin.begin(); iter != v[i][j].domin.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
 	}
 }
 
-// ²âÊÔº¯Êı£ºÊä³öÖ±½Ó±Ø¾­½Úµã
+// æµ‹è¯•å‡½æ•°ï¼šè¾“å‡ºç›´æ¥å¿…ç»èŠ‚ç‚¹
 void SSA::Test_Build_Idom_Tree() {
 	debug_ssa << "---------------- idom tree -----------------" << endl;
 	vector<vector<basicBlock>> v = blockCore;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "¸Ã»ù±¾¿éµÄ±àºÅ: " << v[i][j].number << "\t\t";
-			debug_ssa << "¸Ã»ù±¾¿éµÄÖ±½Ó±Ø¾­½Úµã: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„ç¼–å·: " << v[i][j].number << "\t\t";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„ç›´æ¥å¿…ç»èŠ‚ç‚¹: {  ";
 			for (set<int>::iterator iter = v[i][j].idom.begin(); iter != v[i][j].idom.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
 	}
 }
 
-// ²âÊÔº¯Êı£ºÊä³ö·´Ïò±Ø¾­½Úµã
+// æµ‹è¯•å‡½æ•°ï¼šè¾“å‡ºåå‘å¿…ç»èŠ‚ç‚¹
 void SSA::Test_Build_Reverse_Idom_Tree() {
 	debug_ssa << "---------------- reverse idom tree -----------------" << endl;
 	vector<vector<basicBlock>> v = blockCore;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "¸Ã»ù±¾¿éµÄ±àºÅ: " << v[i][j].number << "\t\t";
-			debug_ssa << "¸Ã»ù±¾¿é·´ÏòÖ±½Ó±Ø¾­½Úµã: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„ç¼–å·: " << v[i][j].number << "\t\t";
+			debug_ssa << "è¯¥åŸºæœ¬å—åå‘ç›´æ¥å¿…ç»èŠ‚ç‚¹: {  ";
 			for (set<int>::iterator iter = v[i][j].reverse_idom.begin(); iter != v[i][j].reverse_idom.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
 	}
 }
 
-// ²âÊÔº¯Êı£ºÊä³öºóĞò±éÀúĞòÁĞ
+// æµ‹è¯•å‡½æ•°ï¼šè¾“å‡ºååºéå†åºåˆ—
 void SSA::Test_Build_Post_Order() {
 	debug_ssa << "---------------- post order -----------------" << endl;
 	vector<vector<int>> v = postOrder;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
-		debug_ssa << "ºóĞò±éÀúĞòÁĞ" << "\t\t";
+		debug_ssa << "ååºéå†åºåˆ—" << "\t\t";
 		for (int j = 0; j < size2; j++) debug_ssa << v[i][j] << "\t\t";
 		debug_ssa << endl;
 	}
 }
 
-// ²âÊÔº¯Êı£ºÊä³öÇ°Ğò±éÀúĞòÁĞ
+// æµ‹è¯•å‡½æ•°ï¼šè¾“å‡ºå‰åºéå†åºåˆ—
 void SSA::Test_Build_Pre_Order() {
 	debug_ssa << "---------------- pre order -----------------" << endl;
 	vector<vector<int>> v = preOrder;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
-		debug_ssa << "Ç°Ğò±éÀúĞòÁĞ" << "\t\t";
+		debug_ssa << "å‰åºéå†åºåˆ—" << "\t\t";
 		for (int j = 0; j < size2; j++) debug_ssa << v[i][j] << "\t\t";
 		debug_ssa << endl;
 	}
 }
 
-// ²âÊÔº¯Êı£ºÊä³ö±Ø¾­±ß½ç
+// æµ‹è¯•å‡½æ•°ï¼šè¾“å‡ºå¿…ç»è¾¹ç•Œ
 void SSA::Test_Build_Dom_Frontier() {
 	debug_ssa << "---------------- df tree -----------------" << endl;
 	vector<vector<basicBlock>> v = blockCore;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "¸Ã»ù±¾¿éµÄ±àºÅ: " << v[i][j].number << "\t\t";
-			debug_ssa << "¸Ã»ù±¾¿éµÄ±Ø¾­±ß½ç: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„ç¼–å·: " << v[i][j].number << "\t\t";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„å¿…ç»è¾¹ç•Œ: {  ";
 			for (set<int>::iterator iter = v[i][j].df.begin(); iter != v[i][j].df.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
@@ -160,15 +160,15 @@ void SSA::Test_Build_Def_Use_Chain() {
 	vector<vector<basicBlock>> v = blockCore;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "¸Ã»ù±¾¿éµÄ±àºÅ: " << v[i][j].number << endl;
-			debug_ssa << "¸Ã»ù±¾¿éµÄdef±äÁ¿: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„ç¼–å·: " << v[i][j].number << endl;
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„defå˜é‡: {  ";
 			for (set<string>::iterator iter = v[i][j].def.begin(); iter != v[i][j].def.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
-			debug_ssa << "¸Ã»ù±¾¿éµÄuse±äÁ¿: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„useå˜é‡: {  ";
 			for (set<string>::iterator iter = v[i][j].use.begin(); iter != v[i][j].use.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
@@ -180,15 +180,15 @@ void SSA::Test_Active_Var_Analyse() {
 	vector<vector<basicBlock>> v = blockCore;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "¸Ã»ù±¾¿éµÄ±àºÅ: " << v[i][j].number << endl;
-			debug_ssa << "¸Ã»ù±¾¿éµÄin¼¯ºÏ: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„ç¼–å·: " << v[i][j].number << endl;
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„iné›†åˆ: {  ";
 			for (set<string>::iterator iter = v[i][j].in.begin(); iter != v[i][j].in.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
-			debug_ssa << "¸Ã»ù±¾¿éµÄout¼¯ºÏ: {  ";
+			debug_ssa << "è¯¥åŸºæœ¬å—çš„outé›†åˆ: {  ";
 			for (set<string>::iterator iter = v[i][j].out.begin(); iter != v[i][j].out.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
@@ -200,12 +200,12 @@ void SSA::Test_Build_Var_Chain() {
 	vector<vector<varStruct>> v = varChain;
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
-		// Ê×ÏÈÊä³öÕâÊÇµÚ¼¸¸öº¯Êı
+		// é¦–å…ˆè¾“å‡ºè¿™æ˜¯ç¬¬å‡ ä¸ªå‡½æ•°
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "±äÁ¿Ãû: " << v[i][j].name << endl;
-			debug_ssa << "¸Ã±äÁ¿µÄµü´ú±Ø¾­±ß½ç: {  ";
+			debug_ssa << "å˜é‡å: " << v[i][j].name << endl;
+			debug_ssa << "è¯¥å˜é‡çš„è¿­ä»£å¿…ç»è¾¹ç•Œ: {  ";
 			for (set<int>::iterator iter = v[i][j].blockNums.begin(); iter != v[i][j].blockNums.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
