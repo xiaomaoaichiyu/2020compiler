@@ -29,27 +29,42 @@ public:
 	}
 };
 
+class varStruct {
+public:
+	std::string name;
+	std::set<int> blockNums;			// 该变量所在的迭代必经边界，即DF+，见《高级编译器设计与实现》P186
+	varStruct(std::string name, std::set<int> blockNums) {
+		this->name = name;
+		this->blockNums = blockNums;
+	}
+};
+
 class SSA {
 private:
-	std::vector<std::vector<CodeItem>> codetotal;	// 睿轩前端传过来的中间代码
-	std::vector<std::vector<int>> blockOrigin;			// 每个基本块的第一条中间代码
-	std::vector<std::vector<basicBlock>> blockCore;	// 每个基本块结构
-	std::vector<std::vector<int>> postOrder;				// 必经节点数的后序遍历序列
-	std::vector<std::vector<int>> preOrder;				// 必经节点数的前序遍历序列
-	void divide_basic_block();									// 划分基本块
-	void build_dom_tree();										// 建立必经节点关系
-	void build_idom_tree();										// 建立直接必经关系
-	void build_reverse_idom_tree();							// 直接必经节点的反关系
+	std::vector<std::vector<CodeItem>> codetotal;		// 前端传过来的中间代码
+	std::vector<std::vector<symbolTable>> symtotal;		// 前端传过来的符号表
+	std::vector<std::vector<int>> blockOrigin;				// 每个基本块的第一条中间代码
+	std::vector<std::vector<basicBlock>> blockCore;		// 每个基本块结构
+	std::vector<std::vector<int>> postOrder;					// 必经节点数的后序遍历序列
+	std::vector<std::vector<int>> preOrder;					// 必经节点数的前序遍历序列
+	std::vector<std::vector<varStruct>> varChain;			// 函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
+	void divide_basic_block();										// 划分基本块
+	void build_dom_tree();											// 建立必经节点关系
+	void build_idom_tree();											// 建立直接必经关系
+	void build_reverse_idom_tree();								// 直接必经节点的反关系
 	void post_order(int funNum, int node);
-	void build_post_order();										// 后序遍历必经节点树
+	void build_post_order();											// 后序遍历必经节点树
 	void pre_order(int funNum, int node);
-	void build_pre_order();										// 前序遍历必经节点树
-	void build_dom_frontier();									// 计算流图必经边界
+	void build_pre_order();											// 前序遍历必经节点树
+	void build_dom_frontier();										// 计算流图必经边界
 	void use_insert(int funNum, int blkNum, std::string varName);
 	void def_insert(int funNum, int blkNum, std::string varName);
-	void build_def_use_chain();								// 计算ud链
-	void active_var_analyse();									// 活跃变量分析，生成in、out集合
+	void build_def_use_chain();									// 计算ud链
+	void active_var_analyse();										// 活跃变量分析，生成in、out集合
+	std::set<int> DF_Set(int funNum, std::set<int> s);
+	void build_var_chain();											// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
 	// 测试专用函数
+	void Test_SSA();			// 测试函数的总入口
 	void Test_Divide_Basic_Block();	
 	void Test_Build_Dom_Tree();
 	void Test_Build_Idom_Tree();
@@ -59,9 +74,11 @@ private:
 	void Test_Build_Dom_Frontier();
 	void Test_Build_Def_Use_Chain();
 	void Test_Active_Var_Analyse();
+	void Test_Build_Var_Chain();
 public:
-	SSA(std::vector<std::vector<CodeItem>> codetotal) {
+	SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
+		this->symtotal = symTable;
 	}
-	void generate();
+	void generate();		// 开始函数
 };

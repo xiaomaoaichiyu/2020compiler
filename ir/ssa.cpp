@@ -5,7 +5,6 @@
 #include <fstream>
 
 using namespace std;
-ofstream debug_ssa;
 
 // 用于输出的显示效果
 string standardOutput(string str)
@@ -37,7 +36,7 @@ bool ifGlobalVariable(string name) {
 	return regex_match(name, r);
 }
 
-// 判断是否是局部变量
+// 判断是否是局部变量，包含临时变量
 bool ifLocalVariable(string name) {
 	regex r("%.+");
 	return regex_match(name, r);
@@ -176,8 +175,8 @@ void SSA::build_dom_tree() {
 		blockCore[i][0].domin.insert(0);
 		// for each n except r: Domin(n) := N
 		for (j = 1; j < size2; j++) blockCore[i][j].domin.insert(N.begin(), N.end());
-		bool change;
-		do {
+		bool change = true;
+		while (change) {
 			change = false;
 			// for each n excpt r
 			for (j = 1; j < size2; j++) {
@@ -205,7 +204,7 @@ void SSA::build_dom_tree() {
 					}
 				}
 			}
-		} while (change);
+		} 
 	}
 }
 
@@ -443,206 +442,105 @@ void SSA::active_var_analyse() {
 	}
 }
 
+set<int> SSA::DF_Set(int funNum, set<int> s) {
+	set<int> D;
+	for (set<int>::iterator iter = s.begin(); iter != s.end(); iter++) {
+		set<int> tmp;
+		set_union(D.begin(), D.end(), blockCore[funNum][*iter].df.begin(), blockCore[funNum][*iter].df.end(), inserter(tmp, tmp.begin()));
+		D = tmp;
+	}
+	return D;
+}
+
+// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
+void SSA::build_var_chain() {
+	int i, j, k;
+	int size1 = symtotal.size();
+	// 申请空间
+	for (i = 0; i < size1; i++) {
+		vector<varStruct> v;
+		varChain.push_back(v);
+	}
+	// 添加变量
+	for (i = 1; i < size1; i++) {
+		int size2 = symtotal[i].size();
+		for (j = 0; j < size2; j++) {
+			symbolTable st = symtotal[i][j];
+			if (st.getForm() == VARIABLE) {
+				set<int> s;
+				varChain[i].push_back(varStruct(st.getName(), s));
+			}
+		}
+	}
+	// 确定迭代必经边界
+	// size1 = blockCore[i].size();		
+	// 实际上，codetotal、symtotal、blockCore等的一维大小应该都相同
+	for (i = 1; i < size1; i++) {
+		int size2 = varChain[i].size();
+		for (j = 0; j < size2; j++) {
+			int size3 = blockCore[i].size();
+			// 初始化寻找
+			for (k = 1; k < size3; k++)
+				if (blockCore[i][k].def.find(varChain[i][j].name) != blockCore[i][k].def.end())
+					varChain[i][j].blockNums.insert(k);
+			varChain[i][j].blockNums.insert(0);			// entry块
+			bool change = true;
+			set<int> S = varChain[i][j].blockNums;
+			set<int> DFP = DF_Set(i, S);
+			while (change) {
+				change = false;
+				set<int> tmp;
+				set_union(S.begin(), S.end(), DFP.begin(), DFP.end(), inserter(tmp, tmp.begin()));
+				set<int> D = DF_Set(i, tmp);
+				if (D.size() != DFP.size()) {
+					DFP = D;
+					change = true;
+				}
+				else {
+					for (set<int>::iterator iter1 = D.begin(), iter2 = DFP.begin(); iter1 != D.end(); iter1++, iter2++)
+						if (*iter1 != *iter2) {
+							DFP = D;
+							change = true;
+						}
+				}
+			}
+			varChain[i][j].blockNums = DFP;
+		}
+	}
+}
+
 // 入口函数
 void SSA::generate() {
-	debug_ssa.open("debug_ssa.txt");
-	/* Test_* 函数用于对每个函数进行测试，输出相关信息 */
 	// 为每个函数划分基本块
 	divide_basic_block();							
-	Test_Divide_Basic_Block();
+	
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();				
-	Test_Build_Dom_Tree();
+	
 	// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
 	build_idom_tree();								
-	Test_Build_Idom_Tree();
+	
 	// 根据直接必经节点找到必经节点树中每个节点的后序节点
 	build_reverse_idom_tree();				
-	Test_Build_Reverse_Idom_Tree();
+	
 	// 后序遍历必经节点树
 	build_post_order();								
-	Test_Build_Post_Order();
+	
 	// 前序遍历必经节点树
 	build_pre_order();			
-	Test_Build_Pre_Order();
+	
 	// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
 	build_dom_frontier();
-	Test_Build_Dom_Frontier();
+	
 	// 计算ud链，即分析每个基本块的use和def变量
 	build_def_use_chain();					
-	Test_Build_Def_Use_Chain();
+	
 	// 活跃变量分析，生成in、out集合
 	active_var_analyse();							
-	Test_Active_Var_Analyse();
-	debug_ssa.close();
-}
+	
+	// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
+	build_var_chain();
 
-// 测试函数：输出所有的基本块信息
-void SSA::Test_Divide_Basic_Block() {
-	debug_ssa << "---------------- basic block -----------------" << endl;
-	vector<vector<basicBlock>> v = blockCore;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		// 依次输出该函数下所有的基本块信息
-		debug_ssa << "基本块编号" << "\t\t" << "入口中间代码" << "\t\t" << "结束中间代码" << "\t\t" << "前序节点" << "\t\t" << "后序节点" << "\t\t" << endl;
-		for (int j = 0; j < size2; j++) {
-			debug_ssa << v[i][j].number << "\t\t";	// 基本块编号
-			debug_ssa << v[i][j].start << "\t\t";		// 入口中间代码
-			debug_ssa << v[i][j].end << "\t\t";		// 结束中间代码
-			set<int>::iterator iter;
-			 // 即可以跳转到该基本块的基本块序号
-			debug_ssa << "{ ";
-			for (iter = v[i][j].pred.begin(); iter != v[i][j].pred.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << "\t\t";
-			 // 即通过该基本块可以跳转到的基本块序号
-			debug_ssa << "{ ";
-			for (iter = v[i][j].succeeds.begin(); iter != v[i][j].succeeds.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-		}
-	}
-}
-
-// 测试函数：输出构建的必经节点
-void SSA::Test_Build_Dom_Tree() {
-	debug_ssa << "---------------- dom tree -----------------" << endl;
-	vector<vector<basicBlock>> v = blockCore;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块编号: " << v[i][j].number << "\t\t";
-			debug_ssa << "该基本块的必经节点: {  ";
-			for (set<int>::iterator iter = v[i][j].domin.begin(); iter != v[i][j].domin.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-		}
-	}
-}
-
-// 测试函数：输出直接必经节点
-void SSA::Test_Build_Idom_Tree() {
-	debug_ssa << "---------------- idom tree -----------------" << endl;
-	vector<vector<basicBlock>> v = blockCore;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块的编号: " << v[i][j].number << "\t\t";
-			debug_ssa << "该基本块的直接必经节点: {  ";
-			for (set<int>::iterator iter = v[i][j].idom.begin(); iter != v[i][j].idom.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-		}
-	}
-}
-
-// 测试函数：输出反向必经节点
-void SSA::Test_Build_Reverse_Idom_Tree() {
-	debug_ssa << "---------------- reverse idom tree -----------------" << endl;
-	vector<vector<basicBlock>> v = blockCore;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块的编号: " << v[i][j].number << "\t\t";
-			debug_ssa << "该基本块反向直接必经节点: {  ";
-			for (set<int>::iterator iter = v[i][j].reverse_idom.begin(); iter != v[i][j].reverse_idom.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-		}
-	}
-}
-
-// 测试函数：输出后序遍历序列
-void SSA::Test_Build_Post_Order() {
-	debug_ssa << "---------------- post order -----------------" << endl;
-	vector<vector<int>> v = postOrder;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		debug_ssa << "后序遍历序列" << "\t\t";
-		for (int j = 0; j < size2; j++) debug_ssa << v[i][j] << "\t\t";
-		debug_ssa << endl;
-	}
-}
-
-// 测试函数：输出前序遍历序列
-void SSA::Test_Build_Pre_Order() {
-	debug_ssa << "---------------- pre order -----------------" << endl;
-	vector<vector<int>> v = preOrder;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		debug_ssa << "前序遍历序列" << "\t\t";
-		for (int j = 0; j < size2; j++) debug_ssa << v[i][j] << "\t\t";
-		debug_ssa << endl;
-	}
-}
-
-// 测试函数：输出必经边界
-void SSA::Test_Build_Dom_Frontier() {
-	debug_ssa << "---------------- df tree -----------------" << endl;
-	vector<vector<basicBlock>> v = blockCore;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块的编号: " << v[i][j].number << "\t\t";
-			debug_ssa << "该基本块的必经边界: {  ";
-			for (set<int>::iterator iter = v[i][j].df.begin(); iter != v[i][j].df.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-		}
-	}
-}
-
-void SSA::Test_Build_Def_Use_Chain() {
-	debug_ssa << "---------------- def-use chain -----------------" << endl;
-	vector<vector<basicBlock>> v = blockCore;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块的编号: " << v[i][j].number << endl;
-			debug_ssa << "该基本块的def变量: {  ";
-			for (set<string>::iterator iter = v[i][j].def.begin(); iter != v[i][j].def.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-			debug_ssa << "该基本块的use变量: {  ";
-			for (set<string>::iterator iter = v[i][j].use.begin(); iter != v[i][j].use.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-		}
-	}
-}
-
-void SSA::Test_Active_Var_Analyse() {
-	debug_ssa << "---------------- active var analyse -----------------" << endl;
-	vector<vector<basicBlock>> v = blockCore;
-	int size1 = v.size();
-	for (int i = 1; i < size1; i++) {
-		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
-		int size2 = v[i].size();
-		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块的编号: " << v[i][j].number << endl;
-			debug_ssa << "该基本块的in集合: {  ";
-			for (set<string>::iterator iter = v[i][j].in.begin(); iter != v[i][j].in.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-			debug_ssa << "该基本块的out集合: {  ";
-			for (set<string>::iterator iter = v[i][j].out.begin(); iter != v[i][j].out.end(); iter++) debug_ssa << *iter << "\t\t";
-			debug_ssa << "}" << endl;
-		}
-	}
+	// 测试输出上面各个函数
+	Test_SSA();
 }

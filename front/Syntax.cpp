@@ -225,7 +225,7 @@ int main()
 		cout << "\n";
 	}
 	//优化中间代码
-	SSA ssa(codetotal);
+	SSA ssa(codetotal, total);	// 传入中间代码和符号表
 	ssa.generate();
 	//后端运行
 

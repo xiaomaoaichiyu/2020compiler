@@ -1,6 +1,6 @@
 // 使用方法
 在前端基础上，Syntax.cpp头文件include "ssa.h"，并在第226行main函数的合适位置插入两行代码
-    SSA ssa(codetotal);
+    SSA ssa(codetotal, total);
     ssa.generate();
 尚未完全实现，持续更新中
 
