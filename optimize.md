@@ -1,10 +1,6 @@
-# 优化
+# 优化	
 
-
-
-
-
-### 寄存器分配
+### 1. 寄存器分配
 
 ARM寄存器使用规范
 
@@ -29,11 +25,32 @@ r14：函数调用返回地址
 
 r15：PC
 
-[寄存器使用](<http://blog.chinaunix.net/uid-69947851-id-5825875.html>)
+参考
 
-#### on-the-fly
+> [寄存器使用](<http://blog.chinaunix.net/uid-69947851-id-5825875.html>)
+
+***
+
+#### 问题
+
+- 变量a一开始直接用寄存器，还是把值传到内存的位置？
+- 这个stack slot的插入位置怎么搞呢？
+
+#### 思路
+
+- 将 `LOAD` 转换为 `MOV`
+- **寄存器分配后消除一下 `MOV`，对于MOV的第一个操作数是只会被使用一次，所以可以找到并且替换掉**
+- load分两种情况考虑：
+  - 加载的变量已经有寄存器，**直接把load的要加载的寄存器赋值为已有变量的寄存器**。
+  - 否则正常的加载，并且分配寄存器
 
 
+
+
+
+
+
+***
 
 全局变量遵循协会策略，不分配寄存器，临时变量分配给r0-r3，局部变量分配给r4-r11
 
@@ -42,8 +59,6 @@ r15：PC
 ### 改变顺序优化
 
 - arr[i] = getint()：这里可以把数组的索引计算放在getint的后面，就会少使用几个寄存器，保存上下文也相对减轻了负担
-
-
 
 ![1593348158143](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593348158143.png)
 
@@ -62,8 +77,6 @@ r15：PC
 ![1593619071719](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593619071719.png)
 
 #### 线性扫描
-
-![1593765755972](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593765755972.png)
 
 ![1593766578443](C:\Users\legend\AppData\Roaming\Typora\typora-user-images\1593766578443.png)
 

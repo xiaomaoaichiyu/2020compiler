@@ -209,12 +209,16 @@ int frontExecute()
 	}
 	*/
 	//检测中间代码正确性
+	
+	ofstream irtxt("ir.txt");
 	for (int i = 0; i < codetotal.size(); i++) {
 		vector<CodeItem> item = codetotal[i];
 		for (int j = 0; j < item.size(); j++) {
 			cout << item[j].getContent() << endl;
+			irtxt << item[j].getContent() << endl;
 		}
 		cout << "\n";
+		irtxt << "\n";
 	}
 
 	outfile.close();
