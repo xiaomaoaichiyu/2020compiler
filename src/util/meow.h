@@ -16,11 +16,13 @@
 //int数字->字符串
 #define I2A meow::Meow::i2a
 
+//异常输出
 #define eprintf(...)            \
     do {        \
         std::cerr << FORMAT(__VA_ARGS__); \
     } while(0)
 
+//警告信息
 #define panic(...)                  \
     do {                            \
         eprintf("panic at {}:{} \n", __FILE__, __LINE__);   \
@@ -31,6 +33,8 @@
         /*exit(-1);*/        \
     } while(0)
 
+
+//这个可以不用管，直接用上面的宏就可以
 namespace meow {
 	class Meow {
 	public:
@@ -115,13 +119,15 @@ namespace meow {
 <<std::endl; \
 }while (0)
 
-//输出错误信息
+//输出错误信息,，附带错误的位置和文件
 #define FATAL do { fprintf(stderr, "Error at line %d, file %s (%d)\n", \
     __LINE__, __FILE__, errno); /*exit(1);*/ } while (0)
 
+//输出错误信息，附带错误的位置和文件以及错误的信息
 #define FATAL_MSG(str) do { fprintf(stderr, "%s, Error at line %d, file %s (%d)\n", \
     str, __LINE__, __FILE__, errno); } while (0)
 
+//输出警告信息，附带错误的位置和文件以及错误的信息
 #define WARN_MSG(str) do { fprintf(stderr, "%s, Warn at line %d, file %s (%d)\n", \
     str, __LINE__, __FILE__, errno); } while (0)
 

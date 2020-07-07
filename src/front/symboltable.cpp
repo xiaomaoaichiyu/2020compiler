@@ -1,11 +1,11 @@
-#include<string>
+ï»¿#include<string>
 #include<vector>
 #include<iostream>
-#include "symboltable.h"
+#include "symboltable.h"  
 symbolTable::symbolTable(formType a, valueType b, string c)
 {
 	this->form = a;
-	this->valuetype = b;
+	this->valuetype = b;  
 	this->name = c;
 }
 symbolTable::symbolTable()
@@ -40,7 +40,7 @@ void symbolTable::setMatrixLength(vector<int> a)
 		for (int j = 0; j < a.size(); j++) {
 			i = i * a[j];
 		}
-		vector<int> b(i,0);  //³õÊ¼»¯b´óĞ¡Îªi¶øÇÒÃ¿¸öÔªËØÖµ¾ùÎª0
+		vector<int> b(i,0);  //åˆå§‹åŒ–bå¤§å°ä¸ºiè€Œä¸”æ¯ä¸ªå…ƒç´ å€¼å‡ä¸º0
 		this->intValue = b;
 	}
 }

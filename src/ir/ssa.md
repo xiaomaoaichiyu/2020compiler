@@ -1,8 +1,10 @@
 // 使用方法
 在前端基础上，Syntax.cpp头文件include "ssa.h"，并在第226行main函数的合适位置插入两行代码
-    SSA ssa(codetotal);
+    SSA ssa(codetotal, total);
     ssa.generate();
 尚未完全实现，持续更新中
+
+Test函数会将测试结果打印在根目录下的debug_ssa.txt文件中
 
 **注意：basicBlock结构中的start和end编号从1开始，即保存中间代码的vector结构的第0条中间代码在这里的编号是1；**
 
@@ -29,7 +31,7 @@ public:
 };
 ```
 
-// 插入 \phi 函数
+// 插入 $\phi$ 函数
 1. 划分基本块
     * 入口点
     * 分支的目标（分支节点指有多个后继的节点），不应包含函数调用指令
@@ -37,7 +39,7 @@ public:
 2. 建立边关系，构造流图
 3. 必经节点树
 4. 生成后序遍历序列
-5. 循环计算流图必经边界: $$DF_local$$ ∪ $$DF_up$$，求闭并，插入 \phi 函数
+5. 循环计算流图必经边界: $$DF_local$$ ∪ $$DF_up$$，求闭并，插入 $\phi$ 函数
 
 // 变量重命名
 1. 普通中间代码 -> SSA

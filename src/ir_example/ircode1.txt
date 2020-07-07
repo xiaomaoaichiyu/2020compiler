@@ -1,0 +1,380 @@
+global     @zzzz      _          100
+global     @xx        _          100
+global     @Ac        -2         1
+global     @am        10         1
+global     @z         _          100
+global     @B         _          1
+global     @alpha     42         1
+global     @a         122        1
+storearr   0          @zzzz      0
+storearr   1          @zzzz      4
+storearr   2          @zzzz      8
+storearr   3          @zzzz      12
+storearr   4          @zzzz      16
+storearr   5          @zzzz      20
+storearr   6          @zzzz      24
+storearr   7          @zzzz      28
+storearr   8          @zzzz      32
+storearr   9          @zzzz      36
+storearr   10         @zzzz      40
+storearr   11         @zzzz      44
+storearr   12         @zzzz      48
+storearr   13         @zzzz      52
+storearr   14         @zzzz      56
+storearr   15         @zzzz      60
+storearr   0          @xx        0
+storearr   1          @xx        4
+storearr   2          @xx        8
+storearr   3          @xx        12
+storearr   4          @xx        16
+storearr   5          @xx        20
+storearr   6          @xx        24
+storearr   7          @xx        28
+storearr   8          @xx        32
+storearr   9          @xx        36
+storearr   10         @xx        40
+storearr   11         @xx        44
+storearr   12         @xx        48
+storearr   13         @xx        52
+storearr   14         @xx        56
+storearr   15         @xx        60
+storearr   0          @z         0
+storearr   197        @z         4
+storearr   198        @z         8
+
+define     @test      void
+para       %a         int        0
+store      -20        %a
+ret                   void
+
+define     @compare   int
+para       %a         int        0
+para       %b         int        0
+load       %0         %a
+sub        %1         104        %0
+store      %1         @B
+load       %2         %a
+load       %3         %b
+sgt        %4         %2         %3
+br         %4         %if.then_0 %if.else_0
+label      %if.then_0
+load       %5         %a
+ret        %5         int
+br         %if.end_0
+label      %if.else_0
+load       %6         %b
+ret        %6         int
+br         %if.end_0
+label      %if.end_0
+
+define     @Factorial int
+para       %n         int        0
+load       %0         %n
+eql        %1         %0         1
+br         %1         %if.then_1 %if.else_1
+label      %if.then_1
+ret        1          int
+br         %if.end_1
+label      %if.else_1
+load       %2         %n
+note                 func Factorial() begin
+load       %3         %n
+sub        %4         %3         1
+push       %4         1          int
+call       @Factorial %5         1
+note                 func Factorial() end
+mul        %6         %2         %5
+ret        %6         int
+br         %if.end_1
+label      %if.end_1
+
+define     @gets1     int
+para       %var1      int        0
+para       %var2      int        0
+alloc      %change1   _          1
+load       %0         %var1
+load       %1         %var2
+mul        %2         %0         %1
+store      %2         %change1
+load       %3         %change1
+ret        %3         int
+
+define     @gets2     int
+para       %var1      int        0
+para       %var2      int        0
+alloc      %change1   _          1
+load       %0         %var1
+load       %1         %var2
+div        %2         %0         %1
+store      %2         %change1
+load       %3         %change1
+ret        %3         int
+
+define     @change    int
+para       %Q         int        0
+alloc      %i         _          1
+alloc      %j         _          1
+loadarr    %0         @xx        40
+store      %0         %i
+store      0          %j
+label      %while.cond_0
+load       %1         %j
+load       %2         %i
+sle        %3         %1         %2
+br         %3         %while.body_0 %while.end_0
+label      %while.body_0
+load       %4         %Q
+loadarr    %5         @xx        8
+div        %6         10         %5
+sub        %7         %4         %6
+add        %8         %7         1
+store      %8         %Q
+load       %9         %i
+sub        %10        %9         1
+store      %10        %i
+load       %11        %j
+add        %12        %11        2
+store      %12        %j
+br         %while.cond_0
+label      %while.end_0
+load       %13        %Q
+ret        %13        int
+
+define     @main      int
+alloc      %sadf      100        1
+alloc      %ffff      10         1
+alloc      %Total     _          1
+alloc      %i         _          1
+alloc      %number1   _          1
+alloc      %number2   _          1
+alloc      %number3   _          1
+alloc      %result    _          100
+alloc      %j         _          1
+alloc      %k         _          1
+alloc      %b         _          1
+store      10         %Total
+note                 func getarray() begin
+push       @z         1          int*
+call       @getarray  %0         1
+note                 func getarray() end
+sub        %1         %0         3
+store      %1         %i
+loadarr    %2         @z         4
+store      %2         %number1
+loadarr    %3         @z         8
+store      %3         %number2
+store      102        %number3
+note                 func putint() begin
+load       %4         %Total
+div        %5         %4         2
+add        %6         %5         122
+sub        %7         %6         10
+push       %7         1          int
+call       @putint    %8         1
+note                 func putint() end
+store      10         %j
+load       %9         %i
+sub        %10        %9         0
+store      %10        %k
+load       %11        %i
+sub        %12        0          %11
+div        %13        %12        2
+load       %14        %Total
+mul        %15        %14        42
+add        %16        %13        %15
+load       %17        %number3
+sub        %18        %16        %17
+storearr   %18        %result    0
+note                 func putint() begin
+loadarr    %19        %result    0
+push       %19        1          int
+call       @putint    %20        1
+note                 func putint() end
+note                 func putchar() begin
+push       32         1          int
+call       @putchar   %21        1
+note                 func putchar() end
+note                 func gets1() begin
+push       -2         1          int
+push       10         2          int
+call       @gets1     %22        2
+note                 func gets1() end
+note                 func gets2() begin
+push       10         1          int
+push       -2         2          int
+call       @gets2     %23        2
+note                 func gets2() end
+add        %24        %22        %23
+storearr   %24        %result    4
+note                 func putint() begin
+loadarr    %25        %result    4
+push       %25        1          int
+call       @putint    %26        1
+note                 func putint() end
+note                 func putchar() begin
+push       32         1          int
+call       @putchar   %27        1
+note                 func putchar() end
+label      %while.cond_1
+br         1          %while.body_1 %while.end_1
+label      %while.body_1
+load       %28        %k
+add        %29        %28        1
+store      %29        %k
+note                 index count begin
+load       %30        %k
+mul        %31        %30        4
+add        %32        0          %31
+note                 index count end
+note                 func change() begin
+load       %33        %k
+push       %33        1          int
+call       @change    %34        1
+note                 func change() end
+storearr   %34        %result    %32
+note                 func change() begin
+note                 index count begin
+load       %35        %k
+mul        %36        %35        4
+add        %37        0          %36
+note                 index count end
+loadarr    %38        %result    %37
+sub        %39        0          %38
+push       %39        1          int
+call       @change    %40        1
+note                 func change() end
+sle        %41        %40        -2
+br         %41        %if.then_2 %if.end_2
+label      %if.then_2
+br         %while.end_1
+br         %if.end_2
+label      %if.end_2
+br         %while.cond_1
+label      %while.end_1
+note                 func printf() begin
+push       "%d "      1          string
+load       %42        %k
+push       %42        2          int
+call       @printf    %43        2
+note                 func printf() end
+note                 func printf() begin
+push       "%d "      1          string
+loadarr    %44        %result    4
+push       %44        2          int
+call       @printf    %45        2
+note                 func printf() end
+note                 func printf() begin
+push       "%d "      1          string
+loadarr    %46        %result    8
+push       %46        2          int
+call       @printf    %47        2
+note                 func printf() end
+label      %while.cond_2
+load       %48        %number3
+note                 func compare() begin
+load       %49        %number1
+push       %49        1          int
+load       %50        %number2
+push       %50        2          int
+call       @compare   %51        2
+note                 func compare() end
+neq        %52        %48        %51
+br         %52        %while.body_2 %while.end_2
+label      %while.body_2
+load       %53        %number3
+sub        %54        %53        1
+store      %54        %number3
+load       %55        %j
+sub        %56        %55        1
+store      %56        %j
+note                 index count begin
+load       %57        %j
+mul        %58        %57        4
+add        %59        0          %58
+note                 index count end
+loadarr    %60        %result    %59
+load       %61        %Total
+div        %62        %61        2
+load       %63        %k
+add        %64        %62        %63
+sgt        %65        %60        %64
+br         %65        %if.then_3 %if.end_3
+label      %if.then_3
+note                 index count begin
+load       %66        %j
+mul        %67        %66        4
+add        %68        0          %67
+note                 index count end
+load       %69        %Total
+div        %70        %69        2
+load       %71        %k
+add        %72        %70        %71
+storearr   %72        %result    %68
+br         %if.end_3
+label      %if.end_3
+br         %while.cond_2
+label      %while.end_2
+note                 func printf() begin
+push       "%d "      1          string
+note                 func Factorial() begin
+load       %73        %j
+push       %73        1          int
+call       @Factorial %74        1
+note                 func Factorial() end
+push       %74        2          int
+call       @printf    %75        2
+note                 func printf() end
+note                 func Factorial() begin
+load       %76        @B
+push       %76        1          int
+call       @Factorial %77        1
+note                 func Factorial() end
+store      %77        %b
+label      %while.cond_3
+loadarr    %78        @xx        4
+eql        %79        1          %78
+br         %79        %while.body_3 %while.end_3
+label      %while.body_3
+load       %80        %b
+sgt        %81        %80        18
+br         %81        %if.then_4 %if.else_4
+label      %if.then_4
+load       %82        %b
+sub        %83        %82        10
+store      %83        %b
+load       %84        %i
+load       %85        %Total
+add        %86        %84        %85
+store      %86        %i
+br         %if.end_4
+label      %if.else_4
+br         %while.end_3
+br         %if.end_4
+label      %if.end_4
+br         %while.cond_3
+label      %while.end_3
+note                 func printf() begin
+push       "%d "      1          string
+load       %87        %i
+push       %87        2          int
+call       @printf    %88        2
+note                 func printf() end
+note                 func printf() begin
+push       "%d "      1          string
+note                 func Factorial() begin
+load       %89        @B
+push       %89        1          int
+call       @Factorial %90        1
+note                 func Factorial() end
+note                 func Factorial() begin
+load       %91        @B
+sub        %92        %91        1
+push       %92        1          int
+call       @Factorial %93        1
+note                 func Factorial() end
+rem        %94        %90        %93
+push       %94        2          int
+call       @printf    %95        2
+note                 func printf() end
+load       %96        %i
+ret        %96        int

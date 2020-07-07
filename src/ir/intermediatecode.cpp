@@ -1,4 +1,4 @@
-#include "intermediatecode.h"
+﻿#include "intermediatecode.h"
 #include <string>
 #include <iostream>
 using namespace std;
@@ -75,16 +75,24 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		}
 		content = "alloc      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
-	}
+	}  
 	case STORE: {
-		content = "store      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "store      " + standardLength(res) + " " + standardLength(ope1) ;
+		break;
+	}
+	case STOREARR: {
+		content = "storearr   " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
 		break;
 	}
 	case LOAD: {
-		content = "load       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "load       " + standardLength(res) + " " + standardLength(ope1) ;
 		break;
 	}
-	case INDEX: {
+	case LOADARR: {
+		content = "loadarr    " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case INDEX: {     
 		break;
 	}
 	case CALL: {
@@ -96,7 +104,7 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 		break;
 	}
 	case PUSH: {
-		content = "push       " + standardLength(res) + "           " + standardLength(ope2);
+		content = "push       " + standardLength(res) + " "+standardLength(ope1) +" "+ standardLength(ope2);
 		break;
 	}
 	case POP: {
@@ -128,6 +136,14 @@ string setContent(irCodeType type, string res, string ope1, string ope2)
 			ope1 = "_";
 		}
 		content = "global     " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case MOV: {
+		content = "mov                  "+standardLength(ope1) + " " + standardLength(ope2);
+		break;
+	}
+	case NOTE: {
+		content = "note                 " + standardLength(ope1);
 		break;
 	}
 	default:
