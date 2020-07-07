@@ -63,6 +63,8 @@ private:
 	void active_var_analyse();										// 活跃变量分析，生成in、out集合
 	std::set<int> DF_Set(int funNum, std::set<int> s);
 	void build_var_chain();											// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
+	void renameVar();													// SSA变量重命名
+	void simplify_br();
 	// 测试专用函数
 	void Test_SSA();			// 测试函数的总入口
 	void Test_Divide_Basic_Block();	
@@ -75,6 +77,7 @@ private:
 	void Test_Build_Def_Use_Chain();
 	void Test_Active_Var_Analyse();
 	void Test_Build_Var_Chain();
+	void Output_IR();
 public:
 	SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;

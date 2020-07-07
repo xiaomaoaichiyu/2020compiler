@@ -82,6 +82,9 @@ void SSA::divide_basic_block() {
 					k = lookForLabel(v, c.getOperand2());
 					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 				}
+				else if (ifDigit(c.getResult())) {	/* debug1: result可能是常数 */
+					// 这个问题通过 simplify_br() 函数解决
+				}
 				else {
 					k = lookForLabel(v, c.getResult());
 					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
@@ -509,8 +512,43 @@ void SSA::build_var_chain() {
 	}
 }
 
+void SSA::renameVar() {
+
+}
+
+// 简化条件判断为常值的跳转指令
+void SSA::simplify_br() {
+	int i, j, k;
+	int size1 = codetotal.size();
+	for (i = 1; i < size1; i++) {
+		int size2 = codetotal[i].size();
+		for (j = 0; j < size2; j++) {
+			CodeItem ci = codetotal[i][j];
+			if (ci.getCodetype() == BR && ifDigit(ci.getResult())) {
+				// CodeItem nci(BR, "", "", "");
+				if (ci.getResult().compare("0") == 0) { 
+					CodeItem nci(BR, ci.getOperand1(), "", "");
+					codetotal[i].erase(codetotal[i].begin() + j);
+					codetotal[i].insert(codetotal[i].begin() + j, nci);
+					// nci.setResult(ci.getOperand1());
+				}
+				else { 
+					CodeItem nci(BR, ci.getOperand2(), "", "");
+					codetotal[i].erase(codetotal[i].begin() + j);
+					codetotal[i].insert(codetotal[i].begin() + j, nci);
+					// nci.setResult(ci.getOperand2());
+				}
+			}
+		}
+	}
+}
+
 // 入口函数
 void SSA::generate() {
+
+	// 简化条件判断为常值的跳转指令
+	simplify_br();
+
 	// 为每个函数划分基本块
 	divide_basic_block();							
 	
