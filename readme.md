@@ -14,6 +14,8 @@ gitlab仓库只有源文件，需要使用VS重新构建**cmake**项目。推荐
     - 其余保持默认就好
 - 在src目录下的cmakelists.txt文件页面使用 `Ctrl + S` ，VS会自动构建Cmake，如果出错，联系我即可。
 - 在启动项选择 `compiler` 即可正常运行。
+> 这样做了之后，需要在VS目录下使用git init初始化git仓库，然后使用 `git remote add origin https:\\....` 。这样之后，仓库就绑定了我们的gitlab，使用一次git pull。之后每次可以直接git push！
+
 
 2.
 - VS建立项目，并且删除src目录下的文件
@@ -22,8 +24,6 @@ gitlab仓库只有源文件，需要使用VS重新构建**cmake**项目。推荐
 - 使用git pull，这时拉下来的src应该会自动覆盖VS项目的src文件。
 - **注**：为什么要把项目名改为 `src` ，因为VS的项目名是在配置文件的，不这样做覆盖后的src无法运行。或者修改配置文件.vs，但是比较麻烦！
 
-
-这样做了之后，需要在VS目录下使用git init初始化git仓库，然后使用 `git remote add origin https:\\....` 。这样之后，仓库就绑定了我们的gitlab，使用一次git pull。之后每次可以直接git push！
 
 
 运行结果，正常来说VS会把out保存在与src同级的out里面，在最里面有一个src的目录，可以看到生成的exe和相关文件，在这里新建 `testexapmle.txt` 文件即可！
