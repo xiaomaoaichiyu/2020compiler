@@ -37,18 +37,27 @@ void SSA::Test_Divide_Basic_Block() {
 		// 依次输出该函数下所有的基本块信息
 		debug_ssa << "基本块编号" << "\t\t" << "入口中间代码" << "\t\t" << "结束中间代码" << "\t\t" << "前序节点" << "\t\t" << "后序节点" << "\t\t" << endl;
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << v[i][j].number << "\t\t";	// 基本块编号
+			debug_ssa << "B" << v[i][j].number << "\t\t";	// 基本块编号
 			debug_ssa << v[i][j].start << "\t\t";		// 入口中间代码
 			debug_ssa << v[i][j].end << "\t\t";		// 结束中间代码
+
 			set<int>::iterator iter;
 			// 即可以跳转到该基本块的基本块序号
 			debug_ssa << "{ ";
-			for (iter = v[i][j].pred.begin(); iter != v[i][j].pred.end(); iter++) debug_ssa << *iter << "\t\t";
+			for (iter = v[i][j].pred.begin(); iter != v[i][j].pred.end(); iter++) debug_ssa << "B" << *iter << "\t\t";
 			debug_ssa << "}" << "\t\t";
 			// 即通过该基本块可以跳转到的基本块序号
 			debug_ssa << "{ ";
-			for (iter = v[i][j].succeeds.begin(); iter != v[i][j].succeeds.end(); iter++) debug_ssa << *iter << "\t\t";
+			for (iter = v[i][j].succeeds.begin(); iter != v[i][j].succeeds.end(); iter++) debug_ssa << "B" << *iter << "\t\t";
 			debug_ssa << "}" << endl;
+			
+			//应该写一个从基本块编号直接获得对应指令的函数
+			if (j != 0 && j != size2 - 1) {
+				for (int k = v[i][j].start; k <= v[i][j].end; k++) {
+					debug_ssa << "\t" << k << ": " << codetotal[i][k - 1].getContent() << endl;
+				}
+			}
+			debug_ssa << endl;
 		}
 	}
 }
