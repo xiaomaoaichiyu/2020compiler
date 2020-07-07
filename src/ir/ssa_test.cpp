@@ -11,6 +11,7 @@ void SSA::Test_SSA() {
 	// 打开文件，将测试输出信息输出到该文件
 	debug_ssa.open("debug_ssa.txt");
 	/* Test_* 函数用于对每个函数进行测试，输出相关信息 */
+	Output_IR();
 	Test_Divide_Basic_Block();
 	Test_Build_Dom_Tree();
 	Test_Build_Idom_Tree();
@@ -209,5 +210,17 @@ void SSA::Test_Build_Var_Chain() {
 			for (set<int>::iterator iter = v[i][j].blockNums.begin(); iter != v[i][j].blockNums.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
+	}
+}
+
+void SSA::Output_IR() {
+	debug_ssa << "---------------- IR -----------------" << endl;
+	for (int i = 1; i < codetotal.size(); i++) {
+		debug_ssa << i << endl;
+		vector<CodeItem> item = codetotal[i];
+		for (int j = 0; j < item.size(); j++) {
+			debug_ssa << j + 1 << "    " << item[j].getContent() << endl;
+		}
+		debug_ssa << "\n";
 	}
 }
