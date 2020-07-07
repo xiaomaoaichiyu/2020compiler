@@ -13,8 +13,7 @@ const char* premain[10] = {
 	"WHILETK", "BREAKTK", "CONTINUETK", "RETURNTK"
 };
 
-//加入自定义函数
-string Functionname;	//记录当前函数名
+
 
 //符号表引入变量
 int Funcindex = 0;		//函数符号表在table中总位置
@@ -1012,6 +1011,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		token = wordAnalysis.getToken();//预读
 		string registerL,registerR,registerA,registerC;
 		int typeL,typeR,typeA,typeC;
+		string Functionname;
 		if (symbol == LPARENT) {  //标识符 (函数实参表)
 			paraNum = 0;
 			Functionname = name_tag;
@@ -1019,6 +1019,17 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
+			if (Functionname == "putf" || Functionname == "starttime" || Functionname == "stoptime") {
+				if (Functionname == "putf") {
+					Functionname = "printf";
+				}
+				else if (Functionname == "starttime") {
+					Functionname = "_sysy_starttime";
+				}
+				else {
+					Functionname = "_sysy_stoptime";
+				}
+			}
 			string noteFuncBegin = "func " + Functionname + "() begin";
 			string noteFuncEnd = "func " + Functionname + "() end";
 			CodeItem citem1 = CodeItem(NOTE, "",noteFuncBegin , "");          //call @foo %3 3
@@ -1033,7 +1044,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			token = wordAnalysis.getToken();//预读
 			interRegister = "%" + numToString(Temp);		//存函数返回结果
 			Temp++;
-			CodeItem citem2 = CodeItem(CALL,"@"+Functionname,interRegister,numToString(paraNum));          //call @foo %3 3
+			CodeItem citem2 = CodeItem(CALL, "@" + Functionname, interRegister, numToString(paraNum));          //call @foo %3 3
 			citem2.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem2);//函数引用
 			CodeItem citem3 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3

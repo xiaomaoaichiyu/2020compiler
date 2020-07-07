@@ -251,24 +251,24 @@ br         %if.end_2
 label      %if.end_2
 br         %while.cond_1
 label      %while.end_1
-note                 func putf() begin
+note                 func printf() begin
 push       "%d "      1          string
 load       %42        %k
 push       %42        2          int
-call       @putf      %43        2
-note                 func putf() end
-note                 func putf() begin
+call       @printf    %43        2
+note                 func printf() end
+note                 func printf() begin
 push       "%d "      1          string
 loadarr    %44        %result    4
 push       %44        2          int
-call       @putf      %45        2
-note                 func putf() end
-note                 func putf() begin
+call       @printf    %45        2
+note                 func printf() end
+note                 func printf() begin
 push       "%d "      1          string
 loadarr    %46        %result    8
 push       %46        2          int
-call       @putf      %47        2
-note                 func putf() end
+call       @printf    %47        2
+note                 func printf() end
 label      %while.cond_2
 load       %48        %number3
 note                 func compare() begin
@@ -314,7 +314,7 @@ br         %if.end_3
 label      %if.end_3
 br         %while.cond_2
 label      %while.end_2
-note                 func putf() begin
+note                 func printf() begin
 push       "%d "      1          string
 note                 func Factorial() begin
 load       %73        %j
@@ -322,8 +322,8 @@ push       %73        1          int
 call       @Factorial %74        1
 note                 func Factorial() end
 push       %74        2          int
-call       @Factorial %75        2
-note                 func putf() end
+call       @printf    %75        2
+note                 func printf() end
 note                 func Factorial() begin
 load       %76        @B
 push       %76        1          int
@@ -353,13 +353,13 @@ br         %if.end_4
 label      %if.end_4
 br         %while.cond_3
 label      %while.end_3
-note                 func putf() begin
+note                 func printf() begin
 push       "%d "      1          string
 load       %87        %i
 push       %87        2          int
-call       @putf      %88        2
-note                 func putf() end
-note                 func putf() begin
+call       @printf    %88        2
+note                 func printf() end
+note                 func printf() begin
 push       "%d "      1          string
 note                 func Factorial() begin
 load       %89        @B
@@ -374,7 +374,7 @@ call       @Factorial %93        1
 note                 func Factorial() end
 rem        %94        %90        %93
 push       %94        2          int
-call       @Factorial %95        2
-note                 func putf() end
+call       @printf    %95        2
+note                 func printf() end
 load       %96        %i
 ret        %96        int
