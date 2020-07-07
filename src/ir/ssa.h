@@ -4,6 +4,19 @@
 #include <set>
 #include "intermediatecode.h"
 
+class phiFun {
+	// phi函数的例子：y^3 = \phi(y^1, y^2)
+public:
+	std::string name;							// 初始命名为y，后面更改为y^3
+	std::set<int> blockNums;				// y^1, y^2所在的基本块序号
+	std::set<std::string> subIndexs;	// y^1, y^2
+	phiFun(std::string name, std::set<int> blockNums, std::set<std::string> subIndexs) {
+		this->name = name;
+		this->blockNums = blockNums;
+		this->subIndexs = subIndexs;
+	}
+};
+
 class basicBlock {
 public:
 	int number;							// 基本块的编号
@@ -20,6 +33,7 @@ public:
 	std::set<std::string> def;		// 该基本块中的def变量
 	std::set<std::string> in;		// 该基本块中的in集合
 	std::set<std::string> out;		// 该基本块中的out集合
+	std::vector<phiFun> phi;		// 基本块初始需要添加的\phi函数
 	basicBlock(int number, int start, int end, std::set<int> pred, std::set<int> succeeds) {
 		this->number = number;
 		this->start = start;
@@ -64,7 +78,9 @@ private:
 	std::set<int> DF_Set(int funNum, std::set<int> s);
 	void build_var_chain();											// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
 	void renameVar();													// SSA变量重命名
-	void simplify_br();
+	void simplify_br();													// 简化条件判断为常值的跳转指令
+	void add_phi_function();											// 在需要添加基本块的开始添加\phi函数
+	int phi_loc_block(int funNum, int blkNum, std::string name, std::vector<bool> visited);			// 查找该节点开始对应的name变量的基本块位置
 	// 测试专用函数
 	void Test_SSA();			// 测试函数的总入口
 	void Test_Divide_Basic_Block();	
@@ -77,6 +93,7 @@ private:
 	void Test_Build_Def_Use_Chain();
 	void Test_Active_Var_Analyse();
 	void Test_Build_Var_Chain();
+	void Test_Add_Phi_Fun();
 	void Output_IR();
 public:
 	SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {

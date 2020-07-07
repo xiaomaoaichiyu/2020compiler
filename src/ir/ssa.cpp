@@ -512,6 +512,59 @@ void SSA::build_var_chain() {
 	}
 }
 
+// 查找该节点开始对应的name变量的基本块位置
+int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited) {
+	if (visited[blkNum]) return 0;
+	else visited[blkNum] = true;
+	// 如果该基本块中用到或定义了name变量
+	set<string> s1 = blockCore[funNum][blkNum].def;
+	set<string> s2 = blockCore[funNum][blkNum].use;
+	if (s1.find(name) != s1.end() || s2.find(name) != s2.end()) return blkNum;
+	// 如果该基本块要插入的\phi函数中包含改变量，也算该基本块使用了该变量
+	set<int> s3;  varStruct vs(name, s3);
+	for (int i = 0; i < varChain[funNum].size(); i++) if (varChain[funNum][i].name.compare(vs.name) == 0) {
+		vs = varChain[funNum][i]; break;
+	}
+	if (vs.blockNums.find(blkNum) != vs.blockNums.end()) return blkNum;
+	// 在该基本块的前驱节点中再继续找
+	set<int> pred = blockCore[funNum][blkNum].pred;
+	for (set<int>::iterator iter = pred.begin(); iter != pred.end(); iter++) {
+		int result = phi_loc_block(funNum, *iter, name, visited);
+		if (result != 0) return *iter;
+	}
+	return 0;
+}
+
+// 在需要添加基本块的开始添加\phi函数
+void SSA::add_phi_function() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		int size2 = blockCore[i].size();
+		// 申请空间
+		for (j = 0; j < size2; j++) { vector<phiFun> v; blockCore[i][j].phi = v; }
+		int size3 = varChain[i].size();
+		// 遍历这个函数需要\phi函数的变量
+		for (k = 0; k < size3; k++) {
+			varStruct vs = varChain[i][k];
+			// 在每个需要插入\phi函数的基本块插入\phi函数
+			for (set<int>::iterator iter = vs.blockNums.begin(); iter != vs.blockNums.end(); iter++) {
+				// 初始化要插入的\phi函数
+				set<int> s1; set<string> s2;  phiFun pf(vs.name, s1, s2);
+				// 在每个前序节点中查找该变量的基本块位置
+				for (set<int>::iterator iter1 = blockCore[i][*iter].pred.begin(); iter1 != blockCore[i][*iter].pred.end(); iter1++) {
+					// 记录该基本块是否被访问过
+					vector<bool> visited;
+					for (int p = 0; p < size2; p++) visited.push_back(false);
+					pf.blockNums.insert(phi_loc_block(i, *iter1, vs.name, visited));
+				}
+				// 在基本块中插入
+				blockCore[i][j].phi.push_back(pf);
+			}
+		}
+	}
+}
+
 void SSA::renameVar() {
 
 }
@@ -578,6 +631,9 @@ void SSA::generate() {
 	
 	// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
 	build_var_chain();
+
+	// 在需要添加基本块的开始添加\phi函数
+	add_phi_function();											
 
 	// 测试输出上面各个函数
 	Test_SSA();
