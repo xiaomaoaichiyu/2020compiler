@@ -2,7 +2,7 @@
 #include <regex>
 #include <algorithm>
 #include <set>
-#include <fstream>
+#include <map>
 
 using namespace std;
 
@@ -545,8 +545,8 @@ void SSA::add_phi_function() {
 		for (j = 0; j < size2; j++) { vector<phiFun> v; blockCore[i][j].phi = v; }
 		int size3 = varChain[i].size();
 		// 遍历这个函数需要\phi函数的变量
-		for (k = 0; k < size3; k++) {
-			varStruct vs = varChain[i][k];
+		for (j = 0; j < size3; j++) {
+			varStruct vs = varChain[i][j];
 			// 在每个需要插入\phi函数的基本块插入\phi函数
 			for (set<int>::iterator iter = vs.blockNums.begin(); iter != vs.blockNums.end(); iter++) {
 				// 初始化要插入的\phi函数
@@ -555,7 +555,7 @@ void SSA::add_phi_function() {
 				for (set<int>::iterator iter1 = blockCore[i][*iter].pred.begin(); iter1 != blockCore[i][*iter].pred.end(); iter1++) {
 					// 记录该基本块是否被访问过
 					vector<bool> visited;
-					for (int p = 0; p < size2; p++) visited.push_back(false);
+					for (k = 0; k < size2; k++) visited.push_back(false);
 					pf.blockNums.insert(phi_loc_block(i, *iter1, vs.name, visited));
 				}
 				// 在基本块中插入
@@ -565,8 +565,68 @@ void SSA::add_phi_function() {
 	}
 }
 
+// 变量重命名
 void SSA::renameVar() {
-
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		// 建立该函数的变量池，同时指定变量的下标
+		map<string, int> varPool;
+		int size2 = symtotal[i].size();
+		for (j = 0; j < size2; j++) if (symtotal[i][j].getForm() == VARIABLE) varPool[symtotal[i][j].getName()] = 0;
+		
+		// 以基本块为单位遍历中间代码
+		int size3 = blockCore[i].size();
+		for (j = 1; j < size3 - 1; j++) { // 跳过entry块和exit块
+			// 记录每个变量在基本块中出现的次序
+			map<string, vector<string>> varSequence;
+			for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) {
+				vector<string> v;
+				varSequence[iter->first] = v;
+			}
+			// 首先更新基本块开始的\phi函数
+			int size4 = blockCore[i][j].phi.size();
+			for (k = 0; k < size4; k++) {
+				phiFun pf = blockCore[i][j].phi[k];
+				string tmp = pf.name + "^" + to_string(varPool[pf.name]);
+				blockCore[i][j].phi[k].name = tmp;
+				varPool[pf.name] = varPool[pf.name] + 1; 
+				varSequence[pf.name].push_back(tmp);
+			}
+			for (k = blockCore[i][j].start - 1; k <= blockCore[i][j].end - 1; k++) {	// 中间代码序号减一
+				// 更新result的变量名
+				CodeItem ci = codetotal[i][k];
+				if (varPool.find(ci.getResult()) != varPool.end()) {
+					string tmp = ci.getResult() + "^" + to_string(varPool[ci.getResult()]);
+					CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
+					codetotal[i].erase(codetotal[i].begin() + k);
+					codetotal[i].insert(codetotal[i].begin() + k, nci);
+					varPool[ci.getResult()] = varPool[ci.getResult()] + 1;
+					varSequence[ci.getResult()].push_back(tmp);
+				}
+				// 更新op1的变量名
+				ci = codetotal[i][k];
+				if (varPool.find(ci.getOperand1()) != varPool.end()) {
+					string tmp = ci.getOperand1();
+					// 正常情况下应该不会为空
+					if (!varSequence[ci.getOperand1()].empty()) tmp = varSequence[ci.getOperand1()].back();	// 最后一个元素
+					CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
+					codetotal[i].erase(codetotal[i].begin() + k);
+					codetotal[i].insert(codetotal[i].begin() + k, nci);
+				}
+				// 更新op2的变量名
+				ci = codetotal[i][k];
+				if (varPool.find(ci.getOperand2()) != varPool.end()) {
+					string tmp = ci.getOperand2();
+					// 正常情况下应该不会为空
+					if (!varSequence[ci.getOperand2()].empty()) tmp = varSequence[ci.getOperand2()].back();	// 最后一个元素
+					CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
+					codetotal[i].erase(codetotal[i].begin() + k);
+					codetotal[i].insert(codetotal[i].begin() + k, nci);
+				}
+			}
+		}
+	}
 }
 
 // 简化条件判断为常值的跳转指令
@@ -633,7 +693,10 @@ void SSA::generate() {
 	build_var_chain();
 
 	// 在需要添加基本块的开始添加\phi函数
-	add_phi_function();											
+	add_phi_function();				
+
+	// 变量重命名
+	renameVar();
 
 	// 测试输出上面各个函数
 	Test_SSA();
