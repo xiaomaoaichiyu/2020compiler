@@ -574,7 +574,9 @@ void SSA::renameVar() {
 		map<string, int> varPool;
 		int size2 = symtotal[i].size();
 		for (j = 0; j < size2; j++) if (symtotal[i][j].getForm() == VARIABLE) varPool[symtotal[i][j].getName()] = 0;
-		
+		// 记录每个基本块中最后出现的变量名
+		map<string, map<int, string>> lastVarName; 
+		for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) { map<int, string> m;  lastVarName[iter->first] = m; }
 		// 以基本块为单位遍历中间代码
 		int size3 = blockCore[i].size();
 		for (j = 1; j < size3 - 1; j++) { // 跳过entry块和exit块
@@ -624,6 +626,19 @@ void SSA::renameVar() {
 					codetotal[i].erase(codetotal[i].begin() + k);
 					codetotal[i].insert(codetotal[i].begin() + k, nci);
 				}
+			}
+			// 将该基本块中的变量名添加到lastVarName
+			for (map<string, vector<string>>::iterator iter = varSequence.begin(); iter != varSequence.end(); iter++)
+				if (!iter->second.empty()) lastVarName[iter->first][j] = iter->second.back();
+		}
+		// 以基本块为单位更新基本块起始的\phi函数结构
+		int size5 = blockCore[i].size();
+		for (j = 1; j < size5 - 1; j++) { // 跳过entry块和exit块
+			int size6 = blockCore[i][j].phi.size();
+			for (k = 0; k < size6; k++) {
+				phiFun pf = blockCore[i][j].phi[k];
+				for (set<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
+					blockCore[i][j].phi[k].subIndexs.insert(lastVarName[pf.name][*iter]);
 			}
 		}
 	}
