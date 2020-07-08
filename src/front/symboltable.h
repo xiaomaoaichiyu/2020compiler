@@ -28,6 +28,7 @@ public:
 	void changeName(string newname);			//修改变量名
 	vector<int> getIntValue();
 	int getvarLength();          //获得变量总元素个数
+	valueType getValuetype();
 private:
 	formType form;  //符号表形式种类
 	valueType valuetype;  //符号表值种类，除了函数可能有VOID剩下都是INT

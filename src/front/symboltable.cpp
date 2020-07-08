@@ -94,3 +94,7 @@ void symbolTable::changeName(string newname)
 {
 	this->name = newname;
 }
+valueType symbolTable::getValuetype()
+{
+	return this->valuetype;
+}
