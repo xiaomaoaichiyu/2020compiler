@@ -90,7 +90,6 @@ string matrixName;			  //记录数组名
 string token;   //分析出来的单词
 enum Memory symbol;  //分析出来的单词类别
 ofstream outfile;
-Word wordAnalysis("testexample.txt");
 void printMessage()
 {
 	string message;
@@ -147,8 +146,9 @@ void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 //        以上为全局变量定义以及函数定义
 //=============================================================================================================
 
-int frontExecute()
+int frontExecute(string syname)
 {
+	Word wordAnalysis(syname);
 	outfile.open("output.txt");
 	//先读一个单词然后进入分析程序
 	wordAnalysis.getsym();   //这里不需要使用其返回的bool类型值

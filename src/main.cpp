@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
 	string syname = argv[1];
 	string sname = argv[4];
 	//运行前端
-	frontExecute();
+	frontExecute(syname);
 
 	//运行优化
 	//SSA ssa(codetotal, total);
