@@ -3,7 +3,11 @@
 #include "word.h"
 #define MAX_LENGTH 10000
 using namespace std;
-Word::Word(string filename)
+Word::Word()
+{
+	
+}
+void Word::setFilepath(string filename)
 {
 	ifstream infile;
 	infile.open(filename);
