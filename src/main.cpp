@@ -7,8 +7,8 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-	string syname = argv[1];
-	string sname = argv[4];
+	string syname = argv[4];
+	string sname = argv[3];
 	//运行前端
 	frontExecute(syname);
 
