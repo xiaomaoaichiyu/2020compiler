@@ -62,11 +62,19 @@ r15：PC
 - 分支块尽量在一块，比如 if 和 else
 - 循环的块连续
 
+##### block order
 
+- 循环检测 —— loop_index 和 loop_depth
 
+- 基于循环检测的loop_depth和一个栈的**final block orders**
 
+- 指令标号 每次+2
 
+##### 生存周期 lifetime intervals
 
+一个虚拟寄存器可能对应多个生存周期
+
+**usePosition**：在没有寄存器的时候用来判断分割并且溢出哪一个 interval，以及一个被溢出的 interval在什么时候被重新加载到寄存器
 
 ****
 
