@@ -9,7 +9,6 @@
 using namespace std;
 
 vector<string> output_buffer;
-ofstream arm("testcase.s");
 int symbol_pointer;
 map<string, int> var2addr;//记录函数内的绝对地址,结果减去sp得到相对偏移
 int sp; //跟踪sp
@@ -788,8 +787,9 @@ void _ret(CodeItem* ir)
 	OUTPUT("MOV PC,LR");
 }
 
-void arm_generate_without_register()
+void arm_generate_without_register(string sname)
 {
+	ofstream arm(sname);
 	for (int i = 0; i < codetotal.size(); i++) {
 		for (int j = 0; j < codetotal[i].size(); j++) {
 			CodeItem* ir_now = &codetotal[i][j];

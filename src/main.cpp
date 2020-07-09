@@ -7,6 +7,8 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
+	string syname = argv[1];
+	string sname = argv[4];
 	//运行前端
 	frontExecute();
 
@@ -15,6 +17,6 @@ int main(int argc, char* argv[])
 	//ssa.generate();
 
 	//运行后端，生成arm代码
-	arm_generate_without_register();
+	arm_generate_without_register(sname);
 	return 0;
 }
