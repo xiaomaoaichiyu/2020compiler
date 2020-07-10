@@ -17,12 +17,13 @@ const string remain[keyword] = {
 class Word
 {
 public:
-	Word(string filename);
+	Word();
 	bool getsym();
 	void setSymbol(Memory symbol);
 	Memory getSymbol();
 	int getNumber();
 	string getToken();
+	void setFilepath(string filename);
 	void setToken(string Token);
 	void setfRecord(int record);
 	int getfRecord();

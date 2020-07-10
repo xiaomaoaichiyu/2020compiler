@@ -12,7 +12,7 @@
 #include "symboltable.h"
 #include "../ir/intermediatecode.h"
 
-int frontExecute();
+int frontExecute(string syname);
 
 extern vector<vector<CodeItem>> codetotal;   //总中间代码
 extern vector<vector<symbolTable>> total;	//总符号表
