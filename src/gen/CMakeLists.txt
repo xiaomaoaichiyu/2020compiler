@@ -1,4 +1,4 @@
-include_directories(../front ../ir ../util)
+include_directories(./ ../front ../ir ../util)
 
 aux_source_directory(. DIR_GEN)
 
