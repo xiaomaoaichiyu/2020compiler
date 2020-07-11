@@ -34,12 +34,16 @@ public:
 	std::set<std::string> in;		// 该基本块中的in集合
 	std::set<std::string> out;		// 该基本块中的out集合
 	std::vector<phiFun> phi;		// 基本块初始需要添加的\phi函数
+	basicBlock() {}
 	basicBlock(int number, int start, int end, std::set<int> pred, std::set<int> succeeds) {
 		this->number = number;
 		this->start = start;
 		this->end = end;
 		this->pred = pred;
 		this->succeeds = succeeds;
+	}
+	void getInstrs() {
+
 	}
 };
 

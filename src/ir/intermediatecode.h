@@ -33,7 +33,9 @@ enum irCodeType {
 class CodeItem
 {
 public:
-	CodeItem(irCodeType type, string res, string ope1, string ope2);   
+	CodeItem(irCodeType type, string res, string ope1, string ope2);
+	void setID(int id);
+	int getId();
 	irCodeType getCodetype();
 	string getOperand1();
 	string getOperand2();
@@ -45,7 +47,8 @@ public:
 	void changeContent(string res, string ope1, string ope2);
 	vector<int> getFatherBlock();
 	string getContent();
-private:   
+private:  
+	int id;
 	irCodeType codetype;     //中间代码种类
 	string result;				//结果
 	string operand1;			//左操作数

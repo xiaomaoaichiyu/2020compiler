@@ -159,8 +159,15 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->content = setContent(type, res, ope1, ope2);
 }
 
-irCodeType CodeItem::getCodetype()
-{
+void CodeItem::setID(int id) {
+	this->id = id;
+}
+
+int CodeItem::getId() {
+	return this->id;
+}
+
+irCodeType CodeItem::getCodetype() {
 	return this->codetype;
 }
 

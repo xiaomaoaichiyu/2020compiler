@@ -14,6 +14,8 @@
 
 int frontExecute(string syname);
 
+void TestIrCode(string outputFile);
+
 extern vector<vector<CodeItem>> codetotal;   //总中间代码
 extern vector<vector<symbolTable>> total;	//总符号表
 
