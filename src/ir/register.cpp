@@ -64,7 +64,7 @@ void registerAllocation(vector<CodeItem>& func) {
 	int i = 0;
 	for (; i < vars.size(); i++) {
 		var2reg[vars.at(i)] = FORMAT("R{}", begin++);
-		first[vars.at(i)] = false;
+		first[vars.at(i)] = true;
 		if (begin >= 12) {
 			i++;
 			break;
@@ -72,7 +72,7 @@ void registerAllocation(vector<CodeItem>& func) {
 	}
 	for (; i < vars.size(); i++) {
 		var2reg[vars.at(i)] = "memory";
-		first[vars.at(i)] = false;
+		first[vars.at(i)] = true;
 	}
 	//全局变量怎么破？无脑加载到临时变量中？
 
@@ -112,31 +112,25 @@ void registerAllocation(vector<CodeItem>& func) {
 		else if (op == LOAD) {	//分配临时寄存器
 			if (var2reg[ope1] == "memory") {
 				resReg = regpool.allocReg(res);
+				setInstr(instr, resReg, ope1, ope2);
 			}
 			else {
-				resReg = var2reg[res];	
+				resReg = var2reg[ope1];
+				if (first[ope1] == false) {
+					instr.setCodetype(MOV);
+					setInstr(instr, "", resReg, resReg);
+				}
+				else {
+					first[ope1] = false;
+					setInstr(instr, resReg, ope1, ope2);
+				}
 			}
-			if (first[ope1] == true) {
-				instr.setCodetype(MOV);
-			}
-			else {
-				first[ope1] = true;
-			}
-			setInstr(instr, resReg, ope1, ope2);
 		}
 		else if (op == LOADARR) {	//分配临时寄存器
-			if (var2reg[ope2] == "memory") {
-				resReg = regpool.allocReg(res);
-			}
-			else {
-				resReg = var2reg[res];
-			}
-			ope2Reg = regpool.getReg(ope2);
-			setInstr(instr, resReg, ope1, ope2Reg);
+			
 		}
 		else if (op == STORE) {
-			resReg = regpool.getReg(res);
-			setInstr(instr, resReg, ope1, ope2);
+			
 		}
 		else if (op == STOREARR) {
 			resReg = regpool.getReg(res);

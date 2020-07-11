@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include "intermediatecode.h"
+#include "../front/syntax.h"
 
 class phiFun {
 	// phi函数的例子：y^3 = \phi(y^1, y^2)

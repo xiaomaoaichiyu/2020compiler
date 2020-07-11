@@ -1,5 +1,4 @@
-﻿﻿#include "ssa.h"
-#include "../front/syntax.h"
+﻿#include "ssa.h"
 #include <regex>
 #include <algorithm>
 #include <set>
