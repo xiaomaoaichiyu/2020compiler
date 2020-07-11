@@ -47,14 +47,13 @@ public:
 	void changeContent(string res, string ope1, string ope2);
 	vector<int> getFatherBlock();
 	string getContent();
-private:  
+private:
 	int id;
 	irCodeType codetype;     //中间代码种类
 	string result;				//结果
 	string operand1;			//左操作数
 	string operand2;			//右操作数
 	vector<int> fatherBlock;	//当前中间代码所在作用域
-	string content;				//debug显示内容，即中间代码内容
 };
 
 #endif 
