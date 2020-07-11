@@ -1050,12 +1050,17 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			token = wordAnalysis.getToken();//预读
 			interRegister = "%" + numToString(Temp);		//存函数返回结果
 			Temp++;
-			CodeItem citem2 = CodeItem(CALL, interRegister, "@" + Functionname,  numToString(paraNum));          //call @foo %3 3
+			CodeItem citem2 = CodeItem(CALL, interRegister, "@" + Functionname, numToString(paraNum));          //call @foo %3 3
 			citem2.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem2);//函数引用
-			CodeItem citem3 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3
+			CodeItem citem3 = CodeItem(MOV,"", interRegister, "%" + numToString(Temp));          //call @foo %3 3
 			citem3.setFatherBlock(fatherBlock);
-			codetotal[Funcindex].push_back(citem3);//函数结束注释
+			codetotal[Funcindex].push_back(citem3);//函数引用
+			interRegister = "%" + numToString(Temp);
+			Temp++;
+			CodeItem citem4 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3
+			citem3.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem4);//函数结束注释
 		}
 		else {  //标识符 {'['表达式']'}
 			symbolTable item = checkItem(name_tag);
@@ -1920,12 +1925,13 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 						string paraNum = temp[i][j].getOperand2();
 						temp[i][j].changeContent("void", funName, paraNum);
 						a.push_back(temp[i][j]);
+						j++;	//CALL后面的MOV也没用了
 					}
 					else if (funName == "@getint" || funName == "@getarray" || funName == "@getch") {
 						a.push_back(temp[i][j]);
 					}
 					else {		//前面都是特殊函数，这里是非特殊函数
-						valueType type;
+						valueType type = VOID;
 						for (k = 1; k < total.size(); k++) {		//查表
 							if (funName == total[k][0].getName()) {
 								type = total[k][0].getValuetype();
@@ -1939,6 +1945,7 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 							string paraNum = temp[i][j].getOperand2();
 							temp[i][j].changeContent("void", funName, paraNum);
 							a.push_back(temp[i][j]);
+							j++;	//CALL后面的MOV也没用了
 						}
 					}
 				}

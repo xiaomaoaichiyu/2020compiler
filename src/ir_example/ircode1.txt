@@ -82,9 +82,10 @@ load                  %3         %n
 sub        %4         %3         1         
 push       int        %4         1         
 call       %5         @Factorial 1         
+mov                  %5         %6        
 note                 func Factorial() end
-mul        %6         %2         %5        
-ret                   %6         int       
+mul        %7         %2         %6        
+ret                   %7         int       
 br                    %if.end_1            
 label      %if.end_1 
 
@@ -156,94 +157,99 @@ store      %Total     10
 note                 func getarray() begin
 push       int*       @z         1         
 call       %0         @getarray  1         
+mov                  %0         %1        
 note                 func getarray() end
-sub        %1         %0         3         
-store      %i         %1        
-loadarr    4          %2         @z        
-store      %number1   %2        
-loadarr    8          %3         @z        
-store      %number2   %3        
+sub        %2         %1         3         
+store      %i         %2        
+loadarr    4          %3         @z        
+store      %number1   %3        
+loadarr    8          %4         @z        
+store      %number2   %4        
 store      %number3   102       
 note                 func putint() begin
-load                  %4         %Total    
-div        %5         %4         2         
-add        %6         %5         122       
-sub        %7         %6         10        
-push       int        %7         1         
+load                  %5         %Total    
+div        %6         %5         2         
+add        %7         %6         122       
+sub        %8         %7         10        
+push       int        %8         1         
 call       void       @putint    1         
 note                 func putint() end
 store      %j         10        
-load                  %9         %i        
-sub        %10        %9         0         
-store      %k         %10       
 load                  %11        %i        
-sub        %12        0          %11       
-div        %13        %12        2         
-load                  %14        %Total    
-mul        %15        %14        42        
-add        %16        %13        %15       
-load                  %17        %number3  
-sub        %18        %16        %17       
-storearr   %result    %18        0         
+sub        %12        %11        0         
+store      %k         %12       
+load                  %13        %i        
+sub        %14        0          %13       
+div        %15        %14        2         
+load                  %16        %Total    
+mul        %17        %16        42        
+add        %18        %15        %17       
+load                  %19        %number3  
+sub        %20        %18        %19       
+storearr   %result    %20        0         
 note                 func putint() begin
-loadarr    0          %19        %result   
-push       int        %19        1         
+loadarr    0          %21        %result   
+push       int        %21        1         
 call       void       @putint    1         
 note                 func putint() end
 note                 func putchar() begin
 push       int        32         1         
-call       %21        @putchar   1         
+call       void       @putchar   1         
 note                 func putchar() end
 note                 func gets1() begin
 push       int        -2         1         
 push       int        10         2         
-call       %22        @gets1     2         
+call       %26        @gets1     2         
+mov                  %26        %27       
 note                 func gets1() end
 note                 func gets2() begin
 push       int        10         1         
 push       int        -2         2         
-call       %23        @gets2     2         
+call       %28        @gets2     2         
+mov                  %28        %29       
 note                 func gets2() end
-add        %24        %22        %23       
-storearr   %result    %24        4         
+add        %30        %27        %29       
+storearr   %result    %30        4         
 note                 func putint() begin
-loadarr    4          %25        %result   
-push       int        %25        1         
+loadarr    4          %31        %result   
+push       int        %31        1         
 call       void       @putint    1         
 note                 func putint() end
 note                 func putchar() begin
 push       int        32         1         
-call       %27        @putchar   1         
+call       void       @putchar   1         
 note                 func putchar() end
 label      %while.cond_1
 br         %while.end_1 1          %while.body_1
 label      %while.body_1
-load                  %28        %k        
-add        %29        %28        1         
-store      %k         %29       
+load                  %36        %k        
+add        %37        %36        1         
+store      %k         %37       
 note                 index count begin
-load                  %30        %k        
-mul        %31        %30        4         
-add        %32        0          %31       
+load                  %38        %k        
+mul        %39        %38        4         
+add        %40        0          %39       
 note                 index count end
 note                 func change() begin
-load                  %33        %k        
-push       int        %33        1         
-call       %34        @change    1         
+load                  %41        %k        
+push       int        %41        1         
+call       %42        @change    1         
+mov                  %42        %43       
 note                 func change() end
-storearr   %result    %34        %32       
+storearr   %result    %43        %40       
 note                 func change() begin
 note                 index count begin
-load                  %35        %k        
-mul        %36        %35        4         
-add        %37        0          %36       
+load                  %44        %k        
+mul        %45        %44        4         
+add        %46        0          %45       
 note                 index count end
-loadarr    %37        %38        %result   
-sub        %39        0          %38       
-push       int        %39        1         
-call       %40        @change    1         
+loadarr    %46        %47        %result   
+sub        %48        0          %47       
+push       int        %48        1         
+call       %49        @change    1         
+mov                  %49        %50       
 note                 func change() end
-sle        %41        %40        -2        
+sle        %51        %50        -2        
 br         %if.else_2 %if.then_2 %if.end_2 
 label      %if.then_2
 br                    %while.end_1           
@@ -253,63 +259,64 @@ br                    %while.cond_1
 label      %while.end_1
 note                 func printf() begin
 push       string     "%d "      1         
-load                  %42        %k        
-push       int        %42        2         
+load                  %52        %k        
+push       int        %52        2         
 call       void       @printf    2         
 note                 func printf() end
 note                 func printf() begin
 push       string     "%d "      1         
-loadarr    4          %44        %result   
-push       int        %44        2         
+loadarr    4          %55        %result   
+push       int        %55        2         
 call       void       @printf    2         
 note                 func printf() end
 note                 func printf() begin
 push       string     "%d "      1         
-loadarr    8          %46        %result   
-push       int        %46        2         
+loadarr    8          %58        %result   
+push       int        %58        2         
 call       void       @printf    2         
 note                 func printf() end
 label      %while.cond_2
-load                  %48        %number3  
+load                  %61        %number3  
 note                 func compare() begin
-load                  %49        %number1  
-push       int        %49        1         
-load                  %50        %number2  
-push       int        %50        2         
-call       %51        @compare   2         
+load                  %62        %number1  
+push       int        %62        1         
+load                  %63        %number2  
+push       int        %63        2         
+call       %64        @compare   2         
+mov                  %64        %65       
 note                 func compare() end
-neq        %52        %48        %51       
-br         %while.end_2 %52        %while.body_2
+neq        %66        %61        %65       
+br         %while.end_2 %66        %while.body_2
 label      %while.body_2
-load                  %53        %number3  
-sub        %54        %53        1         
-store      %number3   %54       
-load                  %55        %j        
-sub        %56        %55        1         
-store      %j         %56       
+load                  %67        %number3  
+sub        %68        %67        1         
+store      %number3   %68       
+load                  %69        %j        
+sub        %70        %69        1         
+store      %j         %70       
 note                 index count begin
-load                  %57        %j        
-mul        %58        %57        4         
-add        %59        0          %58       
+load                  %71        %j        
+mul        %72        %71        4         
+add        %73        0          %72       
 note                 index count end
-loadarr    %59        %60        %result   
-load                  %61        %Total    
-div        %62        %61        2         
-load                  %63        %k        
-add        %64        %62        %63       
-sgt        %65        %60        %64       
+loadarr    %73        %74        %result   
+load                  %75        %Total    
+div        %76        %75        2         
+load                  %77        %k        
+add        %78        %76        %77       
+sgt        %79        %74        %78       
 br         %if.else_3 %if.then_3 %if.end_3 
 label      %if.then_3
 note                 index count begin
-load                  %66        %j        
-mul        %67        %66        4         
-add        %68        0          %67       
+load                  %80        %j        
+mul        %81        %80        4         
+add        %82        0          %81       
 note                 index count end
-load                  %69        %Total    
-div        %70        %69        2         
-load                  %71        %k        
-add        %72        %70        %71       
-storearr   %result    %72        %68       
+load                  %83        %Total    
+div        %84        %83        2         
+load                  %85        %k        
+add        %86        %84        %85       
+storearr   %result    %86        %82       
 br                    %if.end_3            
 label      %if.end_3 
 br                    %while.cond_2           
@@ -317,35 +324,37 @@ label      %while.end_2
 note                 func printf() begin
 push       string     "%d "      1         
 note                 func Factorial() begin
-load                  %73        %j        
-push       int        %73        1         
-call       %74        @Factorial 1         
+load                  %87        %j        
+push       int        %87        1         
+call       %88        @Factorial 1         
+mov                  %88        %89       
 note                 func Factorial() end
-push       int        %74        2         
+push       int        %89        2         
 call       void       @printf    2         
 note                 func printf() end
 note                 func Factorial() begin
-load                  %76        @B        
-push       int        %76        1         
-call       %77        @Factorial 1         
+load                  %92        @B        
+push       int        %92        1         
+call       %93        @Factorial 1         
+mov                  %93        %94       
 note                 func Factorial() end
-store      %b         %77       
+store      %b         %94       
 label      %while.cond_3
-loadarr    4          %78        @xx       
-eql        %79        1          %78       
-br         %while.end_3 %79        %while.body_3
+loadarr    4          %95        @xx       
+eql        %96        1          %95       
+br         %while.end_3 %96        %while.body_3
 label      %while.body_3
-load                  %80        %b        
-sgt        %81        %80        18        
-br         %if.else_4 %81        %if.then_4
+load                  %97        %b        
+sgt        %98        %97        18        
+br         %if.else_4 %98        %if.then_4
 label      %if.then_4
-load                  %82        %b        
-sub        %83        %82        10        
-store      %b         %83       
-load                  %84        %i        
-load                  %85        %Total    
-add        %86        %84        %85       
-store      %i         %86       
+load                  %99        %b        
+sub        %100       %99        10        
+store      %b         %100      
+load                  %101       %i        
+load                  %102       %Total    
+add        %103       %101       %102      
+store      %i         %103      
 br                    %if.end_4            
 label      %if.else_4
 br                    %while.end_3           
@@ -355,27 +364,29 @@ br                    %while.cond_3
 label      %while.end_3
 note                 func printf() begin
 push       string     "%d "      1         
-load                  %87        %i        
-push       int        %87        2         
+load                  %104       %i        
+push       int        %104       2         
 call       void       @printf    2         
 note                 func printf() end
 note                 func printf() begin
 push       string     "%d "      1         
 note                 func Factorial() begin
-load                  %89        @B        
-push       int        %89        1         
-call       %90        @Factorial 1         
+load                  %107       @B        
+push       int        %107       1         
+call       %108       @Factorial 1         
+mov                  %108       %109      
 note                 func Factorial() end
 note                 func Factorial() begin
-load                  %91        @B        
-sub        %92        %91        1         
-push       int        %92        1         
-call       %93        @Factorial 1         
+load                  %110       @B        
+sub        %111       %110       1         
+push       int        %111       1         
+call       %112       @Factorial 1         
+mov                  %112       %113      
 note                 func Factorial() end
-rem        %94        %90        %93       
-push       int        %94        2         
+rem        %114       %109       %113      
+push       int        %114       2         
 call       void       @printf    2         
 note                 func printf() end
-load                  %96        %i        
-ret                   %96        int       
+load                  %117       %i        
+ret                   %117       int       
 
