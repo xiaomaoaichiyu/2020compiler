@@ -171,6 +171,10 @@ irCodeType CodeItem::getCodetype() {
 	return this->codetype;
 }
 
+void CodeItem::setCodetype(irCodeType type) {
+	this->codetype = type;
+}
+
 string CodeItem::getOperand1() {
 	return this->operand1;
 }

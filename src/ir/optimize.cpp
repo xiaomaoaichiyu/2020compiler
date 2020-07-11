@@ -48,19 +48,9 @@ void MIR2LIRpass(vector<vector<CodeItem>>& irCodes) {
 //基于活跃变量的简单寄存器分配，临时变量采用寄存器池分配临时寄存器
 //================================================================
 
-void registerAllocation() {
-	SSA ssa(codetotal, total);
-	ssa.generate();
-
-
-}
-
-
-
 void irOptimize() {
 
 
 	//寄存器分配优化
-	MIR2LIRpass(codetotal);
-
+	//MIR2LIRpass(codetotal);
 }

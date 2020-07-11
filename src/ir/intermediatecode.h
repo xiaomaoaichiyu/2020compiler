@@ -37,6 +37,7 @@ public:
 	void setID(int id);
 	int getId();
 	irCodeType getCodetype();
+	void setCodetype(irCodeType type);
 	string getOperand1();
 	string getOperand2();
 	string getResult();

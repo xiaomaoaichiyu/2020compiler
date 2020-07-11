@@ -42,9 +42,6 @@ public:
 		this->pred = pred;
 		this->succeeds = succeeds;
 	}
-	void getInstrs() {
-
-	}
 };
 
 class varStruct {
@@ -104,5 +101,5 @@ public:
 		this->codetotal = codetotal;
 		this->symtotal = symTable;
 	}
-	void generate();		// 开始函数
+	void generate();				// 开始函数
 };
