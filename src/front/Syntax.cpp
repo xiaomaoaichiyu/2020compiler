@@ -163,14 +163,13 @@ int frontExecute(string syname)
 		if (size > 0) {
 			if (item[0].getCodetype() == DEFINE && item[0].getOperand1() == "void") {
 				if (item[size - 1].getCodetype() != RET) {
-					CodeItem citem = CodeItem(RET, "", "void", "");
+					CodeItem citem = CodeItem(RET, "","", "void");
 					citem.setFatherBlock(fatherBlock);
 					codetotal[i].push_back(citem);
 				}
 			}
 		}
 	}
-	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
 	//自动为参数补上第一维大小
 	for (int i = 0; i < total.size(); i++) {
 		vector<symbolTable> item = total[i];
@@ -186,9 +185,11 @@ int frontExecute(string syname)
 		string b = "%";
 		if (i == 0) b = "@";
 		for (int j = 0; j < total[i].size(); j++) {
+			if (j == 0) b = "@";
 			total[i][j].changeName(b + total[i][j].getName());
 		}
 	}
+	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
 	//检测符号表内容
 	/*
 	cout << "名字 " << "Block下标 " << "种类 0Con 1Var 2Para 3Func " << "维度 " << endl;
@@ -221,6 +222,7 @@ int frontExecute(string syname)
 	return 0;
 }
 
+
 void TestIrCode(string outputFile) {
 	ofstream irtxt(outputFile);
 	for (int i = 0; i < codetotal.size(); i++) {
@@ -245,7 +247,7 @@ void CompUnit()
 	names.push_back(globalll);
 	while (symbol == INTTK || symbol == CONSTTK || symbol == VOIDTK) {
 		if (symbol == CONSTTK) {    //常量声明
-			ConstDecl(0, 0);
+			ConstDecl(0,0);
 		}
 		else {   //变量声明或者函数声明                
 			if (symbol == INTTK) {
@@ -274,7 +276,7 @@ void CompUnit()
 				}
 				else {
 					symbol = sym_tag;
-					VarDecl(0, 0);
+					VarDecl(0,0);
 				}
 			}
 			else {
@@ -291,27 +293,27 @@ void CompUnit()
 			}
 		}
 	}
-	outfile << "<编译单元>" << endl;
+	outfile<<"<编译单元>"<<endl;
 }
-void ConstDecl(int index, int block) 		   //常量说明
+void ConstDecl(int index,int block) 		   //常量说明
 {
 	printMessage();    //输出const信息
 	//判断symbol==CONSTTK
-	wordAnalysis.getsym();
+	wordAnalysis.getsym();  
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
 	printMessage();    //输出int信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken(); //预读
-	ConstDef(index, block);  //常量定义
+	ConstDef(index,block);  //常量定义
 	//判断symbol=;
 	while (symbol == COMMA) {
 		printMessage();   //输出,信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
-		ConstDef(index, block);  //常量定义
+		ConstDef(index,block);  //常量定义
 	}
 	printMessage();    //输出；信息
 	wordAnalysis.getsym();
@@ -320,7 +322,7 @@ void ConstDecl(int index, int block) 		   //常量说明
 	//退出循环前已经预读单词
 	outfile << "<常量说明>" << endl;
 }
-void ConstDef(int index, int block)			   //常量定义
+void ConstDef(int index,int block)			   //常量定义
 {
 	int value;
 	vector<int> length; //记录每个维度大小
@@ -341,7 +343,7 @@ void ConstDef(int index, int block)			   //常量定义
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
 	}
-	symbolTable item = symbolTable(CONSTANT, INT, name, dimenson, block);
+	symbolTable item = symbolTable(CONSTANT, INT, name,dimenson,block);
 	item.setMatrixLength(length);
 	total[index].push_back(item);
 	names[index][name]++;
@@ -350,7 +352,7 @@ void ConstDef(int index, int block)			   //常量定义
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken(); //预读
 
-
+	
 	//常量赋值前做好变量初始化相关工作
 	offset = 0;
 	matrixLength = length;
@@ -392,7 +394,7 @@ void ConstDef(int index, int block)			   //常量定义
 int ConstExp()
 {
 	int valueL, valueR;
-	valueL = ConstMulExp();  //退出前读了一个单词
+	valueL= ConstMulExp();  //退出前读了一个单词
 	while (symbol == PLUS || symbol == MINU) {
 		Memory tag = symbol;
 		printMessage();    //输出+或-信息
@@ -440,7 +442,7 @@ int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' 
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
 	}
-	else if (symbol == INTCON) {      //symbol == INTCON
+	else if(symbol==INTCON){      //symbol == INTCON
 		value = wordAnalysis.getNumber();   //获取数值
 		printMessage();
 		wordAnalysis.getsym();
@@ -476,7 +478,7 @@ int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' 
 			for (int j = nowDimenson; j < dimenLength.size(); j++) {
 				offset = offset * dimenLength[j];
 			}
-			totaloffset += value * offset;
+			totaloffset += value*offset;
 			printMessage();//输出]信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
@@ -499,28 +501,26 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 	int flag = 0;
 	if (symbol == LBRACE) {
 		int mod = 1;     //偏移量
-		if (isNesting == 1) {
+		if(isNesting == 1){
 			isNesting = 1;
 			Ndimension++;
-			for (int pp = Ndimension; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+			for (int pp = Ndimension; pp < matrixLength.size();pp++) {   //计算当前维度偏移量mod
 				mod = mod * matrixLength[pp];
 			}
-		}
-		else {
-			if (isBegin == 0) {
-				isBegin = 1;
+		}else{
+			if(isBegin == 0){
+			    isBegin = 1;
 				isNesting = 0;
-			}
-			else {
+			}else{
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+			for (int pp = 1; pp < matrixLength.size();pp++) {   //计算当前维度偏移量mod
 				mod = mod * matrixLength[pp];
 			}
 			Ndimension = 1;
-			while (offset % mod != 0) {
+			while(offset%mod!=0){
 				Ndimension++;
-				mod = mod / matrixLength[Ndimension - 1];
+				mod = mod / matrixLength[Ndimension-1];
 			}
 		}
 		printMessage();
@@ -543,7 +543,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 		}
 		if (flag == 1) offset += mod;						//{}，直接加当前维度大小
 		else {												//补齐当前维度
-			while (offset % mod != 0) {
+			while (offset % mod != 0) {           
 				offset++;
 			}
 		}
@@ -572,7 +572,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 				if (Range != 0) {
 					b = "%";
 				}
-				CodeItem citem = CodeItem(STOREARR, value_string, b + nodeName, offset_string);
+				CodeItem citem = CodeItem(STOREARR, b+nodeName,value_string,offset_string);
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
 			}
@@ -580,19 +580,19 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 	}
 	outfile << "<常量初值>" << endl;
 }
-void VarDecl(int index, int block)			   //变量说明
+void VarDecl(int index,int block)			   //变量说明
 {
 	printMessage();   //输出int信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读 
-	VarDef(index, block);   //已经预读一个单词，直接进入即可
+	VarDef(index,block);   //已经预读一个单词，直接进入即可
 	while (symbol == COMMA) {
 		printMessage();    //输出,信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读 
-		VarDef(index, block);   //已经预读一个单词，直接进入即可
+		VarDef(index,block);   //已经预读一个单词，直接进入即可
 	}
 	printMessage();    //输出；信息
 	wordAnalysis.getsym();
@@ -601,7 +601,7 @@ void VarDecl(int index, int block)			   //变量说明
 	//退出循环前均已经预读单词
 	outfile << "<变量说明>" << endl;
 }
-void VarDef(int index, int block)             //变量定义
+void VarDef(int index,int block)             //变量定义
 {
 	int value;
 	vector<int> length; //记录每个维度大小
@@ -623,7 +623,7 @@ void VarDef(int index, int block)             //变量定义
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
-	symbolTable item = symbolTable(VARIABLE, INT, name, dimenson, block);
+	symbolTable item = symbolTable(VARIABLE, INT, name,dimenson,block);
 	item.setMatrixLength(length);
 	total[index].push_back(item);
 	names[index][name]++;
@@ -658,7 +658,7 @@ void VarDef(int index, int block)             //变量定义
 		isNesting = 0;
 		isBegin = 0;
 		nodeName = name;
-
+		
 		InitVal(index);
 	}
 	//退出循环前已经预读单词
@@ -669,28 +669,26 @@ void InitVal(int index)
 	int flag = 0;
 	if (symbol == LBRACE) {
 		int mod = 1;
-		if (isNesting == 1) {
+		if(isNesting == 1){
 			isNesting = 1;
 			Ndimension++;
-			for (int pp = Ndimension; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+			for (int pp = Ndimension; pp < matrixLength.size();pp++) {   //计算当前维度偏移量mod
 				mod = mod * matrixLength[pp];
 			}
-		}
-		else {
-			if (isBegin == 0) {
-				isBegin = 1;
+		}else{
+			if(isBegin == 0){
+			    isBegin = 1;
 				isNesting = 0;
-			}
-			else {
+			}else{
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+			for (int pp = 1; pp < matrixLength.size();pp++) {   //计算当前维度偏移量mod
 				mod = mod * matrixLength[pp];
 			}
 			Ndimension = 1;
-			while (offset % mod != 0) {
+			while(offset%mod!=0){
 				Ndimension++;
-				mod = mod / matrixLength[Ndimension - 1];
+				mod = mod / matrixLength[Ndimension-1];
 			}
 		}
 		printMessage();   //输出{
@@ -732,19 +730,19 @@ void InitVal(int index)
 			if (Range != 0) {
 				b = "%";
 			}
-			CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, "");	//赋值单值
+			CodeItem citem = CodeItem(STORE,b+nodeName,interRegister,"");	//赋值单值
 			citem.setFatherBlock(fatherBlock);
 			codetotal[index].push_back(citem);
 		}
 		else {
 			if (offset <= totalSize) {
-				string offset_string = numToString((offset - 1) * 4);
+				string offset_string = numToString((offset - 1)*4);
 				string b = "@";
 				symbolTable item = checkItem(nodeName);
 				if (Range != 0) {
 					b = "%";
 				}
-				CodeItem citem = CodeItem(STOREARR, interRegister, b + nodeName, offset_string);
+				CodeItem citem = CodeItem(STOREARR, b + nodeName,interRegister,offset_string);
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
 			}
@@ -762,7 +760,7 @@ void valueFuncDef()    //有返回值函数定义
 	printMessage();   //获得标识符并输出
 	symbolTable item(FUNCTION, INT, name);
 	total[Funcindex].push_back(item);
-	CodeItem citem(DEFINE, "@" + name, "int", "");           //define @foo int
+	CodeItem citem(DEFINE, "@"+name,"int","");           //define @foo int
 	codetotal[Funcindex].push_back(citem);
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
@@ -835,10 +833,10 @@ void Block()      //语句块
 	token = wordAnalysis.getToken();//预读
 	while (symbol != RBRACE) {
 		if (symbol == CONSTTK) {
-			ConstDecl(Funcindex, block);
+			ConstDecl(Funcindex,block);
 		}
 		else if (symbol == INTTK) {
-			VarDecl(Funcindex, block);
+			VarDecl(Funcindex,block);
 		}
 		else {
 			Stmt();
@@ -904,7 +902,7 @@ void FuncFParam()
 			token = wordAnalysis.getToken();  //预读
 		}
 	}
-	symbolTable item = symbolTable(PARAMETER, INT, name, dimenson, 1);
+	symbolTable item = symbolTable(PARAMETER, INT, name, dimenson,1);
 	item.setMatrixLength(length);
 	total[Funcindex].push_back(item);
 	names[Funcindex][name]++;
@@ -912,7 +910,7 @@ void FuncFParam()
 	if (dimenson > 0) {
 		b = "int*";
 	}
-	CodeItem citem = CodeItem(PARA, "%" + name, b, numToString(dimenson));//函数形参
+	CodeItem citem = CodeItem(PARA,"%"+name,b,numToString(dimenson));//函数形参
 	citem.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem);
 	outfile << "<函数形参>" << endl;
@@ -938,8 +936,7 @@ void Exp()	//MulExp{('+'|'-')MulExp}
 			if (symbol_tag == PLUS) value = valueL + valueR;
 			else value = valueL - valueR;
 			interRegister = numToString(value);
-		}
-		else {
+		}else{
 			interRegister = "%" + numToString(Temp);
 			Temp++;
 			irCodeType codetype;
@@ -953,7 +950,7 @@ void Exp()	//MulExp{('+'|'-')MulExp}
 	}
 	//退出前已经预读
 	outfile << "<表达式>" << endl;
-	return;
+	return ;
 }
 void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 {
@@ -1005,7 +1002,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
-	else if (symbol == INTCON) {  //number
+	else if (symbol == INTCON){  //number
 		printMessage();
 		interRegister = numToString(wordAnalysis.getNumber());		//将数值转换成字符串模式
 		wordAnalysis.getsym();
@@ -1018,8 +1015,8 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
-		string registerL, registerR, registerA, registerC;
-		int typeL, typeR, typeA, typeC;
+		string registerL,registerR,registerA,registerC;
+		int typeL,typeR,typeA,typeC;
 		string Functionname;
 		if (symbol == LPARENT) {  //标识符 (函数实参表)
 			paraNum = 0;
@@ -1041,7 +1038,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			}
 			string noteFuncBegin = "func " + Functionname + "() begin";
 			string noteFuncEnd = "func " + Functionname + "() end";
-			CodeItem citem1 = CodeItem(NOTE, "", noteFuncBegin, "");          //call @foo %3 3
+			CodeItem citem1 = CodeItem(NOTE, "",noteFuncBegin , "");          //call @foo %3 3
 			citem1.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem1);//函数开始注释
 			if (symbol != RPARENT) {
@@ -1053,7 +1050,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			token = wordAnalysis.getToken();//预读
 			interRegister = "%" + numToString(Temp);		//存函数返回结果
 			Temp++;
-			CodeItem citem2 = CodeItem(CALL, "@" + Functionname, interRegister, numToString(paraNum));          //call @foo %3 3
+			CodeItem citem2 = CodeItem(CALL, interRegister, "@" + Functionname,  numToString(paraNum));          //call @foo %3 3
 			citem2.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem2);//函数引用
 			CodeItem citem3 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3
@@ -1138,7 +1135,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					if (range == 0) {
 						b = "@";	//全局变量
 					}
-					CodeItem citem = CodeItem(LOADARR, interRegister, b + name_tag, registerA); //数组取值
+					CodeItem citem = CodeItem(LOADARR, registerA,interRegister, b + name_tag); //数组取值
 					citem.setFatherBlock(fatherBlock);    //保存当前作用域
 					codetotal[Funcindex].push_back(citem);
 				}
@@ -1149,7 +1146,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				if (range == 0) {
 					b = "@";	//全局变量
 				}
-				interRegister = b + name_tag;
+				interRegister = b+name_tag;
 			}
 			else {		//此时是正常变量，不是数组变量
 				if (item.getForm() == CONSTANT) {
@@ -1162,7 +1159,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					if (range == 0) {
 						b = "@";	//全局变量
 					}
-					CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, ""); //一维变量、常量取值
+					CodeItem citem = CodeItem(LOAD,"", interRegister, b+name_tag); //一维变量、常量取值
 					citem.setFatherBlock(fatherBlock);
 					codetotal[Funcindex].push_back(citem);
 				}
@@ -1170,9 +1167,9 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		}
 	}
 	else { //+| -| !  UnaryExp
-		string op, registerL, registerR;
-		int typeL, typeR;
-		if (symbol == PLUS) {
+		string op,registerL,registerR;
+		int typeL,typeR;
+		if (symbol == PLUS){
 			printMessage();    //输出+信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
@@ -1237,7 +1234,7 @@ void Stmt()              //语句
 	}
 	else if (symbol == BREAKTK) {	//break ;
 		printMessage();    //输出break信息
-		CodeItem citem = CodeItem(BR, whileLabel[whileLabel.size() - 2], "", ""); //br %while.cond 
+		CodeItem citem = CodeItem(BR, "",whileLabel[whileLabel.size() - 2], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		wordAnalysis.getsym();
@@ -1250,7 +1247,7 @@ void Stmt()              //语句
 	}
 	else if (symbol == CONTINUETK) {	//continue ;
 		printMessage();    //输出continue信息
-		CodeItem citem = CodeItem(BR, whileLabel[whileLabel.size() - 1], "", ""); //br %while.cond 
+		CodeItem citem = CodeItem(BR, "",whileLabel[whileLabel.size() - 1], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		wordAnalysis.getsym();
@@ -1422,12 +1419,12 @@ void assignStmt()        //赋值语句 LVal = Exp
 	Exp();
 	if (dimenLength.size() > 0) {
 		string tempRegister = interRegister;
-		CodeItem citem = CodeItem(STOREARR, tempRegister, b + name_tag, registerA);		//数组某个变量赋值
+		CodeItem citem = CodeItem(STOREARR, b + name_tag,tempRegister, registerA);		//数组某个变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
 	else {
-		CodeItem citem = CodeItem(STORE, interRegister, b + name_tag, "");		//给一维变量赋值
+		CodeItem citem = CodeItem(STORE, b+name_tag,interRegister,"");		//给一维变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
@@ -1454,16 +1451,16 @@ void ifStmt()            //条件语句
 	string if_else_label = "%if.else_" + numToString(iflabelIndex);
 	string if_end_label = "%if.end_" + numToString(iflabelIndex);
 	iflabelIndex++;
-	CodeItem citem = CodeItem(BR, interRegister, if_then_label, if_else_label); //br 条件 %if.then_1 %if.else_1 
+	CodeItem citem = CodeItem(BR,if_else_label, interRegister,if_then_label); //br 条件 %if.then_1 %if.else_1 
 	citem.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem);
-	CodeItem citem2 = CodeItem(LABEL, if_then_label, "", "");	//label if.then
+	CodeItem citem2 = CodeItem(LABEL,if_then_label,"","");	//label if.then
 	citem2.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem2);
 	int nowIndex = codetotal[Funcindex].size() - 2;		//暂存 br 条件 %if.then_1 %if.else_1  下标，可能后续要把%if.else改成 %if.end
 	Stmt();													//stmt1
 	if (symbol == ELSETK) {
-		CodeItem citem3 = CodeItem(BR, if_end_label, "", "");   //BR if.end
+		CodeItem citem3 = CodeItem(BR, "",if_end_label, "");   //BR if.end
 		citem3.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem3);
 		CodeItem citem4 = CodeItem(LABEL, if_else_label, "", "");	//label if.else
@@ -1479,7 +1476,7 @@ void ifStmt()            //条件语句
 		string res = codetotal[Funcindex][nowIndex].getResult();
 		codetotal[Funcindex][nowIndex].changeContent(res, if_then_label, if_end_label);
 	}
-	CodeItem citem5 = CodeItem(BR, if_end_label, "", "");   //BR if.end
+	CodeItem citem5 = CodeItem(BR, "",if_end_label, "");   //BR if.end
 	citem5.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem5);
 	CodeItem citem6 = CodeItem(LABEL, if_end_label, "", "");	//label if.else
@@ -1490,7 +1487,7 @@ void ifStmt()            //条件语句
 }
 void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
-	string registerL, registerR, op;
+	string registerL, registerR,op;
 	int nowSize = codetotal[Funcindex].size();
 	int flag = 0;	//flag为1说明多个||的条件中某个条件真值为1，中间代码不必要出现，可直接删除
 	LAndExp();
@@ -1651,7 +1648,7 @@ void RelExp()			  //关系表达式
 	string registerL, registerR, op;
 	Exp();
 	registerL = interRegister;
-	while (symbol == LSS || symbol == LEQ || symbol == GRE || symbol == GEQ) {
+	while (symbol == LSS || symbol == LEQ||symbol==GRE||symbol==GEQ){
 		Memory symbol_tag = symbol;
 		printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
@@ -1716,13 +1713,13 @@ void loopStmt()          //循环语句
 	codetotal[Funcindex].push_back(citem1);
 	Cond();						//cond
 	printMessage();    //输出)信息
-	CodeItem citem2 = CodeItem(BR, interRegister, while_body_label, while_end_label); //br 条件 %while.body %while.end  
+	CodeItem citem2 = CodeItem(BR, while_end_label, interRegister, while_body_label); //br 条件 %while.body %while.end  
 	citem2.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem2);
 	CodeItem citem3 = CodeItem(LABEL, while_body_label, "", "");	//label %while.body
 	citem3.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem3);
-	whileLabel.push_back(while_end_label);
+	whileLabel.push_back(while_end_label);		
 	whileLabel.push_back(while_cond_label);
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
@@ -1730,7 +1727,7 @@ void loopStmt()          //循环语句
 	Stmt();
 	whileLabel.pop_back();
 	whileLabel.pop_back();
-	CodeItem citem4 = CodeItem(BR, while_cond_label, "", ""); //br %while.cond 
+	CodeItem citem4 = CodeItem(BR, "",while_cond_label,""); //br %while.cond 
 	citem4.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem4);
 	CodeItem citem5 = CodeItem(LABEL, while_end_label, "", "");	//label %while.end
@@ -1755,19 +1752,19 @@ void FuncRParams()    //函数实参数表
 	}
 	int paranum = 1;
 	if (paraIntNode == 0) {
-		if (interRegister[0] == '\"') {
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "string");  //传参
+		if(interRegister[0]=='\"'){
+			CodeItem citem = CodeItem(PUSH, "string",interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int");  //传参
+			CodeItem citem = CodeItem(PUSH, "int",interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 	}
 	else {
-		CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int*");  //传参
+		CodeItem citem = CodeItem(PUSH, "int*",interRegister, numToString(paranum));  //传参
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		paraIntNode = 0;
@@ -1780,12 +1777,12 @@ void FuncRParams()    //函数实参数表
 		Exp();
 		paranum++;
 		if (paraIntNode == 0) {
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int");  //传参
+			CodeItem citem = CodeItem(PUSH, "int",interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
-			CodeItem citem = CodeItem(PUSH, interRegister, numToString(paranum), "int*");  //传参
+			CodeItem citem = CodeItem(PUSH, "int*",interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
 			paraIntNode = 0;
@@ -1804,12 +1801,12 @@ void returnStmt()        //返回语句
 	token = wordAnalysis.getToken();//预读
 	if (symbol != SEMICN) {
 		Exp();
-		CodeItem citem = CodeItem(RET, interRegister, "int", "");  //有返回值返回
+		CodeItem citem = CodeItem(RET,"", interRegister, "int");  //有返回值返回
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
 	else {
-		CodeItem citem = CodeItem(RET, "", "void", "");
+		CodeItem citem = CodeItem(RET,"","","void");
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
@@ -1850,7 +1847,7 @@ void change(int index)	//修改中间代码、符号表
 		string res = b[i].getResult();
 		string ope1 = b[i].getOperand1();
 		string ope2 = b[i].getOperand2();
-		if (res.size() > 0 && res[0] == '%' && (!isdigit(res[1]))) {  //res必须是变量
+		if (res.size()>0 && res[0] == '%' && (!isdigit(res[1])) ) {  //res必须是变量
 			res.erase(0, 1);  //去掉首字母
 			if (names[index][res] > 1) {
 				symbolTable item = checkTable(res, index, b[i].getFatherBlock());
@@ -1901,7 +1898,7 @@ void change(int index)	//修改中间代码、符号表
 	}
 	total.push_back(a);
 }
-void putAllocGlobalFirst()		//将中间代码中alloc类型前移
+void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CALL中调用无返回值函数对应的res转为"void"而非寄存器
 {
 	vector<vector<CodeItem>> temp = codetotal;
 	codetotal.clear();
@@ -1916,7 +1913,38 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移
 		}
 		for (j = 0; j < temp[i].size(); j++) {
 			if (temp[i][j].getCodetype() != DEFINE && temp[i][j].getCodetype() != PARA && temp[i][j].getCodetype() != ALLOC && temp[i][j].getCodetype() != GLOBAL) {
-				a.push_back(temp[i][j]);
+				if (temp[i][j].getCodetype() == CALL) {
+					string funName = temp[i][j].getOperand1();
+					if (funName == "@printf" || funName == "@_sysy_starttime" || funName == "@_sysy_stoptime" || funName == "@putarray"
+						|| funName == "@putch" || funName == "@putint") {
+						string paraNum = temp[i][j].getOperand2();
+						temp[i][j].changeContent("void", funName, paraNum);
+						a.push_back(temp[i][j]);
+					}
+					else if (funName == "@getint" || funName == "@getarray" || funName == "@getch") {
+						a.push_back(temp[i][j]);
+					}
+					else {		//前面都是特殊函数，这里是非特殊函数
+						valueType type;
+						for (k = 1; k < total.size(); k++) {		//查表
+							if (funName == total[k][0].getName()) {
+								type = total[k][0].getValuetype();
+								break;
+							}
+						}
+						if (type == INT) {
+							a.push_back(temp[i][j]);
+						}
+						else {
+							string paraNum = temp[i][j].getOperand2();
+							temp[i][j].changeContent("void", funName, paraNum);
+							a.push_back(temp[i][j]);
+						}
+					}
+				}
+				else {
+					a.push_back(temp[i][j]);
+				}
 			}
 		}
 		codetotal.push_back(a);

@@ -20,8 +20,9 @@ public:
 class basicBlock {
 public:
 	int number;							// 基本块的编号
-	int start;								// 基本块的起始中间代码
-	int end;								// 基本块的结束中间代码
+	// int start;								// 基本块的起始中间代码（删掉）
+	// int end;								// 基本块的结束中间代码（删掉）
+	std::vector<CodeItem> Ir;	// 该基本块对应的中间代码
 	std::set<int> pred;				// 前驱
 	std::set<int> succeeds;			// 后继节点
 	std::set<int> domin;				// 必经节点
@@ -37,8 +38,7 @@ public:
 	basicBlock() {}
 	basicBlock(int number, int start, int end, std::set<int> pred, std::set<int> succeeds) {
 		this->number = number;
-		this->start = start;
-		this->end = end;
+		this->Ir = Ir;
 		this->pred = pred;
 		this->succeeds = succeeds;
 	}
@@ -56,14 +56,16 @@ public:
 
 class SSA {
 private:
-	std::vector<std::vector<CodeItem>> codetotal;		// 前端传过来的中间代码
-	std::vector<std::vector<symbolTable>> symtotal;		// 前端传过来的符号表
+	// std::vector<std::vector<CodeItem>> codetotal;		// 前端传过来的中间代码
+	// std::vector<std::vector<symbolTable>> symtotal;		// 前端传过来的符号表
 	std::vector<std::vector<int>> blockOrigin;				// 每个基本块的第一条中间代码
 	std::vector<std::vector<basicBlock>> blockCore;		// 每个基本块结构
 	std::vector<std::vector<int>> postOrder;					// 必经节点数的后序遍历序列
 	std::vector<std::vector<int>> preOrder;					// 必经节点数的前序遍历序列
 	std::vector<std::vector<varStruct>> varChain;			// 函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
+	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块
+	void build_pred_and_succeeds();							// 建立基本块间的前序和后序关系
 	void build_dom_tree();											// 建立必经节点关系
 	void build_idom_tree();											// 建立直接必经关系
 	void build_reverse_idom_tree();								// 直接必经节点的反关系
@@ -95,11 +97,15 @@ private:
 	void Test_Active_Var_Analyse();
 	void Test_Build_Var_Chain();
 	void Test_Add_Phi_Fun();
-	void Output_IR();
 public:
-	SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
+	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
 		this->symtotal = symTable;
+<<<<<<< HEAD
 	}
 	void generate();				// 开始函数
+=======
+	}*/
+	SSA() {}
+	void generate();		// 开始函数
 };

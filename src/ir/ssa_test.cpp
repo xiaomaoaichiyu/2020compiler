@@ -1,4 +1,5 @@
 ﻿#include "ssa.h"
+#include "../front/syntax.h"
 #include <regex>
 #include <algorithm>
 #include <set>
@@ -11,7 +12,6 @@ void SSA::Test_SSA() {
 	// 打开文件，将测试输出信息输出到该文件
 	debug_ssa.open("debug_ssa.txt");
 	/* Test_* 函数用于对每个函数进行测试，输出相关信息 */
-	Output_IR();
 	Test_Divide_Basic_Block();
 	Test_Build_Dom_Tree();
 	Test_Build_Idom_Tree();
@@ -53,6 +53,14 @@ void SSA::Test_Add_Phi_Fun() {
 	}
 }
 
+// 输出基本块中的中间代码
+void Output_IR(vector<CodeItem> v) {
+	for (int i = 1; i < v.size(); i++) {
+		CodeItem item = v[i];
+		debug_ssa << i + 1 << "    " << item.getContent() << endl;
+	}
+}
+
 // 测试函数：输出所有的基本块信息
 void SSA::Test_Divide_Basic_Block() {
 	debug_ssa << "---------------- basic block -----------------" << endl;
@@ -60,11 +68,24 @@ void SSA::Test_Divide_Basic_Block() {
 	int size1 = v.size();
 	for (int i = 1; i < size1; i++) {
 		// 首先输出这是第几个函数
-		debug_ssa << i << endl;
+		debug_ssa << "---------------- function " << i << " ----------------" << endl;
 		int size2 = v[i].size();
 		// 依次输出该函数下所有的基本块信息
-		debug_ssa << "基本块编号" << "\t\t" << "入口中间代码" << "\t\t" << "结束中间代码" << "\t\t" << "前序节点" << "\t\t" << "后序节点" << "\t\t" << endl;
 		for (int j = 0; j < size2; j++) {
+<<<<<<< HEAD
+			debug_ssa << "该基本块的编号:  " << v[i][j].number << "\t\t";	// 基本块编号
+			set<int>::iterator iter;
+			// 即可以跳转到该基本块的基本块序号
+			debug_ssa << "前序节点和后序节点: {  ";
+			for (iter = v[i][j].pred.begin(); iter != v[i][j].pred.end(); iter++) debug_ssa << *iter << "  ";
+			debug_ssa << "}" << "\t\t";
+			// 即通过该基本块可以跳转到的基本块序号
+			debug_ssa << "{  ";
+			for (iter = v[i][j].succeeds.begin(); iter != v[i][j].succeeds.end(); iter++) debug_ssa << *iter << "  ";
+			debug_ssa << "}" << endl;
+			// 输出该基本块中的中间代码
+			Output_IR(v[i][j].Ir);
+=======
 			debug_ssa << "B" << v[i][j].number << "\t\t";	// 基本块编号
 			debug_ssa << v[i][j].start << "\t\t";		// 入口中间代码
 			debug_ssa << v[i][j].end << "\t\t";		// 结束中间代码
@@ -86,6 +107,7 @@ void SSA::Test_Divide_Basic_Block() {
 				}
 			}
 			debug_ssa << endl;
+>>>>>>> 5aa2c3830cce1379dacb3e8f8959bb6468c01e18
 		}
 	}
 }
@@ -246,17 +268,5 @@ void SSA::Test_Build_Var_Chain() {
 			for (set<int>::iterator iter = v[i][j].blockNums.begin(); iter != v[i][j].blockNums.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
 		}
-	}
-}
-
-void SSA::Output_IR() {
-	debug_ssa << "---------------- IR -----------------" << endl;
-	for (int i = 1; i < codetotal.size(); i++) {
-		debug_ssa << i << endl;
-		vector<CodeItem> item = codetotal[i];
-		for (int j = 0; j < item.size(); j++) {
-			debug_ssa << j + 1 << "    " << item[j].getContent() << endl;
-		}
-		debug_ssa << "\n";
 	}
 }
