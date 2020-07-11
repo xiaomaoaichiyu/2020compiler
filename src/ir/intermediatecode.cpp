@@ -166,6 +166,15 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->operand2 = ope2;
 }
 
+void CodeItem::setID(int id) {
+	this->id = id;
+}
+
+int CodeItem::getId()
+{
+	return this->id;
+}
+
 irCodeType CodeItem::getCodetype()
 {
 	return this->codetype;
