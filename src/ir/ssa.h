@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿#ifndef _SSA_H_
+#define _SSA_H_
+
 #include <iostream>
 #include <vector>
 #include <set>
@@ -35,8 +37,7 @@ public:
 	std::set<std::string> in;		// 该基本块中的in集合
 	std::set<std::string> out;		// 该基本块中的out集合
 	std::vector<phiFun> phi;		// 基本块初始需要添加的\phi函数
-	basicBlock() {}
-	basicBlock(int number, int start, int end, std::set<int> pred, std::set<int> succeeds) {
+	basicBlock(int number, std::vector<CodeItem> Ir, std::set<int> pred, std::set<int> succeeds) {
 		this->number = number;
 		this->Ir = Ir;
 		this->pred = pred;
@@ -101,11 +102,9 @@ public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
 		this->symtotal = symTable;
-<<<<<<< HEAD
-	}
-	void generate();				// 开始函数
-=======
 	}*/
 	SSA() {}
 	void generate();		// 开始函数
 };
+
+#endif //_SSA_H_
