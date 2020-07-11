@@ -8,8 +8,6 @@
 
 2. > 每个 LLVM 优化程序都独立出一个类，都继承自`Pass`父类。大多数优化程序都独立出`.cpp`文件，并且`Pass`的子类都被定义在匿名命名空间中（这使其完全对定义文件私有）。为了使用优化程序，文件之外的代码需要能引用到它，因此会在文件编写一个用于创建优化程序的类导出函数。
 
-![1592984983679](.\image\1592984983679.png)
-
 *****
 
 ### 前端->IR
@@ -197,10 +195,11 @@
 | 关系大于等于(signed)   | sge      | res                                | ope1                | ope2                |
 | 关系小于(signed)       | slt      | res                                | ope1                | ope2                |
 | 关系小于等于(signed)   | sle      | res                                | ope1                | ope2                |
-| 赋值单值（变了）       | store    |                                    | value  ➡            | name                |
-| 赋值数组（变了）       | storeArr | offset                             | value  ➡            | address(暂时用name) |
+| 赋值单值（变了）       | store    | name                               | ⬅ value             |                     |
+| 赋值数组（变了）       | storeArr | address(暂时用name)                | ⬅ value             | offset              |
 | 取内存 （变了）        | load     |                                    | tmpReg  ⬅           | name                |
 | 取内存 （变了）        | loadArr  | offset                             | tmpReg  ⬅           | address(暂时用name) |
+| 移动                   | mov      |                                    | src                 | dst                 |
 | 有返回值函数调用(变了) | call     | retReg(寄存器分配时指定为R0寄存器) | funcName            | paraNum             |
 | 无返回值函数调用(变了) | call     | void                               | funcName            | paraNum             |
 | 函数返回(变了)         | ret      |                                    | retValue            | int\|void           |
@@ -209,7 +208,6 @@
 | 标签                   | label    | name                               |                     |                     |
 | 直接跳转(变了)         | br       |                                    | label               |                     |
 | 条件跳转(变了)         | br       | lable2(错误)                       | tmpReg              | label1(正确)        |
-| 移动                   | mov      |                                    | src                 | dst                 |
 |                        |          |                                    |                     |                     |
 | 函数定义               | define   | name                               | funcType            |                     |
 | 函数形参               | para     | name                               | paraType(int\|int*) |                     |
@@ -217,7 +215,6 @@
 | 全局变量\|常量         | global   | variableName                       | value               | size                |
 | 注释                   | note     |                                    | 注释内容            |                     |
 |                        |          |                                    |                     |                     |
-
 
 *****
 
