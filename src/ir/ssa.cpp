@@ -1,4 +1,5 @@
 ﻿#include "ssa.h"
+#include "../front/syntax.h"
 #include <regex>
 #include <algorithm>
 #include <set>
@@ -36,14 +37,15 @@ bool ifGlobalVariable(string name) {
 	return regex_match(name, r);
 }
 
-// 判断是否是局部变量，包含临时变量
+// 判断是否是局部变量
 bool ifLocalVariable(string name) {
 	regex r("%.+");
-	return regex_match(name, r);
+	return regex_match(name, r) && !ifTempVariable(name);
 }
 
 // 在一个函数的所有中间代码中找到某个标签的位置，即它是第几条中间代码
-// @result: 0, 1, 2, ..., size-1(size代表该函数总的中间代码条数), -1(表示没有找到，lzh在调用该函数时正常情况下不应出现该情况)
+// @result: 0, 1, 2, ..., size-1(size代表该函数总的中间代码条数)
+// @exception: -1(表示没有找到，lzh在调用该函数时正常情况下不应出现该情况)
 int lookForLabel(vector<CodeItem> v, string label) {
 	int size = v.size();
 	int i;
@@ -53,104 +55,148 @@ int lookForLabel(vector<CodeItem> v, string label) {
 	return -1;
 }
 
-// @para key: 传入的是上面lookForLabel函数查出的label标签对应的中间代码序号
 // 用于查找某个函数中第一条语句序号是key的基本块，即找出哪个基本块是以上面函数查到的label标签为第一条语句
+// @para key: 传入的是上面lookForLabel函数查出的label标签对应的中间代码序号
+// @result: 0, 1, 2, ..., size-1(size代表基本块的总数量)
+// exception: -1(表示没有找到，lzh在调用该函数时正常情况下不应出现该情况)
 int locBlockForLabel(vector<int> v, int key) {
 	int size = v.size();
 	for (int i = 0; i < size; i++) if (v[i] == key) return i;
 	return -1;
 }
 
-// 为每个函数划分基本块
-void SSA::divide_basic_block() {
+// 找到基本块的每个起始语句
+void SSA::find_primary_statement() {
 	int size1 = codetotal.size();
 	int i, j, k;
-	// 跳过全局定义
-	vector<int> v0 = {}; blockOrigin.push_back(v0);
-	// 函数定义
+	// 申请空间
+	for (i = 0; i < size1; i++) {
+		vector<int> v; blockOrigin.push_back(v);
+	}
+	// 遍历每个函数
 	for (i = 1; i < size1; i++)
 	{
 		vector<CodeItem> v = codetotal[i];
 		int size2 = v.size();
-		vector<int> tmp = { 0, 1 };		// tmp用于保存所有基本块的起始语句：0代表entry；1代表函数第一条中间代码
-		for (j = 0; j < size2; j++) {	// 第几条中间代码(1, 2, 3...)
+		// tmp用于保存所有基本块的起始语句: 初始化 0 代表entry，无实际含义；初始化 1 代表函数第一条中间代码
+		vector<int> tmp = { 0, 1 };		
+		// 遍历该函数内的所有中间代码，找出基本块的第一条语句，注意在push时要加1，因为代表第几条中间代码，1,2,3...
+		for (j = 0; j < size2; j++) {
 			CodeItem c = v[j];
 			if (c.getCodetype() == BR) {			// 跳转指令
 				if (ifTempVariable(c.getResult())) {
 					k = lookForLabel(v, c.getOperand1());
-					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1); // 第几条中间代码，从1开始，因此push进去的要加1，后面同理
+					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 					k = lookForLabel(v, c.getOperand2());
 					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 				}
-				else if (ifDigit(c.getResult())) {	/* debug1: result可能是常数 */
-					// 这个问题通过 simplify_br() 函数解决
+				else if (ifDigit(c.getResult())) {	/* debug1: result可能是常数，e.g br 1 if_... else_... */
+					// 这个问题通过 simplify_br() 函数解决，转换为无条件跳转指令
 				}
 				else {
 					k = lookForLabel(v, c.getResult());
 					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 				}
-				k = j + 1;		// 分支指令的下一条指令
+				// 分支指令的下一条指令
+				k = j + 1;		
 				if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 			}
-			else if (c.getCodetype() == RET) { // 返回指令
+			// 返回指令
+			else if (c.getCodetype() == RET) {
 				k = j + 1;		// 分支指令的下一条指令
 				if (k + 1 <= size2 && find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 			}
 		}
 		tmp.push_back(size2 + 1);		// exit块
 		sort(tmp.begin(), tmp.end());	// 对所有入口语句从小到大排序
-		blockOrigin.push_back(tmp);
+		blockOrigin[i] = tmp;
 	}
+}
 
-	// 跳过全局定义
-	vector<basicBlock> vv0; blockCore.push_back(vv0);
-	// 函数定义
+// 为每个函数划分基本块
+void SSA::divide_basic_block() {
+	int size1 = codetotal.size();
+	int i, j, k;
+	// 申请空间
+	for (i = 0; i < size1; i++) {
+		vector<basicBlock> v; blockCore.push_back(v);
+	}
+	// 遍历每个函数
 	for (i = 1; i < size1; i++)
 	{
-		// 申请空间
 		vector<int> v = blockOrigin[i];
+		// tmp用于保存该函数下的所有基本块
 		vector<basicBlock> tmp;
 		// entry块
-		basicBlock bb1(0, 0, 0, {},  {});		// 序号为0，起始和终止语句均为0
+		basicBlock bb1(0, {}, {}, {});		// 序号为0，起始和终止语句均为0
+		// 改：basicBlock bb1(0, 0, 0, {}, {});
 		tmp.push_back(bb1);
 		int size2 = v.size();
 		// 函数中间代码划分的基本块
 		for (j = 1; j < size2 - 1; j++) {
-			basicBlock bb(j, v[j], v[j + 1] - 1, {}, {});	// 序号1, 2, 3...，起始语句为当前的入口语句，到下一条入口语句的前一条为止
+			vector<CodeItem> tv;
+			for (k = v[j]; k < v[j + 1]; k++) tv.push_back(codetotal[i][k - 1]);
+			// 改：basicBlock bb(j, v[j], v[j + 1] - 1, {}, {});	// 序号1, 2, 3...，起始语句为当前的入口语句，到下一条入口语句的前一条为止
+			basicBlock bb(j, tv, {}, {});
 			tmp.push_back(bb);
 		}
-		// 初始化entry块的后序节点为1，第1个基本块的前序节点为entry块即0
-		tmp[0].succeeds.insert(0);
-		tmp[1].pred.insert(0);
 		// exit块
-		basicBlock bb2(j, v[j], v[j], {}, {});	// 前序节点无需初始化，后序节点为空
+		// 改：basicBlock bb2(j, v[j], v[j], {}, {});	// 前序节点无需初始化，后序节点为空
+		basicBlock bb2(j, {}, {}, {});
 		tmp.push_back(bb2);
+		blockCore[i] = tmp;
+	}
+}
+
+// 建立基本块间的前序和后序关系
+void SSA::build_pred_and_succeeds() {
+	int size1 = blockCore.size();
+	int i, j, k;
+	for (i = 1; i < size1; i++) {
+		int size2 = blockCore[i].size();
+		vector<int> v = blockOrigin[i];
+		vector<basicBlock> tmp = blockCore[i];
+		// 初始化entry块的后序节点为1，第1个基本块的前序节点为entry块即0
+		tmp[0].succeeds.insert(1);
+		tmp[1].pred.insert(0);
 		// 建立关系
 		for (j = 1; j < size2 - 1; j++) {
-			if (codetotal[i][tmp[j].end - 1].getCodetype() == BR) {	// 跳转指令
-				// 找到跳转到标签所在的基本块序号，插入当前基本块的后序节点，同时为跳转到的基本块前序节点插入当前基本块的序号
-				if (ifTempVariable(codetotal[i][tmp[j].end - 1].getResult())) {
-					k = lookForLabel(codetotal[i], codetotal[i][tmp[j].end - 1].getOperand1());
-					k = locBlockForLabel(v, k + 1);
-					tmp[j].succeeds.insert(k);
-					tmp[k].pred.insert(j);
-					k = lookForLabel(codetotal[i], codetotal[i][tmp[j].end - 1].getOperand2());
-					k = locBlockForLabel(v, k + 1);
+			if (!tmp[j].Ir.empty()) {
+				CodeItem ci = tmp[j].Ir.back();
+				if (ci.getCodetype() == BR) {
+					// 跳转指令
+					if (ifTempVariable(ci.getResult())) {
+						// step1: 找到跳转到标签所在的基本块序号
+						k = lookForLabel(codetotal[i], ci.getOperand1());
+						k = locBlockForLabel(v, k + 1);
+						// step2: 插入当前基本块的后序节点
+						tmp[j].succeeds.insert(k);
+						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
+						tmp[k].pred.insert(j);
+						// step1: 找到跳转到标签所在的基本块序号
+						k = lookForLabel(codetotal[i], ci.getOperand2());
+						k = locBlockForLabel(v, k + 1);
+						// step2: 插入当前基本块的后序节点
+						tmp[j].succeeds.insert(k);
+						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
+						tmp[k].pred.insert(j);
+					}
+					else {
+						// step1: 找到跳转到标签所在的基本块序号
+						k = lookForLabel(codetotal[i], ci.getResult());
+						k = locBlockForLabel(v, k + 1);
+						// step2: 插入当前基本块的后序节点
+						tmp[j].succeeds.insert(k);
+						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
+						tmp[k].pred.insert(j);
+					}
+				}
+				else if (ci.getCodetype() == RET) {
+					// 返回指令，该基本块跳转到exit块
+					k = size2 - 1;
 					tmp[j].succeeds.insert(k);
 					tmp[k].pred.insert(j);
 				}
-				else {
-					k = lookForLabel(codetotal[i], codetotal[i][tmp[j].end - 1].getResult());
-					k = locBlockForLabel(v, k + 1);
-					tmp[j].succeeds.insert(k);
-					tmp[k].pred.insert(j);
-				}
-			}
-			else if (codetotal[i][tmp[j].end - 1].getCodetype() == RET) {	// 返回指令
-				// 该基本块跳转到exit块
-				k = size2 - 1;
-				tmp[j].succeeds.insert(k);
-				tmp[k].pred.insert(j);
 			}
 			else {
 				// 该基本块正常结束，顺序执行到下一个基本块（即顺序执行下一条代码语句）
@@ -159,7 +205,7 @@ void SSA::divide_basic_block() {
 				tmp[k].pred.insert(j);
 			}
 		}
-		blockCore.push_back(tmp); 
+		blockCore[i] = tmp;
 	}
 }
 
@@ -167,7 +213,7 @@ void SSA::divide_basic_block() {
 void SSA::build_dom_tree() {
 	int size1 = blockCore.size();
 	int i, j, k;
-	for (i = 1; i < size1; i++) 
+	for (i = 1; i < size1; i++)
 	{
 		// 进入到每个函数中
 		int size2 = blockCore[i].size();
@@ -207,7 +253,7 @@ void SSA::build_dom_tree() {
 					}
 				}
 			}
-		} 
+		}
 	}
 }
 
@@ -247,8 +293,8 @@ void SSA::build_idom_tree() {
 			blockCore[i][j].tmpIdom = tmp3;
 		}
 		// foreach n
-		for (j = 1; j < size2; j++) 
-			if (!blockCore[i][j].tmpIdom.empty()) 
+		for (j = 1; j < size2; j++)
+			if (!blockCore[i][j].tmpIdom.empty())
 				blockCore[i][j].idom.insert(*(blockCore[i][j].tmpIdom.begin()));
 	}
 }
@@ -332,17 +378,13 @@ void SSA::build_dom_frontier() {
 // 在基本块的use链中插入变量名称
 void SSA::use_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
-	// if (ifTempVariable(varName)) return;							// 不加入临时变量
-	// if (ifDigit(varName)) return;										// 前端可能直接做好部分优化，操作数这里可能是常数
 	if (ifLocalVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
 }
 
 // 在基本块的def链中插入变量名称
 void SSA::def_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
-	// if (ifTempVariable(varName)) return;							// 不加入临时变量
-	// if (ifDigit(varName)) return;										// 前端可能直接做好部分优化，操作数这里可能是常数
-	if(ifLocalVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
+	if (ifLocalVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
 }
 
 // 计算ud链，即分析每个基本块的use和def变量
@@ -356,50 +398,28 @@ void SSA::build_def_use_chain() {
 			set<string> s2; blockCore[i][j].def = s2;
 		}
 		for (j = 1; j < size2; j++) {		// 遍历基本块
-			for (k = blockCore[i][j].start; k <= blockCore[i][j].end; k++) {
-				if (k - 1 < 0 || k - 1 >= codetotal[i].size()) continue;
-				CodeItem ci = codetotal[i][k - 1];
+			// 改：for (k = blockCore[i][j].start; k <= blockCore[i][j].end; k++) {
+			for (vector<CodeItem>::iterator iter = blockCore[i][j].Ir.begin(); iter != blockCore[i][j].Ir.end(); iter++) {
+				// if (k - 1 < 0 || k - 1 >= codetotal[i].size()) continue;
+				// CodeItem ci = codetotal[i][k - 1];
+				CodeItem ci = *iter;
 				switch (ci.getCodetype())
 				{
+				// result为def，op1和op2为use
 				case ADD: case SUB: case MUL: case DIV: case REM:
-					use_insert(i, j, ci.getOperand1());
-					use_insert(i, j, ci.getOperand2());
-					def_insert(i, j, ci.getResult());
-					break;
 				case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
+				case STORE: case STOREARR: case LOAD: case LOADARR: /* lzh: 这一部分中间代码格式我个人觉得怪得很，不过先这样吧 */
+				case RET:
+				case PUSH: case POP:
+				case BR:
+				case PARA:
+				case MOV:
 					use_insert(i, j, ci.getOperand1());
 					use_insert(i, j, ci.getOperand2());
 					def_insert(i, j, ci.getResult());
 					break;
+				// 无需处理的部分，当然也与上面合并也无妨
 				case ALLOC: case GLOBAL:
-					break;
-				case STORE: case STOREARR:
-					use_insert(i, j, ci.getResult());
-					def_insert(i, j, ci.getOperand1());			// 变量名或者数组名
-					break;
-				case LOAD: case LOADARR:
-					use_insert(i, j, ci.getOperand1());			// 变量名或者数组名
-					def_insert(i, j, ci.getResult());
-					break;
-				case RET:
-					use_insert(i, j, ci.getResult());			// 函数返回值
-					break;
-				case PUSH:
-					use_insert(i, j, ci.getResult());
-					break;
-				case POP:
-					def_insert(i, j, ci.getResult());
-					break;
-				case BR:
-					/* 特殊判断，只添加中间变量 */
-					if (ifTempVariable(ci.getResult())) use_insert(i, j, ci.getResult());
-					break;
-				case PARA:
-					def_insert(i, j, ci.getResult());
-					break;
-				/* MOV在中间代码中应该还没有
-				case MOV:
-					break; */
 				case CALL: case LABEL: case DEFINE:
 					break;
 				default:
@@ -444,7 +464,7 @@ void SSA::active_var_analyse() {
 				}
 			}
 		}
-		
+
 	}
 }
 
@@ -461,7 +481,7 @@ set<int> SSA::DF_Set(int funNum, set<int> s) {
 // 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
 void SSA::build_var_chain() {
 	int i, j, k;
-	int size1 = symtotal.size();
+	int size1 = total.size();
 	// 申请空间
 	for (i = 0; i < size1; i++) {
 		vector<varStruct> v;
@@ -469,9 +489,9 @@ void SSA::build_var_chain() {
 	}
 	// 添加变量
 	for (i = 1; i < size1; i++) {
-		int size2 = symtotal[i].size();
+		int size2 = total[i].size();
 		for (j = 0; j < size2; j++) {
-			symbolTable st = symtotal[i][j];
+			symbolTable st = total[i][j];
 			if (st.getForm() == VARIABLE || st.getForm() == PARAMETER) {
 				set<int> s;
 				varChain[i].push_back(varStruct(st.getName(), s));
@@ -480,7 +500,7 @@ void SSA::build_var_chain() {
 	}
 	// 确定迭代必经边界
 	// size1 = blockCore[i].size();		
-	// 实际上，codetotal、symtotal、blockCore等的一维大小应该都相同
+	// 实际上，codetotal、total、blockCore等的一维大小应该都相同
 	for (i = 1; i < size1; i++) {
 		int size2 = varChain[i].size();
 		for (j = 0; j < size2; j++) {
@@ -575,10 +595,10 @@ void SSA::renameVar() {
 	for (i = 1; i < size1; i++) {
 		// 建立该函数的变量池，同时指定变量的下标
 		map<string, int> varPool;
-		int size2 = symtotal[i].size();
-		for (j = 0; j < size2; j++) if (symtotal[i][j].getForm() == VARIABLE || symtotal[i][j].getForm() == PARAMETER) varPool[symtotal[i][j].getName()] = 0;
+		int size2 = total[i].size();
+		for (j = 0; j < size2; j++) if (total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) varPool[total[i][j].getName()] = 0;
 		// 记录每个基本块中最后出现的变量名
-		map<string, map<int, string>> lastVarName; 
+		map<string, map<int, string>> lastVarName;
 		for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) { map<int, string> m;  lastVarName[iter->first] = m; }
 		// 以基本块为单位遍历中间代码
 		int size3 = blockCore[i].size();
@@ -595,142 +615,21 @@ void SSA::renameVar() {
 				phiFun pf = blockCore[i][j].phi[k];
 				string tmp = pf.name + "^" + to_string(varPool[pf.name]);
 				blockCore[i][j].phi[k].name = tmp;
-				varPool[pf.name] = varPool[pf.name] + 1; 
+				varPool[pf.name] = varPool[pf.name] + 1;
 				varSequence[pf.name].push_back(tmp);
 			}
-			for (k = blockCore[i][j].start - 1; k <= blockCore[i][j].end - 1; k++) {	// 中间代码序号减一
-				// 更新result的变量名
-				CodeItem ci = codetotal[i][k];
-				switch (ci.getCodetype())
-				{
-				case ADD: case SUB: case MUL: case DIV: case REM:
-				case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
-				case ALLOC: 
-				case LOAD: case LOADARR:
-				case POP:
-				case PARA:
-					// result是新定义的变量，op1和op2是使用的变量
-					if (varPool.find(ci.getResult()) != varPool.end()) {
-						string tmp = ci.getResult() + "^" + to_string(varPool[ci.getResult()]);
-						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
-						codetotal[i].erase(codetotal[i].begin() + k);
-						codetotal[i].insert(codetotal[i].begin() + k, nci);
-						varPool[ci.getResult()] = varPool[ci.getResult()] + 1;
-						varSequence[ci.getResult()].push_back(tmp);
-					}
-					// 更新op1的变量名
-					ci = codetotal[i][k];
-					if (varPool.find(ci.getOperand1()) != varPool.end()) {
-						string tmp = ci.getOperand1();
-						if (!varSequence[ci.getOperand1()].empty()) tmp = varSequence[ci.getOperand1()].back();	// 最后一个元素
-						else {
-							vector<int> queue;
-							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
-							int flag = 0;
-							for (int p = 0; p < queue.size(); p++) {
-								if (lastVarName[ci.getOperand1()].find(queue[p]) != lastVarName[ci.getOperand1()].end()) { tmp = lastVarName[ci.getOperand1()][queue[p]]; flag++;  break; }
-								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
-									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
-							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand1() << endl;
-						}
-						CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
-						codetotal[i].erase(codetotal[i].begin() + k);
-						codetotal[i].insert(codetotal[i].begin() + k, nci);
-					}
-					// 更新op2的变量名
-					ci = codetotal[i][k];
-					if (varPool.find(ci.getOperand2()) != varPool.end()) {
-						string tmp = ci.getOperand2();
-						if (!varSequence[ci.getOperand2()].empty()) tmp = varSequence[ci.getOperand2()].back();	// 最后一个元素
-						else {
-							vector<int> queue;
-							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
-							int flag = 0;
-							for (int p = 0; p < queue.size(); p++) {
-								if (lastVarName[ci.getOperand2()].find(queue[p]) != lastVarName[ci.getOperand2()].end()) { tmp = lastVarName[ci.getOperand2()][queue[p]]; flag++; break; }
-								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
-									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
-							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand2() << endl;
-						}
-						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
-						codetotal[i].erase(codetotal[i].begin() + k);
-						codetotal[i].insert(codetotal[i].begin() + k, nci);
-					}
-					break;
-				case STORE: case STOREARR:
-				case RET:
-				case PUSH:
-					// result和op2是被使用的变量，op1是新定义的变量
-					// 更新op2的变量名
-					if (varPool.find(ci.getResult()) != varPool.end()) {
-						string tmp = ci.getResult();
-						if (!varSequence[ci.getResult()].empty()) tmp = varSequence[ci.getResult()].back();
-						else {
-							vector<int> queue;
-							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
-							int flag = 0;
-							for (int p = 0; p < queue.size(); p++) {
-								if (lastVarName[ci.getResult()].find(queue[p]) != lastVarName[ci.getResult()].end()) { tmp = lastVarName[ci.getResult()][queue[p]]; flag++; break; }
-								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
-									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
-							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getResult() << endl;
-						}
-						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
-						codetotal[i].erase(codetotal[i].begin() + k);
-						codetotal[i].insert(codetotal[i].begin() + k, nci);
-					}
-					// 更新op1的变量名
-					ci = codetotal[i][k];
-					if (varPool.find(ci.getOperand1()) != varPool.end()) {
-						string tmp = ci.getOperand1() + "^" + to_string(varPool[ci.getOperand1()]);
-						CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
-						codetotal[i].erase(codetotal[i].begin() + k);
-						codetotal[i].insert(codetotal[i].begin() + k, nci);
-						varPool[ci.getOperand1()] = varPool[ci.getOperand1()] + 1;
-						varSequence[ci.getOperand1()].push_back(tmp);
-					}
-					// 更新op2的变量名
-					ci = codetotal[i][k];
-					if (varPool.find(ci.getOperand2()) != varPool.end()) {
-						string tmp = ci.getOperand2();
-						if (!varSequence[ci.getOperand2()].empty()) tmp = varSequence[ci.getOperand2()].back();	// 最后一个元素
-						else {
-							vector<int> queue;
-							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
-							int flag = 0;
-							for (int p = 0; p < queue.size(); p++) {
-								if (lastVarName[ci.getOperand2()].find(queue[p]) != lastVarName[ci.getOperand2()].end()) { tmp = lastVarName[ci.getOperand2()][queue[p]]; flag++; break; }
-								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
-									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
-							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand2() << endl;
-						}
-						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
-						codetotal[i].erase(codetotal[i].begin() + k);
-						codetotal[i].insert(codetotal[i].begin() + k, nci);
-					}
-					break;
-				case GLOBAL: case BR: case MOV: case CALL: case LABEL: case DEFINE:
-					// 不做处理
-					break;		
-				default:
-					break;
-				}
-				// 如果result放的全是被定义的变量，op1和op2全部是被使用的变量可以如下写法，否则必须严格区分，按照上面的写法
-				/*
+			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
+				CodeItem ci = blockCore[i][j].Ir[k];
+				// result是新定义的变量，op1和op2是使用的变量
 				if (varPool.find(ci.getResult()) != varPool.end()) {
 					string tmp = ci.getResult() + "^" + to_string(varPool[ci.getResult()]);
 					CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
-					codetotal[i].erase(codetotal[i].begin() + k);
-					codetotal[i].insert(codetotal[i].begin() + k, nci);
+					blockCore[i][j].Ir[k] = nci;
 					varPool[ci.getResult()] = varPool[ci.getResult()] + 1;
 					varSequence[ci.getResult()].push_back(tmp);
 				}
 				// 更新op1的变量名
-				ci = codetotal[i][k];
+				ci = blockCore[i][j].Ir[k];
 				if (varPool.find(ci.getOperand1()) != varPool.end()) {
 					string tmp = ci.getOperand1();
 					if (!varSequence[ci.getOperand1()].empty()) tmp = varSequence[ci.getOperand1()].back();	// 最后一个元素
@@ -746,11 +645,10 @@ void SSA::renameVar() {
 							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand1() << endl;
 						}
 					CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
-					codetotal[i].erase(codetotal[i].begin() + k);
-					codetotal[i].insert(codetotal[i].begin() + k, nci);
+					blockCore[i][j].Ir[k] = nci;
 				}
 				// 更新op2的变量名
-				ci = codetotal[i][k];
+				ci = blockCore[i][j].Ir[k];
 				if (varPool.find(ci.getOperand2()) != varPool.end()) {
 					string tmp = ci.getOperand2();
 					if (!varSequence[ci.getOperand2()].empty()) tmp = varSequence[ci.getOperand2()].back();	// 最后一个元素
@@ -766,9 +664,8 @@ void SSA::renameVar() {
 							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand2() << endl;
 						}
 					CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
-					codetotal[i].erase(codetotal[i].begin() + k);
-					codetotal[i].insert(codetotal[i].begin() + k, nci);
-				}*/
+					blockCore[i][j].Ir[k] = nci;
+				}
 			}
 			// 将该基本块中的变量名添加到lastVarName
 			for (map<string, vector<string>>::iterator iter = varSequence.begin(); iter != varSequence.end(); iter++)
@@ -797,13 +694,13 @@ void SSA::simplify_br() {
 			CodeItem ci = codetotal[i][j];
 			if (ci.getCodetype() == BR && ifDigit(ci.getResult())) {
 				// CodeItem nci(BR, "", "", "");
-				if (ci.getResult().compare("0") == 0) { 
+				if (ci.getResult().compare("0") == 0) {
 					CodeItem nci(BR, ci.getOperand1(), "", "");
 					codetotal[i].erase(codetotal[i].begin() + j);
 					codetotal[i].insert(codetotal[i].begin() + j, nci);
 					// nci.setResult(ci.getOperand1());
 				}
-				else { 
+				else {
 					CodeItem nci(BR, ci.getOperand2(), "", "");
 					codetotal[i].erase(codetotal[i].begin() + j);
 					codetotal[i].insert(codetotal[i].begin() + j, nci);
@@ -820,42 +717,47 @@ void SSA::generate() {
 	// 简化条件判断为常值的跳转指令
 	simplify_br();
 
+	
+	// 计算每个基本块的起始语句
+	find_primary_statement();
 	// 为每个函数划分基本块
-	divide_basic_block();							
-	
+	divide_basic_block();
+	// 建立基本块间的前序和后序关系
+	build_pred_and_succeeds();
+
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
-	build_dom_tree();				
-	
+	build_dom_tree();
+
 	// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
-	build_idom_tree();								
-	
+	build_idom_tree();
+
 	// 根据直接必经节点找到必经节点树中每个节点的后序节点
-	build_reverse_idom_tree();				
-	
+	build_reverse_idom_tree();
+
 	// 后序遍历必经节点树
-	build_post_order();								
-	
+	build_post_order();
+
 	// 前序遍历必经节点树
-	build_pre_order();			
-	
+	build_pre_order();
+
 	// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
 	build_dom_frontier();
-	
+
 	// 计算ud链，即分析每个基本块的use和def变量
-	build_def_use_chain();					
-	
+	build_def_use_chain();
+
 	// 活跃变量分析，生成in、out集合
-	active_var_analyse();							
-	
+	active_var_analyse();
+
 	// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
 	build_var_chain();
 
 	// 在需要添加基本块的开始添加\phi函数
-	add_phi_function();				
+	add_phi_function();
 
 	// 变量重命名
 	renameVar();
-
+	
 	// 测试输出上面各个函数
 	Test_SSA();
 }
