@@ -7,6 +7,13 @@
 #include <sstream>
 #include <cstdio>
 
+
+#define isTmp(x) (x.size() > 1 && (x.at(0) == '%') && (isdigit(x.at(1))))
+
+#define isGobal(x) (x.size() > 1 && (x.at(0) == '@'))
+
+#define isVar(x) (x.size() > 1 && (isalpha(x.at(1)))
+
 //和python的format的使用方法一致 FORMAT("{}:{}", a, b) => "a:b";
 #define FORMAT meow::Meow::format
 

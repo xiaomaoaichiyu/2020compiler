@@ -9,141 +9,149 @@ string standardLength(string a)
 	}
 	return a;
 }
-string setContent(irCodeType type, string res, string ope1, string ope2)
+string CodeItem::getContent()
 {
 	string content = "";
-	switch (type) {
+	switch (this->codetype) {
 	case ADD: {
-		content = "add        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "add        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case SUB: {
-		content = "sub        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "sub        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case DIV: {
-		content = "div        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "div        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case MUL: {
-		content = "mul        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "mul        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case REM: {
-		content = "rem        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "rem        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case AND: {
-		content = "and        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "and        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case OR: {
-		content = "or         " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "or         " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case NOT: {
-		content = "not        " + standardLength(res) + " " + standardLength(ope1);
+		content = "not        " + standardLength(result) + " " + standardLength(operand1);
 		break;
 	}
 	case EQL: {
-		content = "eql        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "eql        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case NEQ: {
-		content = "neq        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "neq        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case SGT: {
-		content = "sgt        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "sgt        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case SGE: {
-		content = "sge        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "sge        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case SLT: {
-		content = "slt        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "slt        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case SLE: {
-		content = "sle        " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "sle        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case ALLOC: {
-		if (ope1.size() == 0) {
+		string ope1;
+		if (operand1.size() == 0) {
 			ope1 = "_";
 		}
-		content = "alloc      " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		else {
+			ope1 = operand1;
+		}
+		content = "alloc      " + standardLength(result) + " " + standardLength(ope1) + " " + standardLength(operand2);
 		break;
 	}  
 	case STORE: {
-		content = "store      " + standardLength(res) + " " + standardLength(ope1) ;
+		content = "store      " + standardLength(result) + " " + standardLength(operand1) ;
 		break;
 	}
 	case STOREARR: {
-		content = "storearr   " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "storearr   " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case LOAD: {
-		content = "load       " + standardLength(res) + " " + standardLength(ope1) ;
+		content = "load                  " + standardLength(operand1) + " " + standardLength(operand2) ;
 		break;
 	}
 	case LOADARR: {
-		content = "loadarr    " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "loadarr    " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case INDEX: {     
 		break;
 	}
 	case CALL: {
-		content = "call       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "call       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case RET: {
-		content = "ret        " + standardLength(res) + " " + standardLength(ope1);
+		content = "ret                   " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case PUSH: {
-		content = "push       " + standardLength(res) + " "+standardLength(ope1) +" "+ standardLength(ope2);
+		content = "push       " + standardLength(result) + " "+standardLength(operand1) +" "+ standardLength(operand2);
 		break;
 	}
 	case POP: {
 		break;
 	}
 	case LABEL: {
-		content = "label      " + standardLength(res);
+		content = "label      " + standardLength(result);
 		break;
 	}
 	case BR: {
-		if (ope1.size() > 0) {
-			content = "br         " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		if (operand1.size() > 0) {
+			content = "br         " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		}
 		else {
-			content = "br         " + standardLength(res);
+			content = "br                    " + standardLength(operand1);
 		}
 		break;
 	}
 	case DEFINE: {
-		content = "define     " + standardLength(res) + " " + standardLength(ope1);
+		content = "define     " + standardLength(result) + " " + standardLength(operand1);
 		break;
 	}
 	case PARA: {
-		content = "para       " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		content = "para       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case GLOBAL: {
-		if (ope1.size() == 0) {
+		string ope1;
+		if (operand1.size() == 0) {
 			ope1 = "_";
 		}
-		content = "global     " + standardLength(res) + " " + standardLength(ope1) + " " + standardLength(ope2);
+		else {
+			ope1 = operand1;
+		}
+		content = "global     " + standardLength(result) + " " + standardLength(ope1) + " " + standardLength(operand2);
 		break;
 	}
 	case MOV: {
-		content = "mov                  "+standardLength(ope1) + " " + standardLength(ope2);
+		content = "mov                  "+standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case NOTE: {
-		content = "note                 " + standardLength(ope1);
+		content = "note                 " + standardLength(operand1);
 		break;
 	}
 	default:
@@ -156,7 +164,6 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->result = res;
 	this->operand1 = ope1;
 	this->operand2 = ope2;
-	this->content = setContent(type, res, ope1, ope2);
 }
 
 irCodeType CodeItem::getCodetype()
@@ -197,10 +204,6 @@ vector<int> CodeItem::getFatherBlock()
 	return this->fatherBlock;
 }
 
-string CodeItem::getContent()
-{
-	return this->content;
-}
 
 #define ENUM_TO_STRING(enumName) (#enumName)
 
@@ -210,5 +213,4 @@ void CodeItem::changeContent(string res, string ope1, string ope2)
 	this->result = res;
 	this->operand1 = ope1;
 	this->operand2 = ope2;
-	this->content = setContent(this->codetype, res, ope1, ope2);
 }
