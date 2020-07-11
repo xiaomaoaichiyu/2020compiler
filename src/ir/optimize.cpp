@@ -49,7 +49,7 @@ void MIR2LIRpass(vector<vector<CodeItem>>& irCodes) {
 //================================================================
 
 void registerAllocation() {
-	SSA ssa(codetotal, total);
+	SSA ssa;
 	ssa.generate();
 
 
