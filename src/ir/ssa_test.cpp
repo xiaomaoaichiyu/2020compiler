@@ -18,8 +18,8 @@ void SSA::Test_SSA() {
 	Test_Build_Reverse_Idom_Tree();
 	Test_Build_Post_Order();
 	Test_Build_Pre_Order();
-	Test_Build_Dom_Frontier();
 	Test_Build_Def_Use_Chain();
+	Test_Build_Dom_Frontier();
 	Test_Active_Var_Analyse();
 	Test_Build_Var_Chain();
 	Test_Add_Phi_Fun();
@@ -39,15 +39,16 @@ void SSA::Test_Add_Phi_Fun() {
 		for (int j = 0; j < size2; j++) {
 			debug_ssa << "基本块编号" << "\t\t" << v[i][j].number << endl;
 			for (vector<phiFun>::iterator iter = v[i][j].phi.begin(); iter != v[i][j].phi.end(); iter++) {
+				debug_ssa << "\\phi" << "\t\t";
 				debug_ssa << (*iter).name << "\t\t";
-				debug_ssa << "{" << "\t\t";
+				debug_ssa << "{" << "  ";
 				for (set<int>::iterator iter1 = (*iter).blockNums.begin(); iter1 != (*iter).blockNums.end(); iter1++)
-					debug_ssa << *iter1 << "\t\t";
-				debug_ssa << "}";
-				debug_ssa << "{" << "\t\t";
+					debug_ssa << *iter1 << "  ";
+				debug_ssa << "}\t\t";
+				debug_ssa << "{" << "  ";
 				for (set<string>::iterator iter2 = (*iter).subIndexs.begin(); iter2 != (*iter).subIndexs.end(); iter2++)
-					debug_ssa << *iter2 << "\t\t";
-				debug_ssa << "}";
+					debug_ssa << *iter2 << "  ";
+				debug_ssa << "}" << endl;
 			}
 		}
 	}
