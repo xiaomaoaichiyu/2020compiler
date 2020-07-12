@@ -27,7 +27,8 @@ enum irCodeType {
 	PARA,							//参数定义
 	GLOBAL,							//全局声明：常量+变量
 	NOTE,							//注释
-	MOV								//移动
+	MOV,							//移动
+	LEA,							//取地址
 };
 
 class CodeItem
