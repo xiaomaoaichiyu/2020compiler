@@ -44,15 +44,13 @@ int main(int argc, char* argv[])
 	frontExecute(syname);
 
 	//运行优化
-	SSA ssa;
-	ssa.generate();
+	/*SSA ssa;
+	ssa.generate();*/
 
 	irOptimize();
 
 	TestIrCode("ir2.txt");
 	//运行后端，生成arm代码
-
-	// arm_generate_without_register(sname);
 
 	//arm_generate_without_register(sname);
 

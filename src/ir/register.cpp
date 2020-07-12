@@ -82,9 +82,9 @@ void registerAllocation(vector<CodeItem>& func) {
 		string res = instr.getResult();
 		string ope1 = instr.getOperand1();
 		string ope2 = instr.getOperand2();
-		string resReg = "";
-		string ope1Reg = "";
-		string ope2Reg = "";
+		string resReg = res;
+		string ope1Reg = ope1Reg;
+		string ope2Reg = ope2Reg;
 		
 		//res◊÷∂Œ∑÷≈‰¡Ÿ ±ºƒ¥Ê∆˜
 		if (op == ADD || op == SUB || op == DIV || op == MUL || op == REM ||
@@ -151,13 +151,14 @@ void registerAllocation(vector<CodeItem>& func) {
 		}
 		else if (op == CALL) {
 			if (res != "void") {
-				resReg = "R0";
+				resReg = regpool.allocReg(res);
 			}
 			setInstr(instr, resReg, ope1, ope2);
 		}
 		else if (op == RET) {
-			if (ope2 != "void") {
+			if (isTmp(ope1)) {
 				ope1Reg = regpool.getReg(ope1);
+				regpool.releaseReg(ope1);
 			}
 			setInstr(instr, res, ope1Reg, ope2);
 		}
@@ -165,15 +166,16 @@ void registerAllocation(vector<CodeItem>& func) {
 			ope1Reg = regpool.getReg(ope1);
 			setInstr(instr, res, ope1Reg, ope2);
 		}
-		else if (op == POP) {
+		else if (op == POP) {	//√≤À∆”√≤ªµΩ
 			ope1Reg = regpool.getReg(ope1);
 			setInstr(instr, res, ope1Reg, ope2);
+			WARN_MSG("will use this Pop??");
 		}
 		else if (op == BR) {
 			if (isTmp(ope1)) {
-
+				ope1Reg = regpool.getReg(ope1);
 			}
-			setInstr(instr, res, ope1, ope2);
+			setInstr(instr, res, ope1Reg, ope2);
 		}
 		else {
 			//do nothing!

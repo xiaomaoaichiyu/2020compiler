@@ -3,6 +3,9 @@
 //===============================================================
 //将MIR转换为LIR，把临时变量都用虚拟寄存器替换，vrIndex从0开始编号
 //===============================================================
+
+vector<vector<CodeItem>> LIR;
+
 int vrIndex = 0;
 map<string, string> tmp2vr;
 
@@ -40,6 +43,17 @@ void MIR2LIRpass(vector<vector<CodeItem>>& irCodes) {
 			//处理instr的operand2字段
 			string ope2 = dealOperand(instr.getOperand2());
 			setInstr(instr, res, ope1, ope2);
+		}
+		for (int j = 0; j < func.size(); j++) {
+			CodeItem& instr = func.at(j);
+			string res = instr.getResult();
+			string ope1 = instr.getOperand1();
+			string ope2 = instr.getOperand2();
+			//额外处理
+			if (instr.getCodetype() == RET) {
+				/*CodeItem tmp(MOV, "", FORMAT("%{}", tmpIndex), ope2);
+				func.insert(func.begin() + j, tmp);*/
+			}
 		}
 	}
 }

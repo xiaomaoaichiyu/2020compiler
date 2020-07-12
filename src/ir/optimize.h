@@ -12,6 +12,8 @@
 
 using namespace std;
 
+extern vector<vector<CodeItem>> LIR;
+
 void irOptimize();
 
 //将MIR转换为LIR，主要是替换操作数，全部放到虚拟寄存器中VR中，编号从0开始
