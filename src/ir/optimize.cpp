@@ -38,7 +38,7 @@ string dealTmpOpe(string operand) {
 void MIR2LIRpass() {
 	for (int i = 0; i < codetotal.size(); i++) {
 		vector<CodeItem> src = codetotal.at(i);
-		vector<CodeItem> dst = LIR.at(i);
+		vector<CodeItem> dst;
 		vrIndex = 0;
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
@@ -60,9 +60,19 @@ void MIR2LIRpass() {
 				dst.push_back(instr);
 			}
 			else if (op == LOAD) {
-				res = dealTmpOpe(res);
-				setInstr(instr, res, ope1, ope2);
-				dst.push_back(instr);
+				if (1) {	//全局变量
+					CodeItem address(LEA, "", getVreg(), ope1);
+					ope1 = curVreg;
+					res = dealTmpOpe(res);
+					setInstr(instr, res, ope1, ope2);
+					dst.push_back(address);
+					dst.push_back(instr);
+				}
+				else {
+					res = dealTmpOpe(res);
+					setInstr(instr, res, ope1, ope2);
+					dst.push_back(instr);
+				}
 			}
 			else if (op == LOADARR) {
 
@@ -92,6 +102,7 @@ void MIR2LIRpass() {
 				dst.push_back(instr);
 			}
 		}
+		LIR.push_back(dst);
 	}
 }
 
