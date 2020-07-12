@@ -34,6 +34,7 @@ int isNesting;                  //是否嵌套，即{{
 int isBegin;					//是否开头，最前面的{不算
 
 int Temp = 0;				//中间变量起始编号
+vector<int> func2tmpIndex;	//临时变量索引值
 int iflabelIndex;          //if标签下标
 int whilelabelIndex;		//while标签下标
 vector<string> whileLabel;      //用于break和continue对应的标签
@@ -264,6 +265,7 @@ void CompUnit()
 				if (symbol == LPARENT) {   //函数声明
 					symbol = sym_tag;
 					Funcindex++;
+					func2tmpIndex.push_back(Temp);
 					Temp = 0;
 					vector<symbolTable> item;
 					total.push_back(item);
@@ -281,6 +283,7 @@ void CompUnit()
 			}
 			else {
 				Funcindex++;
+				func2tmpIndex.push_back(Temp);
 				Temp = 0;
 				vector<symbolTable> item;
 				total.push_back(item);
@@ -293,6 +296,7 @@ void CompUnit()
 			}
 		}
 	}
+	func2tmpIndex.push_back(Temp);
 	outfile<<"<编译单元>"<<endl;
 }
 void ConstDecl(int index,int block) 		   //常量说明
@@ -572,7 +576,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 				if (Range != 0) {
 					b = "%";
 				}
-				CodeItem citem = CodeItem(STOREARR, b+nodeName,value_string,offset_string);
+				CodeItem citem = CodeItem(STOREARR, value_string,b+nodeName,offset_string);
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
 			}
@@ -730,7 +734,7 @@ void InitVal(int index)
 			if (Range != 0) {
 				b = "%";
 			}
-			CodeItem citem = CodeItem(STORE,b+nodeName,interRegister,"");	//赋值单值
+			CodeItem citem = CodeItem(STORE,interRegister,b+nodeName,"");	//赋值单值
 			citem.setFatherBlock(fatherBlock);
 			codetotal[index].push_back(citem);
 		}
@@ -742,7 +746,7 @@ void InitVal(int index)
 				if (Range != 0) {
 					b = "%";
 				}
-				CodeItem citem = CodeItem(STOREARR, b + nodeName,interRegister,offset_string);
+				CodeItem citem = CodeItem(STOREARR, interRegister,b + nodeName,offset_string);
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
 			}
@@ -1053,13 +1057,13 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			CodeItem citem2 = CodeItem(CALL, interRegister, "@" + Functionname, numToString(paraNum));          //call @foo %3 3
 			citem2.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem2);//函数引用
-			CodeItem citem3 = CodeItem(MOV,"", interRegister, "%" + numToString(Temp));          //call @foo %3 3
+			/*CodeItem citem3 = CodeItem(MOV,"", interRegister, "%" + numToString(Temp));          //call @foo %3 3
 			citem3.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem3);//函数引用
 			interRegister = "%" + numToString(Temp);
-			Temp++;
+			Temp++;*/
 			CodeItem citem4 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3
-			citem3.setFatherBlock(fatherBlock);
+			citem4.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem4);//函数结束注释
 		}
 		else {  //标识符 {'['表达式']'}
@@ -1140,7 +1144,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					if (range == 0) {
 						b = "@";	//全局变量
 					}
-					CodeItem citem = CodeItem(LOADARR, registerA,interRegister, b + name_tag); //数组取值
+					CodeItem citem = CodeItem(LOADARR,interRegister, b + name_tag, registerA); //数组取值
 					citem.setFatherBlock(fatherBlock);    //保存当前作用域
 					codetotal[Funcindex].push_back(citem);
 				}
@@ -1164,7 +1168,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					if (range == 0) {
 						b = "@";	//全局变量
 					}
-					CodeItem citem = CodeItem(LOAD,"", interRegister, b+name_tag); //一维变量、常量取值
+					CodeItem citem = CodeItem(LOAD, interRegister, b+name_tag,""); //一维变量、常量取值
 					citem.setFatherBlock(fatherBlock);
 					codetotal[Funcindex].push_back(citem);
 				}
@@ -1424,12 +1428,12 @@ void assignStmt()        //赋值语句 LVal = Exp
 	Exp();
 	if (dimenLength.size() > 0) {
 		string tempRegister = interRegister;
-		CodeItem citem = CodeItem(STOREARR, b + name_tag,tempRegister, registerA);		//数组某个变量赋值
+		CodeItem citem = CodeItem(STOREARR, tempRegister,b + name_tag, registerA);		//数组某个变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
 	else {
-		CodeItem citem = CodeItem(STORE, b+name_tag,interRegister,"");		//给一维变量赋值
+		CodeItem citem = CodeItem(STORE, interRegister,b+name_tag,"");		//给一维变量赋值
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
@@ -1925,7 +1929,7 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 						string paraNum = temp[i][j].getOperand2();
 						temp[i][j].changeContent("void", funName, paraNum);
 						a.push_back(temp[i][j]);
-						j++;	//CALL后面的MOV也没用了
+						//j++;	//CALL后面的MOV也没用了
 					}
 					else if (funName == "@getint" || funName == "@getarray" || funName == "@getch") {
 						a.push_back(temp[i][j]);
@@ -1945,7 +1949,7 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 							string paraNum = temp[i][j].getOperand2();
 							temp[i][j].changeContent("void", funName, paraNum);
 							a.push_back(temp[i][j]);
-							j++;	//CALL后面的MOV也没用了
+							//j++;	//CALL后面的MOV也没用了
 						}
 					}
 				}

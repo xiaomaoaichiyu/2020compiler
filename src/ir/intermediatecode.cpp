@@ -89,7 +89,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case LOAD: {
-		content = "load                  " + standardLength(operand1) + " " + standardLength(operand2) ;
+		content = "load       " + standardLength(result) + " " + standardLength(operand1) ;
 		break;
 	}
 	case LOADARR: {
