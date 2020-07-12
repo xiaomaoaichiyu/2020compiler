@@ -130,7 +130,19 @@ void registerAllocation(vector<CodeItem>& func) {
 			
 		}
 		else if (op == STORE) {
-			
+			if (var2reg[ope1] == "memory") {
+				resReg = regpool.getReg(res);
+				regpool.releaseReg(res);
+				setInstr(instr, resReg, ope1, ope2);
+			}
+			else {
+				resReg = regpool.getReg(res);
+				regpool.releaseReg(res);
+				ope1Reg = var2reg[ope1];
+				first[ope1] = false;
+				instr.setCodetype(MOV);
+				setInstr(instr, "", ope1Reg, resReg);
+			}
 		}
 		else if (op == STOREARR) {
 			resReg = regpool.getReg(res);
