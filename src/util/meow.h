@@ -7,6 +7,7 @@
 #include <sstream>
 #include <cstdio>
 
+#define isNumber(x) (x.size() > 0 && (isdigit(x.at(0))))
 
 #define isTmp(x) (x.size() > 1 && (x.at(0) == '%') && (isdigit(x.at(1))))
 

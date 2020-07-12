@@ -34,6 +34,8 @@ class CodeItem
 {
 public:
 	CodeItem(irCodeType type, string res, string ope1, string ope2);
+	CodeItem(const CodeItem& instr);
+	CodeItem& operator=(const CodeItem& instr);
 	void setID(int id);
 	int getId();
 	irCodeType getCodetype();

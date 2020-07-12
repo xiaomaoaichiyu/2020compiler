@@ -166,6 +166,26 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->operand2 = ope2;
 }
 
+CodeItem::CodeItem(const CodeItem& instr) {
+	this->id = instr.id;
+	this->codetype = instr.codetype;
+	this->result = instr.result;
+	this->operand1 = instr.operand1;
+	this->operand2 = instr.operand2;
+	this->fatherBlock = instr.fatherBlock;
+}
+
+CodeItem& CodeItem::operator=(const CodeItem& instr)
+{
+	this->id = instr.id;
+	this->codetype = instr.codetype;
+	this->result = instr.result;
+	this->operand1 = instr.operand1;
+	this->operand2 = instr.operand2;
+	this->fatherBlock = instr.fatherBlock;
+	return *this;
+}
+
 void CodeItem::setID(int id) {
 	this->id = id;
 }

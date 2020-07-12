@@ -6,23 +6,28 @@
 
 vector<vector<CodeItem>> LIR;
 
-int vrIndex = 0;
+int vrIndex;
+string curVreg = "";
 map<string, string> tmp2vr;
 
 void setInstr(CodeItem& instr, string res, string ope1, string ope2) {
 	instr.setResult(res);
 	instr.setOperand1(ope1);
 	instr.setOperand2(ope2);
-	instr.changeContent(res, ope1, ope2);
 }
 
-string dealOperand(string operand) {
+string getVreg() {
+	curVreg = FORMAT("VR{}", vrIndex++);
+	return curVreg;
+}
+
+string dealTmpOpe(string operand) {
 	if (isTmp(operand)) {
 		if (tmp2vr.find(operand) != tmp2vr.end()) {
 			operand = tmp2vr[operand];
 		}
 		else {
-			string vr = FORMAT("VR{}", vrIndex++);
+			string vr = getVreg();
 			tmp2vr[operand] = vr;
 			operand = vr;
 		}
@@ -30,29 +35,61 @@ string dealOperand(string operand) {
 	return operand;
 }
 
-void MIR2LIRpass(vector<vector<CodeItem>>& irCodes) {
-	for (int i = 1; i < irCodes.size(); i++) {
-		vector<CodeItem>& func = irCodes.at(i);
+void MIR2LIRpass() {
+	for (int i = 0; i < codetotal.size(); i++) {
+		vector<CodeItem> src = codetotal.at(i);
+		vector<CodeItem> dst = LIR.at(i);
 		vrIndex = 0;
-		for (int j = 0; j < func.size(); j++) {
-			CodeItem& instr = func.at(j);
-			//处理instr的result字段
-			string res = dealOperand(instr.getResult());
-			//处理instr的operand1字段
-			string ope1 = dealOperand(instr.getOperand1());
-			//处理instr的operand2字段
-			string ope2 = dealOperand(instr.getOperand2());
-			setInstr(instr, res, ope1, ope2);
-		}
-		for (int j = 0; j < func.size(); j++) {
-			CodeItem& instr = func.at(j);
+		for (int j = 0; j < src.size(); j++) {
+			CodeItem instr = src.at(j);
+			irCodeType op = instr.getCodetype();
 			string res = instr.getResult();
 			string ope1 = instr.getOperand1();
 			string ope2 = instr.getOperand2();
-			//额外处理
-			if (instr.getCodetype() == RET) {
-				/*CodeItem tmp(MOV, "", FORMAT("%{}", tmpIndex), ope2);
-				func.insert(func.begin() + j, tmp);*/
+			if (op == ADD || op == SUB || op == MUL || op == DIV || op == REM ||
+				op == AND || op == OR || op == NOT ||
+				op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SGE) {
+				if (isNumber(ope1)) {
+					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
+					ope1 = curVreg;
+				}
+				res = dealTmpOpe(res);
+				ope1 = dealTmpOpe(ope1);
+				ope2 = dealTmpOpe(ope2);
+				setInstr(instr, res, ope1, ope2);
+				dst.push_back(instr);
+			}
+			else if (op == LOAD) {
+				res = dealTmpOpe(res);
+				setInstr(instr, res, ope1, ope2);
+				dst.push_back(instr);
+			}
+			else if (op == LOADARR) {
+
+			}
+			else if (op == STORE) {
+
+			}
+			else if (op == STOREARR) {
+
+			}
+			else if (op == CALL) {
+
+			}
+			else if (op == RET) {
+
+			}
+			else if (op == PUSH) {
+
+			}
+			else if (op == POP) {
+
+			}
+			else if (op == BR) {
+
+			}
+			else {
+				dst.push_back(instr);
 			}
 		}
 	}

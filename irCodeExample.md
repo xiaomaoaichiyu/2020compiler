@@ -133,3 +133,159 @@
        // 若考虑上学期编译课程的优化，可将while变成do while形式减少跳转指令
     ```
 
+
+
+
+
+### 前端->IR
+
+全局常量：
+
+- const ：保存在符号表，使用的时候通过符号表差值
+- constArr ：需要开全局空间保存
+
+全局变量
+
+- var ：开空间 global
+- varArr ：开空间 global [i1] [i2] [i3]......
+
+#### 函数内部
+
+1. 局部变量
+
+   - var
+   - varArr
+
+2. 局部常量
+
+   - const
+   - constArr
+
+3. Expr
+
+   - add : +
+   - sub : -
+   - div : /
+   - mul : +
+   - rem : %
+
+4. logic
+
+   - and : &&
+   - or : ||
+   - not : !
+
+5. 关系比较 (icmp) 
+
+   - eq : ==
+   - ne : !=
+   - sgt : >
+   - sge : >=
+   - slt : <
+   - sle : <=
+
+6. if、if-else
+
+   ```
+   if-else
+   //通过关系比较和br来进行转换
+   entry:
+   	res = icmp (关系比较) ope1, ope2
+   	br res %if.then, %if.else
+   if.then: //preds = %entry
+   	...
+   	br %if.end
+   if.else: //preds = %entry
+   	...
+   	br %if.end
+   if.end: //preds = %if.then, %if.else
+   	...
+   	
+   if(no else)
+   entry:
+   	res = icmp (关系比较) ope1, ope2
+   	br res %if.then, %if.end
+   if.then: //preds = %entry
+   	...
+   	br %if.end
+   if.end: //preds = %if.then, %if.else
+   	...
+   ```
+
+7. while
+
+   ```
+   //通过关系比较和br来进行转换
+   entry:
+   	...
+   	br %while.cond
+   
+   while.cond: //preds = %entry, %while.body
+   	...
+   	res = icmp (关系比较) ope1, ope2
+   	br res %while.body, %while.end
+   	
+   while.body: //preds = %cond
+   	...
+   	br %while.cond
+   	
+   while.end:  //preds = %cond
+   	...
+   ```
+
+8. ret
+
+   - ret
+
+9. 函数调用
+
+   - call
+
+10. break
+
+    - br label
+
+11. continue
+
+    - br label
+
+12. 赋值
+
+    - 数组 storeArr
+    - 单值 store
+
+13. 加载内存值
+
+    - 数组 loadArr
+    - 单值 load
+
+14. 注释
+
+    - 函数调用
+
+      ```cpp
+      //call func "函数名字" begin
+      push arg1
+      push arg2
+      call f
+      //call func "函数名字" end
+      ```
+
+    - 数组索引计算
+
+      ```cpp
+      a[2][2];
+      i = 1;
+      求 a[i][i]
+      //index count begin
+      load       %0         %i        
+      mul        %1         %0         8         
+      add        %2         0          %1        
+      load       %3         %i        
+      mul        %4         %3         4         
+      add        %5         %2         %4               
+      //index count end
+      loadArr    %6 		  @a         %5
+      ```
+
+      

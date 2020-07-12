@@ -1,166 +1,4 @@
-编译器设计
-
-****
-
-### [LLVM](<https://zhuanlan.zhihu.com/p/100241322>)
-
-1. > 除了被实现为一种语言，LLVM IR 实际上有三种等价形式：上面的文本格式、优化器自身检查和修改的内存数据结构形式，以及高效磁盘二进制“位码”形式。LLVM 项目还提供了将磁盘格式的文本转换为二进制的工具：`llvm-as`命令 将 `.ll`文本文件转成以`.bc`作为后缀的二进制流文件，`llvm-dis`命令将 `.bc` 文件转成`.ll`文件。
-
-2. > 每个 LLVM 优化程序都独立出一个类，都继承自`Pass`父类。大多数优化程序都独立出`.cpp`文件，并且`Pass`的子类都被定义在匿名命名空间中（这使其完全对定义文件私有）。为了使用优化程序，文件之外的代码需要能引用到它，因此会在文件编写一个用于创建优化程序的类导出函数。
-
-*****
-
-### 前端->IR
-
-全局常量：
-
-- const ：保存在符号表，使用的时候通过符号表差值
-- constArr ：需要开全局空间保存
-
-全局变量
-
-- var ：开空间 global
-- varArr ：开空间 global [i1] [i2] [i3]......
-
-#### 函数内部
-
-1. 局部变量
-   - var
-   - varArr
-
-2. 局部常量
-   - const
-   - constArr
-
-3. Expr
-   - add : +
-   - sub : -
-   - div : /
-   - mul : +
-   - rem : %
-
-4. logic
-   - and : &&
-   - or : ||
-   - not : !
-
-5. 关系比较 (icmp) 
-
-   - eq : ==
-
-   - ne : !=
-   - sgt : >
-   - sge : >=
-   - slt : <
-   - sle : <=
-
-6. if、if-else
-
-   ```
-   if-else
-   //通过关系比较和br来进行转换
-   entry:
-   	res = icmp (关系比较) ope1, ope2
-   	br res %if.then, %if.else
-   if.then: //preds = %entry
-   	...
-   	br %if.end
-   if.else: //preds = %entry
-   	...
-   	br %if.end
-   if.end: //preds = %if.then, %if.else
-   	...
-   	
-   if(no else)
-   entry:
-   	res = icmp (关系比较) ope1, ope2
-   	br res %if.then, %if.end
-   if.then: //preds = %entry
-   	...
-   	br %if.end
-   if.end: //preds = %if.then, %if.else
-   	...
-   ```
-
-7. while
-
-   ```
-   //通过关系比较和br来进行转换
-   entry:
-   	...
-   	br %while.cond
-   
-   while.cond: //preds = %entry, %while.body
-   	...
-   	res = icmp (关系比较) ope1, ope2
-   	br res %while.body, %while.end
-   	
-   while.body: //preds = %cond
-   	...
-   	br %while.cond
-   	
-   while.end:  //preds = %cond
-   	...
-   ```
-
-8. ret
-
-   - ret
-
-9. 函数调用
-
-   - call
-
-10. break
-
-    - br label
-
-11. continue
-
-    - br label
-
-12. 赋值
-
-    - 数组 storeArr
-    - 单值 store
-
-13. 加载内存值
-
-    - 数组 loadArr
-    - 单值 load
-
-14. 注释
-
-    - 函数调用
-
-      ```cpp
-      //call func "函数名字" begin
-      push arg1
-      push arg2
-      call f
-      //call func "函数名字" end
-      ```
-
-    - 数组索引计算
-
-      ```cpp
-      a[2][2];
-      i = 1;
-      求 a[i][i]
-      //index count begin
-      load       %0         %i        
-      mul        %1         %0         8         
-      add        %2         0          %1        
-      load       %3         %i        
-      mul        %4         %3         4         
-      add        %5         %2         %4               
-      //index count end
-      loadArr    %6 		  @a         %5
-      ```
-
-      
-
-***
+# 编译器设计
 
 ### IR设计
 
@@ -179,44 +17,144 @@
 
 
 
-| 语义                   | op       | result (define)                    | operand1 (use)      | operand2 (use) |
-| ---------------------- | -------- | ---------------------------------- | ------------------- | -------------- |
-| 加法                   | add      | res                                | ope1                | ope2           |
-| 减法                   | sub      | res                                | ope1                | ope2           |
-| 除法                   | div      | res                                | ope1                | ope2           |
-| 乘法                   | mul      | res                                | ope1                | ope2           |
-| 取余                   | rem      | res                                | ope1                | ope2           |
-| 逻辑与                 | and      | res                                | ope1                | ope2           |
-| 逻辑或                 | or       | res                                | ope1                | ope2           |
-| 逻辑非                 | not      | res                                | ope1                | ope2           |
-| 关系等于               | eql      | res                                | ope1                | ope2           |
-| 关系不等               | neq      | res                                | ope1                | ope2           |
-| 关系大于(signed)       | sgt      | res                                | ope1                | ope2           |
-| 关系大于等于(signed)   | sge      | res                                | ope1                | ope2           |
-| 关系小于(signed)       | slt      | res                                | ope1                | ope2           |
-| 关系小于等于(signed)   | sle      | res                                | ope1                | ope2           |
-| 赋值单值（变了）       | store    | value ➡                            | name                |                |
-| 赋值数组（变了）       | storeArr | value ➡                            | address(暂时用name) | offset         |
-| 取内存 （变了）        | load     | tmpReg ⬅                           | name                |                |
-| 取内存 （变了）        | loadArr  | tmpReg ⬅                           | address(暂时用name) | offset         |
-| 移动                   | mov      |                                    | src                 | dst            |
-| 有返回值函数调用(变了) | call     | retReg(寄存器分配时指定为R0寄存器) | funcName            | paraNum        |
-| 无返回值函数调用(变了) | call     | void                               | funcName            | paraNum        |
-| 函数返回(变了)         | ret      |                                    | retValue            | int\|void      |
-| 函数传参(变了)         | push     | type(int\|int*\|string)            | tmpReg              | num(第几个)    |
-| 退栈                   | pop      | type(int\|int*)                    | tmpReg              |                |
-| 标签                   | label    | name                               |                     |                |
-| 直接跳转(变了)         | br       |                                    | label               |                |
-| 条件跳转(变了)         | br       | lable2(错误)                       | tmpReg              | label1(正确)   |
-|                        |          |                                    |                     |                |
-| 函数定义               | define   | name                               | funcType            |                |
-| 函数形参               | para     | name                               | paraType(int\|int*) |                |
-| 局部常量\|变量         | alloc    | variableName                       | value               | size           |
-| 全局变量\|常量         | global   | variableName                       | value               | size           |
-| 注释                   | note     |                                    | 注释内容            |                |
-|                        |          |                                    |                     |                |
+| 语义                   | op       | result (define)                    | operand1 (use)      | operand2 (use)           |
+| ---------------------- | -------- | ---------------------------------- | ------------------- | ------------------------ |
+| 加法                   | add      | res                                | ope1                | ope2                     |
+| 减法                   | sub      | res                                | ope1                | ope2                     |
+| 除法                   | div      | res                                | ope1                | ope2                     |
+| 乘法                   | mul      | res                                | ope1                | ope2                     |
+| 取余                   | rem      | res                                | ope1                | ope2                     |
+| 逻辑与                 | and      | res                                | ope1                | ope2                     |
+| 逻辑或                 | or       | res                                | ope1                | ope2                     |
+| 逻辑非                 | not      | res                                | ope1                | ope2                     |
+| 关系等于               | eql      | res                                | ope1                | ope2                     |
+| 关系不等               | neq      | res                                | ope1                | ope2                     |
+| 关系大于(signed)       | sgt      | res                                | ope1                | ope2                     |
+| 关系大于等于(signed)   | sge      | res                                | ope1                | ope2                     |
+| 关系小于(signed)       | slt      | res                                | ope1                | ope2                     |
+| 关系小于等于(signed)   | sle      | res                                | ope1                | ope2                     |
+| 加载地址               | lea      |                                    | tmpReg              | name(全局变量或全局数组) |
+| 赋值单值（变了）       | store    | value ➡                            | name                |                          |
+| 赋值数组（变了）       | storeArr | value ➡                            | address(暂时用name) | offset                   |
+| 取内存 （变了）        | load     | tmpReg ⬅                           | name                |                          |
+| 取内存 （变了）        | loadArr  | tmpReg ⬅                           | address(暂时用name) | offset                   |
+| 移动                   | mov      |                                    | dst                 | src                      |
+| 有返回值函数调用(变了) | call     | retReg(寄存器分配时指定为R0寄存器) | funcName            | paraNum                  |
+| 无返回值函数调用(变了) | call     | void                               | funcName            | paraNum                  |
+| 函数返回(变了)         | ret      |                                    | retValue            | int\|void                |
+| 函数传参(变了)         | push     | type(int\|int*\|string)            | tmpReg              | num(第几个)              |
+| 退栈                   | pop      | type(int\|int*)                    | tmpReg              |                          |
+| 标签                   | label    | name                               |                     |                          |
+| 直接跳转(变了)         | br       |                                    | label               |                          |
+| 条件跳转(变了)         | br       | lable2(错误)                       | tmpReg              | label1(正确)             |
+|                        |          |                                    |                     |                          |
+| 函数定义               | define   | name                               | funcType            |                          |
+| 函数形参               | para     | name                               | paraType(int\|int*) |                          |
+| 局部常量\|变量         | alloc    | variableName                       | value               | size                     |
+| 全局变量\|常量         | global   | variableName                       | value               | size                     |
+| 注释                   | note     |                                    | 注释内容            |                          |
 
 *****
+
+### 由LIR到ARM汇编的选择
+
+1. add、sub、div、mul、and、or、not、eql、neq、sgt、sge、slt、sle：**2-3个寄存器**
+
+   - 第二个操作数为立即数
+   - 第二个操作数为寄存器
+
+2. lea：**R0**（以R0为例）
+
+   - 把变量的地址加载到寄存器
+
+3. load：**1-2个寄存器**
+
+   - 变量是单值变量，转换为两条指令
+
+     ```assembly
+     ;1. 全局变量，ope1字段一定是一个搞寄存器，但是具体是哪一个不确定，可能和存数据的是同一个
+     ; load R0, R1
+     LDR R0, [R1]
+     或 LDR R0, [R0]
+     ;2. 栈变量，ope1字段是变量名，生成的时候通过栈来转换为偏移
+     ; load R0, 变量名
+     LDR R0, [SP, #偏移]
+     ```
+
+4. loadarr：**1-2个寄存器**
+
+   - 偏移是立即数
+
+     ```assembly
+     ;1. 全局数组 LOAD R0, R0, 8
+     LDR R0, [R0 #8] ;这里前面的指令R0已经已经加在了数组的地址
+     ;2. 栈数组 LOAD R0, 变量名, 8
+     LDR R0, [SP #8 + (数组相对于sp的偏移)] ;立即数可以在编译期间计算得出
+     ```
+
+     > 这里秉承这样一个思想，全局数组的loadarr指令，会在**前面加一条load指令专门加载地址**，所以直接按照上述的转换即可！
+
+   - 偏移是一个寄存器
+
+     ```assembly
+     ;1. 全局数组 LOAD R0, R1, R2，这里极限情况是R0和R1是同一个寄存器或者R0和R2是同一个寄存器
+     LDR R0, [R1, R2] ;这里前面的指令已经在R1中加载了数组的地址
+     
+     ;2. 栈数组 LOAD R0, 变量名, R1
+     add R1, sp, R1
+     add R1, R1, #数组相对于SP的偏移
+     ;这里是否有指令可以一部计算出来：add R1, R1, [sp, #数组偏移]这种？？
+     LDR R0, [R1]
+     ```
+
+5. store：**R0**
+
+   - 变量是单值变量
+
+     ```assembly
+     ;1. 全局变量，ope1字段是寄存器，R0和R1一定是不同的寄存器
+     ; store R0, R1
+     SDR R0, [R1]
+     ;2. 栈变量，ope1字段是变量名，生成的时候通过栈来转换为偏移
+     ; store R0, 变量名
+     SDR R0, [SP, #变脸偏移]
+     ```
+
+6. storearr：**2-3个寄存器**
+
+   - 偏移是立即数
+
+     ```assembly
+     ;1. 全局数组， STORE R0, R1, 8
+     SDR R0, [R1 #8]
+     ;2. 栈数组，STORE R0, 变量名， 8
+     SDR R0, [sp, #8+(数组相对于sp的偏移)]
+     ```
+
+   - 偏移是一个寄存器
+
+     ```assembly
+     ;1. 全局数组， STORE R0, R1, R2
+     SDR R0, [R1, R2]
+     ;2. 栈数组，STORE R0, 变量名，R1
+     add R1, sp, R1
+     add R1, R1, #数组相对于SP的偏移
+     SDR R0, [R1]
+     ```
+
+7. call ：**R0**
+   - call指令回来后返回值在R0，需要把R0的值移动到一个新的寄存器中，这个寄存器在**res**字段指定
+8. ret ：**R0**
+   - 中间代码会加一条MOV，把返回值移动到R0寄存器
+9. push 和 pop：
+   - 保证中间代码的ope1字段都是寄存器
+10. br：
+    - 保证中间代码的ope1字段都是寄存器
+11. 其余的正常翻译即可
+
+
+
+****
 
 ### 错误处理
 
