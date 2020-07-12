@@ -60,7 +60,7 @@ void MIR2LIRpass() {
 				dst.push_back(instr);
 			}
 			else if (op == LOAD) {
-				if (1) {	//全局变量
+				if (isGlobal(ope1)) {	//全局变量
 					CodeItem address(LEA, "", getVreg(), ope1);
 					ope1 = curVreg;
 					res = dealTmpOpe(res);
@@ -75,19 +75,105 @@ void MIR2LIRpass() {
 				}
 			}
 			else if (op == LOADARR) {
-
+				if (isNumber(ope2)) {	//偏移是立即数
+					if (isGlobal(ope1)) {	//数组是全局数组
+						CodeItem address(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						res = dealTmpOpe(res);
+						dst.push_back(address);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+					else {
+						res = dealTmpOpe(res);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+				}
+				else {
+					if (isGlobal(ope1)) {
+						CodeItem address(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						res = dealTmpOpe(res);
+						ope2 = dealTmpOpe(ope2);
+						dst.push_back(address);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+					else {
+						res = dealTmpOpe(res);
+						ope2 = dealTmpOpe(ope2);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+				}
 			}
 			else if (op == STORE) {
-
+				if(isGlobal(ope1)) {	//全局变量
+					CodeItem address(LEA, "", getVreg(), ope1);
+					ope1 = curVreg;
+					res = dealTmpOpe(res);
+					setInstr(instr, res, ope1, ope2);
+					dst.push_back(address);
+					dst.push_back(instr);
+				}
+				else {
+					res = dealTmpOpe(res);
+					setInstr(instr, res, ope1, ope2);
+					dst.push_back(instr);
+				}
 			}
 			else if (op == STOREARR) {
-
+				if (isNumber(ope2)) {	//偏移是立即数
+					if (isGlobal(ope1)) {	//全局数组
+						CodeItem address(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						res = dealTmpOpe(res);
+						dst.push_back(address);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+					else {
+						res = dealTmpOpe(res);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+				}
+				else {
+					if (isGlobal(ope1)) {
+						CodeItem address(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						res = dealTmpOpe(res);
+						ope2 = dealTmpOpe(ope2);
+						dst.push_back(address);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+					else {
+						res = dealTmpOpe(res);
+						ope2 = dealTmpOpe(ope2);
+						setInstr(instr, res, ope1, ope2);
+						dst.push_back(instr);
+					}
+				}
 			}
 			else if (op == CALL) {
-
+				if (isTmp(res)) {
+					res = dealTmpOpe(res);
+					CodeItem tmp(MOV, "", res, "R0");
+					dst.push_back(instr);
+					dst.push_back(tmp);
+				}
+				else {
+					dst.push_back(instr);
+				}
 			}
 			else if (op == RET) {
-
+				if (ope2 != "void") {
+					CodeItem tmp(MOV, "", "R0", ope1);
+					dst.push_back(tmp);
+				}
+				dst.push_back(instr);
 			}
 			else if (op == PUSH) {
 
