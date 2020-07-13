@@ -16,11 +16,11 @@ void SSA::Test_SSA() {
 	Test_Build_Dom_Tree();
 	Test_Build_Idom_Tree();
 	Test_Build_Reverse_Idom_Tree();
-	Test_Build_Post_Order();
-	Test_Build_Pre_Order();
-	Test_Build_Def_Use_Chain();
+	// Test_Build_Post_Order();
+	// Test_Build_Pre_Order();
+	// Test_Build_Def_Use_Chain();
+	// Test_Active_Var_Analyse();
 	Test_Build_Dom_Frontier();
-	Test_Active_Var_Analyse();
 	Test_Build_Var_Chain();
 	Test_Add_Phi_Fun();
 	// 关闭文件
@@ -56,7 +56,7 @@ void SSA::Test_Add_Phi_Fun() {
 
 // 输出基本块中的中间代码
 void Output_IR(vector<CodeItem> v) {
-	for (int i = 1; i < v.size(); i++) {
+	for (int i = 0; i < v.size(); i++) {
 		CodeItem item = v[i];
 		debug_ssa << i + 1 << "    " << item.getContent() << endl;
 	}
