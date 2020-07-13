@@ -1958,6 +1958,6 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 				}
 			}
 		}
-		codetotal.push_back(a);
+		codetotal.push_back(a);  
 	}
-}
+} 
