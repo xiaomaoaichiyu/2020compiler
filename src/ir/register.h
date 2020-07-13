@@ -18,10 +18,11 @@ using namespace std;
 class RegPool {
 	vector<string> pool;
 	map<string, bool> reg2avail;			//记录寄存器是否被使用，true表示可用，false表示被占用
-
 	map<string, string> vreg2reg;			//记录分配给虚拟寄存器的物理寄存器
+
 	vector<string> vreguse;					//记录虚拟寄存器分配的时间，用于抢占物理寄存器的退出策略
-	map<string, int> stackOffset;			//记录被spiil的临时变量在栈中的偏移
+	int stackOffset = 0;
+	map<string, int> vreg2Offset;			//记录被spiil的临时变量在栈中的偏移
 public:
 	RegPool(vector<string> regs) : pool(regs) {
 		for (int i = 0; i < regs.size(); i++) {
@@ -31,6 +32,7 @@ public:
 	string getReg(string vreg);
 	string allocReg(string vreg);
 	void releaseReg(string vreg);
+	pair<string, string> spillReg();	//返回 <寄存器, 虚拟寄存器> 
 private:
 	string haveAvailReg();
 };
@@ -101,4 +103,4 @@ void registerAllocation(vector<CodeItem>& func);
 //};
 
 
-#endif // !_REGISTER_H_
+#endif // _REGISTER_H_

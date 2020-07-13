@@ -40,6 +40,8 @@ void MIR2LIRpass() {
 		vector<CodeItem> src = codetotal.at(i);
 		vector<CodeItem> dst;
 		vrIndex = 0;
+		curVreg = "";
+		tmp2vr.clear();
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
 			irCodeType op = instr.getCodetype();
@@ -161,6 +163,7 @@ void MIR2LIRpass() {
 				if (isTmp(res)) {
 					res = dealTmpOpe(res);
 					CodeItem tmp(MOV, "", res, "R0");
+					setInstr(instr, res, ope1, ope2);
 					dst.push_back(instr);
 					dst.push_back(tmp);
 				}
@@ -170,19 +173,33 @@ void MIR2LIRpass() {
 			}
 			else if (op == RET) {
 				if (ope2 != "void") {
+					ope1 = dealTmpOpe(ope1);
 					CodeItem tmp(MOV, "", "R0", ope1);
 					dst.push_back(tmp);
 				}
+				ope1 = "R0";
+				setInstr(instr, res, ope1, ope2);
 				dst.push_back(instr);
 			}
-			else if (op == PUSH) {
-
-			}
-			else if (op == POP) {
-
+			else if (op == PUSH || op == POP) {
+				if (isNumber(ope1)) {
+					CodeItem tmp(MOV, "", getVreg(), ope1);
+					ope1 = curVreg;
+					dst.push_back(tmp);
+				}
+				res = dealTmpOpe(res);
+				setInstr(instr, res, ope1, ope2);
+				dst.push_back(instr);
 			}
 			else if (op == BR) {
-
+				if (isNumber(ope1)) {
+					CodeItem tmp(MOV, "", getVreg(), ope1);
+					ope1 = curVreg;
+					dst.push_back(tmp);
+				}
+				ope1 = dealTmpOpe(ope1);
+				setInstr(instr, res, ope1, ope2);
+				dst.push_back(instr);
 			}
 			else {
 				dst.push_back(instr);
@@ -192,13 +209,27 @@ void MIR2LIRpass() {
 	}
 }
 
-//================================================================
-//基于活跃变量的简单寄存器分配，临时变量采用寄存器池分配临时寄存器
-//================================================================
+void printLIR(string outputFile) {
+	ofstream irtxt(outputFile);
+	for (int i = 0; i < LIR.size(); i++) {
+		vector<CodeItem> item = LIR[i];
+		for (int j = 0; j < item.size(); j++) {
+			//cout << item[j].getContent() << endl;
+			irtxt << item[j].getContent() << endl;
+		}
+		//cout << "\n";
+		irtxt << "\n";
+	}
+	irtxt.close();
+}
+
+//=============================================================
+// 优化函数
+//=============================================================
 
 void irOptimize() {
 
 
 	//寄存器分配优化
-	//MIR2LIRpass(codetotal);
+	MIR2LIRpass();
 }

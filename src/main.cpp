@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 
 	irOptimize();
 
-	TestIrCode("ir2.txt");
+	printLIR("LIR.txt");
 	//运行后端，生成arm代码
 
 	//arm_generate_without_register(sname);

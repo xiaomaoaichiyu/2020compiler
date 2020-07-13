@@ -1,7 +1,7 @@
 #include "./register.h"
 
 //=================================================================
-//1. 寄存器直接指派，临时寄存器使用寄存器池
+// 寄存器池
 //=================================================================
 
 string RegPool::getReg(string vreg) {
@@ -44,14 +44,27 @@ string RegPool::haveAvailReg() {
 	return "No reg!";
 }
 
+pair<string, string> RegPool::spillReg() {
+	string vReg = vreguse.front();
+	string spillReg = vreg2reg[vReg];
+	vreguse.erase(vreguse.begin());
+	spillReg = "";
+	return pair<string, string>(vReg, spillReg);
+}
+// class RegPool end--------------------------------------------------
+
+
 void setInstr(CodeItem& instr, string res, string ope1, string ope2) {
 	instr.setResult(res);
 	instr.setOperand1(ope1);
 	instr.setOperand2(ope2);
 }
 
-//寄存器分配算法v1
-//: 接变量指派，多余变量采用load加载数据到临时寄存器
+//===================================================================
+// 寄存器分配算法v1
+// 接变量指派，多余变量采用load加载数据到临时寄存器
+//===================================================================
+
 void registerAllocation(vector<CodeItem>& func) {
 	vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };	//临时寄存器池
 	RegPool regpool(tmpRegs);
@@ -83,8 +96,8 @@ void registerAllocation(vector<CodeItem>& func) {
 		string ope1 = instr.getOperand1();
 		string ope2 = instr.getOperand2();
 		string resReg = res;
-		string ope1Reg = ope1Reg;
-		string ope2Reg = ope2Reg;
+		string ope1Reg = ope1;
+		string ope2Reg = ope2;
 		
 		//res字段分配临时寄存器
 		if (op == ADD || op == SUB || op == DIV || op == MUL || op == REM ||
@@ -99,6 +112,10 @@ void registerAllocation(vector<CodeItem>& func) {
 				regpool.releaseReg(ope2);
 			}
 			resReg = regpool.allocReg(res);
+			setInstr(instr, resReg, ope1Reg, ope2Reg);
+		}
+		else if (op == LEA) {
+			ope1Reg = regpool.allocReg(ope1);
 			setInstr(instr, resReg, ope1Reg, ope2Reg);
 		}
 		else if (op == MOV) {	//分配临时寄存器

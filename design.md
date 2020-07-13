@@ -18,42 +18,47 @@
 
 
 
-| 语义                   | op                | result (define)                    | operand1 (use)      | operand2 (use)           |
-| ---------------------- | ----------------- | ---------------------------------- | ------------------- | ------------------------ |
-| 加法                   | add               | res                                | ope1                | ope2                     |
-| 减法                   | sub               | res                                | ope1                | ope2                     |
-| 除法                   | div               | res                                | ope1                | ope2                     |
-| 乘法                   | mul               | res                                | ope1                | ope2                     |
-| 取余                   | rem               | res                                | ope1                | ope2                     |
-| 逻辑与                 | and               | res                                | ope1                | ope2                     |
-| 逻辑或                 | or                | res                                | ope1                | ope2                     |
-| 逻辑非                 | not               | res                                | ope1                | ope2                     |
-| 关系等于               | eql               | res                                | ope1                | ope2                     |
-| 关系不等               | neq               | res                                | ope1                | ope2                     |
-| 关系大于(signed)       | sgt               | res                                | ope1                | ope2                     |
-| 关系大于等于(signed)   | sge               | res                                | ope1                | ope2                     |
-| 关系小于(signed)       | slt               | res                                | ope1                | ope2                     |
-| 关系小于等于(signed)   | sle               | res                                | ope1                | ope2                     |
-| 加载地址               | $\color{red} lea$ |                                    | tmpReg              | name(全局变量或全局数组) |
-| 赋值单值（变了）       | store             | value ➡                            | name                |                          |
-| 赋值数组（变了）       | storeArr          | value ➡                            | address(暂时用name) | offset                   |
-| 取内存 （变了）        | load              | tmpReg ⬅                           | name                |                          |
-| 取内存 （变了）        | loadArr           | tmpReg ⬅                           | address(暂时用name) | offset                   |
-| 移动                   | $\color{red}mov$  |                                    | dst                 | src                      |
-| 有返回值函数调用(变了) | call              | retReg(寄存器分配时指定为R0寄存器) | funcName            | paraNum                  |
-| 无返回值函数调用(变了) | call              | void                               | funcName            | paraNum                  |
-| 函数返回(变了)         | ret               |                                    | retValue            | int\|void                |
-| 函数传参(变了)         | push              | type(int\|int*\|string)            | tmpReg              | num(第几个)              |
-| 退栈                   | pop               | type(int\|int*)                    | tmpReg              |                          |
-| 标签                   | label             | name                               |                     |                          |
-| 直接跳转(变了)         | br                |                                    | label               |                          |
-| 条件跳转(变了)         | br                | lable2(错误)                       | tmpReg              | label1(正确)             |
-|                        |                   |                                    |                     |                          |
-| 函数定义               | define            | name                               | funcType            |                          |
-| 函数形参               | para              | name                               | paraType(int\|int*) |                          |
-| 局部常量\|变量         | alloc             | variableName                       | value               | size                     |
-| 全局变量\|常量         | global            | variableName                       | value               | size                     |
-| 注释                   | note              |                                    | 注释内容            |                          |
+| 语义                   | op                | result (define)                    | operand1 (use)      | operand2 (use)            |
+| ---------------------- | ----------------- | ---------------------------------- | ------------------- | ------------------------- |
+| 加法                   | add               | res                                | ope1                | ope2                      |
+| 减法                   | sub               | res                                | ope1                | ope2                      |
+| 除法                   | div               | res                                | ope1                | ope2                      |
+| 乘法                   | mul               | res                                | ope1                | ope2                      |
+| 取余                   | rem               | res                                | ope1                | ope2                      |
+| 逻辑与                 | and               | res                                | ope1                | ope2                      |
+| 逻辑或                 | or                | res                                | ope1                | ope2                      |
+| 逻辑非                 | not               | res                                | ope1                | ope2                      |
+| 关系等于               | eql               | res                                | ope1                | ope2                      |
+| 关系不等               | neq               | res                                | ope1                | ope2                      |
+| 关系大于(signed)       | sgt               | res                                | ope1                | ope2                      |
+| 关系大于等于(signed)   | sge               | res                                | ope1                | ope2                      |
+| 关系小于(signed)       | slt               | res                                | ope1                | ope2                      |
+| 关系小于等于(signed)   | sle               | res                                | ope1                | ope2                      |
+| 加载地址               | $\color{red} lea$ |                                    | tmpReg              | name(全局变量或全局数组)  |
+| 赋值单值（变了）       | store             | value ➡                            | name                |                           |
+| 赋值数组（变了）       | storeArr          | value ➡                            | address(暂时用name) | offset                    |
+| 取内存 （变了）        | load              | tmpReg ⬅                           | name                |                           |
+| 取内存 （变了）        | loadArr           | tmpReg ⬅                           | address(暂时用name) | offset                    |
+| 移动                   | $\color{red}mov$  |                                    | dst                 | src                       |
+| 有返回值函数调用(变了) | call              | retReg(寄存器分配时指定为R0寄存器) | funcName            | paraNum                   |
+| 无返回值函数调用(变了) | call              | void                               | funcName            | paraNum                   |
+| 函数返回(变了)         | ret               |                                    | retValue            | int\|void                 |
+| 函数传参(变了)         | push              | type(int\|int*\|string)            | tmpReg              | num(第几个)               |
+| 退栈                   | pop               | type(int\|int*)                    | tmpReg              |                           |
+| 标签                   | label             | name                               |                     |                           |
+| 直接跳转(变了)         | br                |                                    | label               |                           |
+| 条件跳转(变了)         | br                | lable2(错误)                       | tmpReg              | label1(正确)              |
+|                        |                   |                                    |                     |                           |
+| 函数定义               | define            | name                               | funcType            |                           |
+| 函数形参               | para              | name                               | paraType(int\|int*) |                           |
+| 局部常量\|变量         | alloc             | variableName                       | value               | size                      |
+| 全局变量\|常量         | global            | variableName                       | value               | size                      |
+| 注释                   | note              |                                    | 注释内容            |                           |
+| 压栈                   | push              |                                    | reg物理寄存器       | vReg(reg存储的虚拟寄存器) |
+|                        |                   |                                    |                     |                           |
+|                        |                   |                                    |                     |                           |
+|                        |                   |                                    |                     |                           |
+|                        |                   |                                    |                     |                           |
 
 *****
 
@@ -161,7 +166,7 @@
    - call指令回来后返回值在R0，需要把R0的值移动到一个新的寄存器中，这个寄存器在**res**字段指定，即call指令不需要处理res字段，在call指令的下一条是一个MOV指令，指明将**R0**的值转换到那个寄存器
 8. ret ：**R0**
 
-   - 中间代码会加一条MOV，把返回值移动到R0寄存器，故直接返回即可！无需处理R0的问题
+   - 中间代码会加一条MOV，把返回值移动到R0寄存器，**故直接返回即可！无需处理R0的问题**
 9. push 和 pop：
 
    - 保证中间代码的ope1字段都是寄存器
