@@ -20,6 +20,7 @@ class RegPool {
 	map<string, bool> reg2avail;			//记录寄存器是否被使用，true表示可用，false表示被占用
 	map<string, string> vreg2reg;			//记录分配给虚拟寄存器的物理寄存器
 
+	map<string, bool> vreg2spill;			//记录是否被溢出
 	vector<string> vreguse;					//记录虚拟寄存器分配的时间，用于抢占物理寄存器的退出策略
 	int stackOffset = 0;
 	map<string, int> vreg2Offset;			//记录被spiil的临时变量在栈中的偏移
@@ -30,11 +31,19 @@ public:
 		}
 	}
 	string getReg(string vreg);
-	string allocReg(string vreg);
+	string getAndAllocReg(string vreg);
 	void releaseReg(string vreg);
-	pair<string, string> spillReg();	//返回 <寄存器, 虚拟寄存器> 
+	CodeItem loadVreg(string vreg);
 private:
 	string haveAvailReg();
+	string allocReg();
+	pair<string, string> spillReg();	//返回 <寄存器, 虚拟寄存器> 
+};
+
+struct Allocation {
+	int from;		//指令id开始
+	int to;			//指令id结束
+	string reg;		//分配的物理寄存器或者内存位置
 };
 
 void registerAllocation(vector<CodeItem>& func);

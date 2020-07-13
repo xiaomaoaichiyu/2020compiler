@@ -13,7 +13,7 @@ string RegPool::getReg(string vreg) {
 	} 
 }
 
-string RegPool::allocReg(string vreg) {
+string RegPool::getAndAllocReg(string vreg) {
 	string tmpReg = haveAvailReg();
 	if (tmpReg != "No Reg!") {
 		vreg2reg[vreg] = tmpReg;	
@@ -21,7 +21,8 @@ string RegPool::allocReg(string vreg) {
 		reg2avail[tmpReg] = false;	//标记为被占用
 	}
 	else {
-		return vreg;
+		spillReg();	//没有临时寄存器可用，溢出一个临时寄存器并作记录
+
 	}
 }
 
@@ -36,6 +37,11 @@ void RegPool::releaseReg(string vreg) {
 	}
 }
 
+CodeItem RegPool::loadVreg(string vreg)
+{
+	return;
+}
+
 //private
 string RegPool::haveAvailReg() {
 	for (int i = 0; i < pool.size(); i++) {
@@ -44,15 +50,33 @@ string RegPool::haveAvailReg() {
 	return "No reg!";
 }
 
+string RegPool::allocReg()
+{
+	string res = haveAvailReg();
+	if (res == "No reg!") {
+		WARN_MSG("RegPool alloc wrong!");
+	}
+	return res;
+}
+
 pair<string, string> RegPool::spillReg() {
-	string vReg = vreguse.front();
-	string spillReg = vreg2reg[vReg];
+	string vReg = vreguse.front();		//spill的虚拟寄存器vReg
 	vreguse.erase(vreguse.begin());
-	spillReg = "";
+	string spillReg = vreg2reg[vReg];	
+	vreg2reg.erase(vReg);
+	vreg2Offset[vReg] = stackOffset;	//vReg在栈的偏移
+	stackOffset += 4;
+	releaseReg(vReg);					//释放vReg的物理寄存器
 	return pair<string, string>(vReg, spillReg);
 }
+
 // class RegPool end--------------------------------------------------
 
+
+//===================================================================
+// 寄存器分配算法v1
+// 接变量指派，多余变量采用load加载数据到临时寄存器
+//===================================================================
 
 void setInstr(CodeItem& instr, string res, string ope1, string ope2) {
 	instr.setResult(res);
@@ -60,25 +84,30 @@ void setInstr(CodeItem& instr, string res, string ope1, string ope2) {
 	instr.setOperand2(ope2);
 }
 
-//===================================================================
-// 寄存器分配算法v1
-// 接变量指派，多余变量采用load加载数据到临时寄存器
-//===================================================================
+//查找一个虚拟寄存器是否和变量的寄存器对应
+bool isFind(string vreg, map<string, string> container) {
+	if (container.find(vreg) != container.end()) {
+		return true;
+	}
+	return false;
+}
 
 void registerAllocation(vector<CodeItem>& func) {
 	vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };	//临时寄存器池
 	RegPool regpool(tmpRegs);
-	
-	map<string, bool> first;		//标志有寄存器变量是否是第一次访问
+
+	map<string, string> vreg2varReg;	//记录虚拟寄存器和变量之间的关系
+
+	map<string, bool> first;			//标志有寄存器变量是否是第一次访问
 	vector<string> vars;
 	map<string, string> var2reg;
-	int begin = 4;
+	int regBegin = 4;
 	//无脑指派局部变量
 	int i = 0;
 	for (; i < vars.size(); i++) {
-		var2reg[vars.at(i)] = FORMAT("R{}", begin++);
+		var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
 		first[vars.at(i)] = true;
-		if (begin >= 12) {
+		if (regBegin >= 12) {
 			i++;
 			break;
 		}
@@ -87,7 +116,9 @@ void registerAllocation(vector<CodeItem>& func) {
 		var2reg[vars.at(i)] = "memory";
 		first[vars.at(i)] = true;
 	}
-	//全局变量怎么破？无脑加载到临时变量中？
+	//全局变量使用临时变量来加载和使用
+
+#define isVreg(reg) (reg.size() > 2 && (reg.substr(0,2) == "VR"))
 
 	for (int i = 0; i < func.size(); i++) {
 		CodeItem& instr = func.at(i);
@@ -103,19 +134,27 @@ void registerAllocation(vector<CodeItem>& func) {
 		if (op == ADD || op == SUB || op == DIV || op == MUL || op == REM ||
 			op == AND || op == OR || op ==NOT ||
 			op == EQL || op == NEQ || op == SGT || op == SGE || op ==SLT || op == SLE) {
-			if (isTmp(ope1)) {
+			if (!isNumber(ope2)) {	//不是立即数
+				if (isFind(ope2, vreg2varReg)) {	//vreg是变量寄存器的映射
+					ope2Reg = vreg2varReg[ope2];
+				}
+				else {	//之前申请的临时寄存器
+					ope2Reg = regpool.getReg(ope2);
+					regpool.releaseReg(ope2);
+				}
+			}
+			if (isFind(ope1, vreg2varReg)) {
+				ope1Reg = vreg2varReg[ope1];
+			}
+			else {
 				ope1Reg = regpool.getReg(ope1);
 				regpool.releaseReg(ope1);
 			}
-			if (isTmp(ope2)) {
-				ope2Reg = regpool.getReg(ope2);
-				regpool.releaseReg(ope2);
-			}
-			resReg = regpool.allocReg(res);
+			resReg = regpool.getAndAllocReg(res);
 			setInstr(instr, resReg, ope1Reg, ope2Reg);
 		}
 		else if (op == LEA) {
-			ope1Reg = regpool.allocReg(ope1);
+			ope1Reg = regpool.getAndAllocReg(ope1);
 			setInstr(instr, resReg, ope1Reg, ope2Reg);
 		}
 		else if (op == MOV) {	//分配临时寄存器
@@ -123,12 +162,12 @@ void registerAllocation(vector<CodeItem>& func) {
 				ope2Reg = regpool.getReg(ope2);
 				regpool.releaseReg(ope2);
 			}
-			ope1Reg = regpool.allocReg(ope1);
+			ope1Reg = regpool.getAndAllocReg(ope1);
 			setInstr(instr, res, ope1Reg, ope2Reg);
 		}
 		else if (op == LOAD) {	//分配临时寄存器
 			if (var2reg[ope1] == "memory") {
-				resReg = regpool.allocReg(res);
+				resReg = regpool.getAndAllocReg(res);
 				setInstr(instr, resReg, ope1, ope2);
 			}
 			else {
@@ -168,7 +207,7 @@ void registerAllocation(vector<CodeItem>& func) {
 		}
 		else if (op == CALL) {
 			if (res != "void") {
-				resReg = regpool.allocReg(res);
+				resReg = regpool.getAndAllocReg(res);
 			}
 			setInstr(instr, resReg, ope1, ope2);
 		}

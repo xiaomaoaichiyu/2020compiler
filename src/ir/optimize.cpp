@@ -233,3 +233,14 @@ void irOptimize() {
 	//寄存器分配优化
 	MIR2LIRpass();
 }
+
+void sortMIR() {
+	for (int i = 0; i < codetotal.size(); i++) {
+		vector<CodeItem>& func = codetotal.at(i);
+		int index = 0;
+		for (int j = 0; j < func.size(); j++) {
+			CodeItem& instr = func.at(j);
+
+		}
+	}
+}
