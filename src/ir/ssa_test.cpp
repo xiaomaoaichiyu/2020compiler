@@ -18,7 +18,7 @@ void SSA::Test_SSA() {
 	Test_Build_Reverse_Idom_Tree();
 	// Test_Build_Post_Order();
 	// Test_Build_Pre_Order();
-	// Test_Build_Def_Use_Chain();
+	Test_Build_Def_Use_Chain();
 	// Test_Active_Var_Analyse();
 	Test_Build_Dom_Frontier();
 	Test_Build_Var_Chain();
@@ -117,7 +117,7 @@ void SSA::Test_Build_Idom_Tree() {
 		debug_ssa << i << endl;
 		int size2 = v[i].size();
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块的编号: " << v[i][j].number << "\t\t";
+			debug_ssa << "该基本块的编号: " << v[i][j].number << "      ";
 			debug_ssa << "该基本块的直接必经节点: {  ";
 			for (set<int>::iterator iter = v[i][j].idom.begin(); iter != v[i][j].idom.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;

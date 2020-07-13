@@ -168,7 +168,6 @@ void SSA::build_pred_and_succeeds() {
 				CodeItem ci = tmp[j].Ir.back();
 				if (ci.getCodetype() == BR) {
 					// 跳转指令
-					cout << ci.getResult() << " " << ci.getOperand1() << " " << ci.getOperand2() << endl;
 					if (ifTempVariable(ci.getOperand1())) {
 						// step1: 找到跳转到标签所在的基本块序号
 						k = lookForLabel(codetotal[i], ci.getResult());
@@ -233,12 +232,15 @@ void SSA::build_dom_tree() {
 		// Domin(r) := {r}
 		blockCore[i][0].domin.insert(0);
 		// for each n except r: Domin(n) := N
-		for (j = 1; j < size2; j++) blockCore[i][j].domin.insert(N.begin(), N.end());
+		for (j = 1; j < size2; j++) 
+			// if (!blockCore[i][j].pred.empty()) // 在该基本块可达的情况下再初始化
+				blockCore[i][j].domin.insert(N.begin(), N.end());
 		bool change = true;
 		while (change) {
 			change = false;
 			// for each n excpt r
 			for (j = 1; j < size2; j++) {
+				// if (blockCore[i][j].pred.empty()) continue;	// 若该基本块不可达则不进行分析
 				// T := N
 				set<int> T(N.begin(), N.end());
 				for (set<int>::iterator iter = blockCore[i][j].pred.begin(); iter != blockCore[i][j].pred.end(); iter++) {
@@ -592,7 +594,7 @@ void SSA::add_phi_function() {
 			// 在每个需要插入\phi函数的基本块插入\phi函数
 			for (set<int>::iterator iter = vs.blockNums.begin(); iter != vs.blockNums.end(); iter++) {
 				// 初始化要插入的\phi函数
-				set<int> s1; set<string> s2;  phiFun pf(vs.name, s1, s2);
+				set<int> s1; set<string> s2;  phiFun pf(vs.name, vs.name, s1, s2);
 				// 在每个前序节点中查找该变量的基本块位置
 				for (set<int>::iterator iter1 = blockCore[i][*iter].pred.begin(); iter1 != blockCore[i][*iter].pred.end(); iter1++) {
 					// 记录该基本块是否被访问过
@@ -748,7 +750,7 @@ void SSA::renameVar() {
 			for (k = 0; k < size6; k++) {
 				phiFun pf = blockCore[i][j].phi[k];
 				for (set<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
-					blockCore[i][j].phi[k].subIndexs.insert(lastVarName[pf.name][*iter]);
+					blockCore[i][j].phi[k].subIndexs.insert(lastVarName[pf.primaryName][*iter]);
 			}
 		}
 	}
