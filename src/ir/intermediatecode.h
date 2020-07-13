@@ -47,6 +47,7 @@ public:
 	void setOperand1(string ope1);
 	void setOperand2(string ope2);
 	void setResult(string res);
+	void setInstr(string res, string ope1, string ope2);
 	void setFatherBlock(vector<int> a);        //可以set的位置：所有变量、参数出现的地方
 	void changeContent(string res, string ope1, string ope2);
 	vector<int> getFatherBlock();

@@ -44,7 +44,8 @@
 | 无返回值函数调用(变了) | call              | void                               | funcName            | paraNum                   |
 | 函数返回(变了)         | ret               |                                    | retValue            | int\|void                 |
 | 函数传参(变了)         | push              | type(int\|int*\|string)            | tmpReg              | num(第几个)               |
-| 退栈                   | pop               | type(int\|int*)                    | tmpReg              |                           |
+| 压栈                   | push              |                                    | reg物理寄存器       | vReg(reg存储的虚拟寄存器) |
+| 退栈                   | $\color{red}pop$  | type(int\|int*)                    | tmpReg              |                           |
 | 标签                   | label             | name                               |                     |                           |
 | 直接跳转(变了)         | br                |                                    | label               |                           |
 | 条件跳转(变了)         | br                | lable2(错误)                       | tmpReg              | label1(正确)              |
@@ -54,7 +55,6 @@
 | 局部常量\|变量         | alloc             | variableName                       | value               | size                      |
 | 全局变量\|常量         | global            | variableName                       | value               | size                      |
 | 注释                   | note              |                                    | 注释内容            |                           |
-| 压栈                   | push              |                                    | reg物理寄存器       | vReg(reg存储的虚拟寄存器) |
 |                        |                   |                                    |                     |                           |
 |                        |                   |                                    |                     |                           |
 |                        |                   |                                    |                     |                           |
@@ -163,10 +163,10 @@
 
 7. call ：**R0**
 
-   - call指令回来后返回值在R0，需要把R0的值移动到一个新的寄存器中，这个寄存器在**res**字段指定，即call指令不需要处理res字段，在call指令的下一条是一个MOV指令，指明将**R0**的值转换到那个寄存器
+   - call指令回来后返回值在R0，需要把R0的值移动到一个新的寄存器中，这个寄存器在**res**字段指定，即call指令不需要处理res字段，在call指令的下一条是一个**MOV**指令，指明将**R0**的值转换到那个寄存器
 8. ret ：**R0**
 
-   - 中间代码会加一条MOV，把返回值移动到R0寄存器，**故直接返回即可！无需处理R0的问题**
+   - 中间代码会加一条**MOV**，把返回值移动到R0寄存器，**故直接返回即可！无需处理R0的问题**
 9. push 和 pop：
 
    - 保证中间代码的ope1字段都是寄存器

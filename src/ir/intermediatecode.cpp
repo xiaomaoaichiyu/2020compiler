@@ -147,11 +147,14 @@ string CodeItem::getContent()
 		break;
 	}
 	case MOV: {
-		content = "mov                  "+standardLength(operand1) + " " + standardLength(operand2);
+		content = "mov                  " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case NOTE: {
 		content = "note                 " + standardLength(operand1);
+		break;
+	}case LEA: {
+		content = "LEA                  " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	default:
@@ -226,6 +229,12 @@ void CodeItem::setOperand2(string ope2) {
 
 void CodeItem::setResult(string res) {
 	this->result = res;
+}
+
+void CodeItem::setInstr(string res, string ope1, string ope2) {
+	this->result = res;
+	this->operand1 = ope1;
+	this->operand2 = ope2;
 }
 
 void CodeItem::setFatherBlock(vector<int> a)
