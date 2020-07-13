@@ -10,10 +10,12 @@
 class phiFun {
 	// phi函数的例子：y^3 = \phi(y^1, y^2)
 public:
+	std::string primaryName;				// 初始命名为y，之后不做修改
 	std::string name;							// 初始命名为y，后面更改为y^3
 	std::set<int> blockNums;				// y^1, y^2所在的基本块序号
 	std::set<std::string> subIndexs;	// y^1, y^2
-	phiFun(std::string name, std::set<int> blockNums, std::set<std::string> subIndexs) {
+	phiFun(std::string primaryName, std::string name, std::set<int> blockNums, std::set<std::string> subIndexs) {
+		this->primaryName = primaryName;
 		this->name = name;
 		this->blockNums = blockNums;
 		this->subIndexs = subIndexs;

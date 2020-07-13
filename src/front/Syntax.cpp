@@ -183,10 +183,14 @@ int frontExecute(string syname)
 	}
 	//符号表对名字加"@"和"%"
 	for (int i = 0; i < total.size(); i++) {
-		string b = "%";
-		if (i == 0) b = "@";
+		string b;
 		for (int j = 0; j < total[i].size(); j++) {
-			if (j == 0) b = "@";
+			if (i == 0 || j == 0) {	//i=0为全局,j=0为函数
+				b = "@";
+			}
+			else {
+				b = "%";
+			}
 			total[i][j].changeName(b + total[i][j].getName());
 		}
 	}
@@ -1482,8 +1486,8 @@ void ifStmt()            //条件语句
 		Stmt();			//stmt2
 	}
 	else {	//只有if  没有else，只需要把br res %if.then, %if.else中的%if.else标签改成%if.end即可
-		string res = codetotal[Funcindex][nowIndex].getResult();
-		codetotal[Funcindex][nowIndex].changeContent(res, if_then_label, if_end_label);
+		string oper1 = codetotal[Funcindex][nowIndex].getOperand1();
+		codetotal[Funcindex][nowIndex].changeContent(if_end_label, oper1, if_then_label);
 	}
 	CodeItem citem5 = CodeItem(BR, "",if_end_label, "");   //BR if.end
 	citem5.setFatherBlock(fatherBlock);
@@ -1958,6 +1962,6 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 				}
 			}
 		}
-		codetotal.push_back(a);
+		codetotal.push_back(a);  
 	}
-}
+} 
