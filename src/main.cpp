@@ -44,8 +44,8 @@ int main(int argc, char* argv[])
 	frontExecute(syname);
 
 	//运行优化
-	/*SSA ssa;
-	ssa.generate();*/
+	SSA ssa;
+	ssa.generate();
 
 	irOptimize();
 

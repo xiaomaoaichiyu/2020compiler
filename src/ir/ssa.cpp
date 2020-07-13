@@ -39,7 +39,7 @@ bool ifGlobalVariable(string name) {
 // 判断是否是局部变量
 bool ifLocalVariable(string name) {
 	regex r("%.+");
-	return regex_match(name, r) && !ifTempVariable(name);
+	return regex_match(name, r) && (name.find(".") == string::npos) && !ifTempVariable(name);
 }
 
 // 在一个函数的所有中间代码中找到某个标签的位置，即它是第几条中间代码
@@ -270,7 +270,7 @@ void SSA::build_idom_tree() {
 			tmp1.insert(j);
 			set_difference(blockCore[i][j].domin.begin(), blockCore[i][j].domin.end(), tmp1.begin(), tmp1.end(), inserter(tmp2, tmp2.begin()));;
 			blockCore[i][j].tmpIdom = tmp2;
-			blockCore[i][j].idom = tmp3;
+			blockCore[i][j].idom = tmp3;	// 申请idom空间
 		}
 		// foreach n
 		for (j = 1; j < size2; j++) {
@@ -362,11 +362,11 @@ void SSA::build_dom_frontier() {
 			int p_i = preOrder[i][j];
 			set<int> df;
 			for (set<int>::iterator iter = blockCore[i][p_i].succeeds.begin(); iter != blockCore[i][p_i].succeeds.end(); iter++) {
-				if (blockCore[i][p_i].idom.find(*iter) != blockCore[i][p_i].idom.end()) df.insert(*iter);
+				if (blockCore[i][p_i].idom.find(*iter) == blockCore[i][p_i].idom.end()) df.insert(*iter);
 			}
 			for (set<int>::iterator iter1 = blockCore[i][p_i].idom.begin(); iter1 != blockCore[i][p_i].idom.end(); iter1++) {
 				for (set<int>::iterator iter2 = blockCore[i][*iter1].df.begin(); iter2 != blockCore[i][*iter1].df.end(); iter2++) {
-					if (blockCore[i][p_i].idom.find(*iter2) != blockCore[i][p_i].idom.end()) df.insert(*iter2);
+					if (blockCore[i][p_i].idom.find(*iter2) == blockCore[i][p_i].idom.end()) df.insert(*iter2);
 				}
 			}
 			blockCore[i][p_i].df = df;
@@ -526,6 +526,7 @@ void SSA::build_var_chain() {
 						if (*iter1 != *iter2) {
 							DFP = D;
 							change = true;
+							break;
 						}
 				}
 			}
@@ -550,10 +551,13 @@ int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited
 	if (vs.blockNums.find(blkNum) != vs.blockNums.end()) return blkNum;
 	// 在该基本块的前驱节点中再继续找
 	set<int> pred = blockCore[funNum][blkNum].pred;
+	int cnt = 0, result = 0;
 	for (set<int>::iterator iter = pred.begin(); iter != pred.end(); iter++) {
-		int result = phi_loc_block(funNum, *iter, name, visited);
-		if (result != 0) return *iter;
+		int t = phi_loc_block(funNum, *iter, name, visited);
+		if (t != 0 && result != t) { result = t; cnt++; }		// 我认为正常情况下只会使cnt=1或者cnt=0
 	}
+	if (cnt == 1) return result;
+	if (cnt > 1) cout << "Function phi_loc_block: 我认为有问题" << endl;
 	return 0;
 }
 
@@ -578,7 +582,8 @@ void SSA::add_phi_function() {
 					// 记录该基本块是否被访问过
 					vector<bool> visited;
 					for (k = 0; k < size2; k++) visited.push_back(false);
-					pf.blockNums.insert(phi_loc_block(i, *iter1, vs.name, visited));
+					int t = phi_loc_block(i, *iter1, vs.name, visited);
+					if (t != 0) pf.blockNums.insert(t);
 				}
 				// 在基本块中插入
 				blockCore[i][*iter].phi.push_back(pf);
