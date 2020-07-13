@@ -42,11 +42,11 @@ void SSA::Test_Add_Phi_Fun() {
 				debug_ssa << "\\phi" << "\t\t";
 				debug_ssa << (*iter).name << "\t\t";
 				debug_ssa << "{" << "  ";
-				for (set<int>::iterator iter1 = (*iter).blockNums.begin(); iter1 != (*iter).blockNums.end(); iter1++)
+				for (vector<int>::iterator iter1 = (*iter).blockNums.begin(); iter1 != (*iter).blockNums.end(); iter1++)
 					debug_ssa << *iter1 << "  ";
 				debug_ssa << "}\t\t";
 				debug_ssa << "{" << "  ";
-				for (set<string>::iterator iter2 = (*iter).subIndexs.begin(); iter2 != (*iter).subIndexs.end(); iter2++)
+				for (vector<string>::iterator iter2 = (*iter).subIndexs.begin(); iter2 != (*iter).subIndexs.end(); iter2++)
 					debug_ssa << *iter2 << "  ";
 				debug_ssa << "}" << endl;
 			}
