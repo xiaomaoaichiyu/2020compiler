@@ -183,10 +183,14 @@ int frontExecute(string syname)
 	}
 	//符号表对名字加"@"和"%"
 	for (int i = 0; i < total.size(); i++) {
-		string b = "%";
-		if (i == 0) b = "@";
+		string b;
 		for (int j = 0; j < total[i].size(); j++) {
-			if (j == 0) b = "@";
+			if (i == 0 || j == 0) {	//i=0为全局,j=0为函数
+				b = "@";
+			}
+			else {
+				b = "%";
+			}
 			total[i][j].changeName(b + total[i][j].getName());
 		}
 	}
