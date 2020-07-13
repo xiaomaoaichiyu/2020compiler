@@ -390,6 +390,7 @@ void SSA::build_dom_frontier() {
 // 在基本块的use链中插入变量名称
 void SSA::use_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
+	if (blockCore[funNum][blkNum].def.find(varName) == blockCore[funNum][blkNum].def.end()) return;	// use变量的定义为使用前未被定义的变量
 	if (ifLocalVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
 }
 
@@ -509,7 +510,8 @@ void SSA::build_var_chain() {
 		int size2 = total[i].size();
 		for (j = 0; j < size2; j++) {
 			symbolTable st = total[i][j];
-			if (st.getForm() == VARIABLE || st.getForm() == PARAMETER) {
+			if ((st.getForm() == VARIABLE || st.getForm() == PARAMETER) && st.getDimension() == 0) {
+				// 不处理数组
 				set<int> s;
 				varChain[i].push_back(varStruct(st.getName(), s));
 			}
@@ -520,7 +522,7 @@ void SSA::build_var_chain() {
 	// 实际上，codetotal、total、blockCore等的一维大小应该都相同
 	for (i = 1; i < size1; i++) {
 		int size2 = varChain[i].size();
-		for (j = 0; j < size2; j++) {
+		for (j = 0; j < size2; j++) {	// 遍历该函数内的每个变量
 			int size3 = blockCore[i].size();
 			// 初始化寻找
 			for (k = 1; k < size3; k++)
@@ -594,14 +596,15 @@ void SSA::add_phi_function() {
 			// 在每个需要插入\phi函数的基本块插入\phi函数
 			for (set<int>::iterator iter = vs.blockNums.begin(); iter != vs.blockNums.end(); iter++) {
 				// 初始化要插入的\phi函数
-				set<int> s1; set<string> s2;  phiFun pf(vs.name, vs.name, s1, s2);
+				vector<int> s1; vector<string> s2;  phiFun pf(vs.name, vs.name, s1, s2);
 				// 在每个前序节点中查找该变量的基本块位置
 				for (set<int>::iterator iter1 = blockCore[i][*iter].pred.begin(); iter1 != blockCore[i][*iter].pred.end(); iter1++) {
 					// 记录该基本块是否被访问过
 					vector<bool> visited;
 					for (k = 0; k < size2; k++) visited.push_back(false);
 					int t = phi_loc_block(i, *iter1, vs.name, visited);
-					if (t != 0) pf.blockNums.insert(t);
+					if (t != 0 && find(pf.blockNums.begin(), pf.blockNums.end(), t) == pf.blockNums.end()) 
+						pf.blockNums.push_back(t);
 				}
 				// 在基本块中插入
 				blockCore[i][*iter].phi.push_back(pf);
@@ -749,8 +752,34 @@ void SSA::renameVar() {
 			int size6 = blockCore[i][j].phi.size();
 			for (k = 0; k < size6; k++) {
 				phiFun pf = blockCore[i][j].phi[k];
-				for (set<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
-					blockCore[i][j].phi[k].subIndexs.insert(lastVarName[pf.primaryName][*iter]);
+				for (vector<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
+					blockCore[i][j].phi[k].subIndexs.push_back(lastVarName[pf.primaryName][*iter]);
+			}
+		}
+	}
+}
+
+string deleteSuffix(string name) {
+	if (name.find("^") != string::npos)
+		name.erase(name.begin() + name.find("^"), name.end());
+	return name;
+}
+
+// 将SSA变量带下标的中间代码恢复为正常中间代码，即做完优化后去掉下标
+void SSA::rename_back() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 遍历函数
+		int size2 = blockCore[i].size();
+		for (j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry和exit块
+			int size3 = blockCore[i][j].Ir.size();
+			for (k = 0; k < size3; k++) {	// 遍历基本块中的中间代码并进行修改
+				CodeItem ci = blockCore[i][j].Ir[k];
+				string result = deleteSuffix(ci.getResult());
+				string op1 = deleteSuffix(ci.getOperand1());
+				string op2 = deleteSuffix(ci.getOperand2());
+				CodeItem nci(ci.getCodetype(), result, op1, op2);
+				blockCore[i][j].Ir[k] = nci;
 			}
 		}
 	}
@@ -783,12 +812,49 @@ void SSA::simplify_br() {
 	}
 }
 
+// 处理\phi函数
+void SSA::deal_phi_function() {
+	int i, j, k, m, n;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 遍历函数，跳过全局定义
+		int size2 = blockCore[i].size();
+		for (j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry块和exit块
+			int size3 = blockCore[i][j].phi.size();
+			for (k = 0; k < size3; k++) {
+				phiFun pf = blockCore[i][j].phi[k];
+				for (m = 0; m < pf.blockNums.size(); m++) {
+					// e.g. x3 = \phi(x1, x2)
+					// 在x1和x2的基本块末尾分别添加x3 = x1; x3 = x2; 赋值语句
+					// x3 = x1;的赋值语句转换为中间代码为 load %0, x1; store %0, x3; 两条语句
+					int tTempIndex = func2tmpIndex[i];
+					string tTemp = "%" + to_string(tTempIndex);
+					func2tmpIndex[i] = tTempIndex + 1;
+					CodeItem ci1(LOAD, tTemp, pf.subIndexs[m], "");
+					CodeItem ci2(STORE, tTemp, pf.name, "");
+					if (!blockCore[i][pf.blockNums[m]].Ir.empty() && 
+						(blockCore[i][pf.blockNums[m]].Ir.back().getCodetype() == BR || blockCore[i][pf.blockNums[m]].Ir.back().getCodetype() == RET)) {
+						// 如果要插入的基本块最后一条中间代码是跳转指令，则插在它的前面
+						CodeItem ci3 = blockCore[i][pf.blockNums[m]].Ir.back();
+						blockCore[i][pf.blockNums[m]].Ir.pop_back();
+						blockCore[i][pf.blockNums[m]].Ir.push_back(ci1);
+						blockCore[i][pf.blockNums[m]].Ir.push_back(ci2);
+						blockCore[i][pf.blockNums[m]].Ir.push_back(ci3);
+					}
+					else {	// 否则插到基本块的最后
+						blockCore[i][pf.blockNums[m]].Ir.push_back(ci1);
+						blockCore[i][pf.blockNums[m]].Ir.push_back(ci2);
+					}
+				}
+			}
+		}
+	}
+}
+
 // 入口函数
 void SSA::generate() {
 
 	// 简化条件判断为常值的跳转指令
 	simplify_br();
-
 
 	// 计算每个基本块的起始语句
 	find_primary_statement();
@@ -830,6 +896,13 @@ void SSA::generate() {
 	// 变量重命名
 	renameVar();
 
+	// 处理\phi函数
+	deal_phi_function();
+
+	// 恢复变量命名
+	// rename_back();
+
 	// 测试输出上面各个函数
 	Test_SSA();
+
 }

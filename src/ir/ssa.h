@@ -12,9 +12,9 @@ class phiFun {
 public:
 	std::string primaryName;				// 初始命名为y，之后不做修改
 	std::string name;							// 初始命名为y，后面更改为y^3
-	std::set<int> blockNums;				// y^1, y^2所在的基本块序号
-	std::set<std::string> subIndexs;	// y^1, y^2
-	phiFun(std::string primaryName, std::string name, std::set<int> blockNums, std::set<std::string> subIndexs) {
+	std::vector<int> blockNums;				// y^1, y^2所在的基本块序号
+	std::vector<std::string> subIndexs;	// y^1, y^2
+	phiFun(std::string primaryName, std::string name, std::vector<int> blockNums, std::vector<std::string> subIndexs) {
 		this->primaryName = primaryName;
 		this->name = name;
 		this->blockNums = blockNums;
@@ -88,6 +88,8 @@ private:
 	void simplify_br();													// 简化条件判断为常值的跳转指令
 	void add_phi_function();											// 在需要添加基本块的开始添加\phi函数
 	int phi_loc_block(int funNum, int blkNum, std::string name, std::vector<bool> visited);			// 查找该节点开始对应的name变量的基本块位置
+	void deal_phi_function();										// 处理\phi函数
+	void rename_back();												// 将SSA变量带下标的中间代码恢复为正常中间代码，即做完优化后去掉下标
 	// 测试专用函数
 	void Test_SSA();			// 测试函数的总入口
 	void Test_Divide_Basic_Block();	
