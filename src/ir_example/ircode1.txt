@@ -244,7 +244,7 @@ push       int        %39        1
 call       %40        @change    1         
 note                 func change() end
 sle        %41        %40        -2        
-br         %if.else_2 %if.then_2 %if.end_2 
+br         %if.end_2  %41        %if.then_2
 label      %if.then_2
 br                    %while.end_1           
 br                    %if.end_2            
@@ -298,7 +298,7 @@ div        %62        %61        2
 load       %63        %k        
 add        %64        %62        %63       
 sgt        %65        %60        %64       
-br         %if.else_3 %if.then_3 %if.end_3 
+br         %if.end_3  %65        %if.then_3
 label      %if.then_3
 note                 index count begin
 load       %66        %j        
