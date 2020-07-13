@@ -219,7 +219,6 @@ void printLIR(string outputFile) {
 	irtxt.close();
 }
 
-
 vector<vector<string>> stackVars;
 
 void countVars() {
@@ -237,20 +236,74 @@ void countVars() {
 	}
 }
 
+//检查irCode类型
+// 1: 计算类型
+int checkType(irCodeType op) {
+	if (op == ADD ||  op == SUB || op == DIV || op == MUL || op ==REM ||
+		op == AND || op == OR || op == NOT ||
+		op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op ==SLE) {
+		return 1;
+	}
+	return 0;
+}
+
+//窥孔优化
+void peepholeOptimization() {
+	for (int i = 1; i < LIR.size(); i++) {
+		vector<CodeItem>& func = LIR.at(i);
+		for (int j = 0; j < func.size() - 1; j++) {
+			CodeItem& instr = func.at(j);
+			CodeItem& next = func.at(j + 1);
+			if ((checkType(instr.getCodetype()) == 1) && next.getCodetype() == MOV) {
+				string res = instr.getResult();
+				string nextOpe1 = next.getOperand1();
+				string nextOpe2 = next.getOperand2();
+				if (res == nextOpe2) {
+					instr.setResult(nextOpe1);
+					next.setOperand2(nextOpe1);
+				}
+			}
+		}
+		//删除多余的MOV指令
+		for (int j = 1; j < func.size();) {
+			auto op = func.at(j).getCodetype();
+			auto ope1 = func.at(j).getOperand1();
+			auto ope2 = func.at(j).getOperand2();
+			if (op == MOV && ope1 == ope2) {
+				func.erase(func.begin() + j);
+				continue;
+			}
+			j++;
+		}
+	}
+}
+
 //=============================================================
 // 优化函数
 //=============================================================
 
 void irOptimize() {
 	
+	//运行优化
+	SSA ssa;
+	ssa.generate();
+
+
 	//寄存器分配优化
 	MIR2LIRpass();
 	printLIR("LIR.txt");
 	countVars();
 
+	//寄存器直接指派
 	for (int i = 1; i < LIR.size(); i++) {
 		registerAllocation(LIR.at(i), stackVars.at(i));
 	}
+
 	printLIR("armIR.txt");
+
+	peepholeOptimization();
+
+	printLIR("armIR_2.txt");
+
 }
 
