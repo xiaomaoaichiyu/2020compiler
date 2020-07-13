@@ -1,4 +1,5 @@
 ﻿#include "optimize.h"
+#include "register.h"
 
 //===============================================================
 //将MIR转换为LIR，把临时变量都用虚拟寄存器替换，vrIndex从0开始编号
@@ -9,12 +10,6 @@ vector<vector<CodeItem>> LIR;
 int vrIndex;
 string curVreg = "";
 map<string, string> tmp2vr;
-
-void setInstr(CodeItem& instr, string res, string ope1, string ope2) {
-	instr.setResult(res);
-	instr.setOperand1(ope1);
-	instr.setOperand2(ope2);
-}
 
 string getVreg() {
 	curVreg = FORMAT("VR{}", vrIndex++);
@@ -36,7 +31,8 @@ string dealTmpOpe(string operand) {
 }
 
 void MIR2LIRpass() {
-	for (int i = 0; i < codetotal.size(); i++) {
+	LIR.push_back(codetotal.at(0));
+	for (int i = 1; i < codetotal.size(); i++) {
 		vector<CodeItem> src = codetotal.at(i);
 		vector<CodeItem> dst;
 		vrIndex = 0;
@@ -58,7 +54,7 @@ void MIR2LIRpass() {
 				res = dealTmpOpe(res);
 				ope1 = dealTmpOpe(ope1);
 				ope2 = dealTmpOpe(ope2);
-				setInstr(instr, res, ope1, ope2);
+				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
 			else if (op == LOAD) {
@@ -66,13 +62,13 @@ void MIR2LIRpass() {
 					CodeItem address(LEA, "", getVreg(), ope1);
 					ope1 = curVreg;
 					res = dealTmpOpe(res);
-					setInstr(instr, res, ope1, ope2);
+					instr.setInstr(res, ope1, ope2);
 					dst.push_back(address);
 					dst.push_back(instr);
 				}
 				else {
 					res = dealTmpOpe(res);
-					setInstr(instr, res, ope1, ope2);
+					instr.setInstr(res, ope1, ope2);
 					dst.push_back(instr);
 				}
 			}
@@ -83,12 +79,12 @@ void MIR2LIRpass() {
 						ope1 = curVreg;
 						res = dealTmpOpe(res);
 						dst.push_back(address);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
 						res = dealTmpOpe(res);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 				}
@@ -99,13 +95,13 @@ void MIR2LIRpass() {
 						res = dealTmpOpe(res);
 						ope2 = dealTmpOpe(ope2);
 						dst.push_back(address);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
 						res = dealTmpOpe(res);
 						ope2 = dealTmpOpe(ope2);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 				}
@@ -115,13 +111,13 @@ void MIR2LIRpass() {
 					CodeItem address(LEA, "", getVreg(), ope1);
 					ope1 = curVreg;
 					res = dealTmpOpe(res);
-					setInstr(instr, res, ope1, ope2);
+					instr.setInstr(res, ope1, ope2);
 					dst.push_back(address);
 					dst.push_back(instr);
 				}
 				else {
 					res = dealTmpOpe(res);
-					setInstr(instr, res, ope1, ope2);
+					instr.setInstr(res, ope1, ope2);
 					dst.push_back(instr);
 				}
 			}
@@ -132,12 +128,12 @@ void MIR2LIRpass() {
 						ope1 = curVreg;
 						res = dealTmpOpe(res);
 						dst.push_back(address);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
 						res = dealTmpOpe(res);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 				}
@@ -148,13 +144,13 @@ void MIR2LIRpass() {
 						res = dealTmpOpe(res);
 						ope2 = dealTmpOpe(ope2);
 						dst.push_back(address);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
 						res = dealTmpOpe(res);
 						ope2 = dealTmpOpe(ope2);
-						setInstr(instr, res, ope1, ope2);
+						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 				}
@@ -163,7 +159,7 @@ void MIR2LIRpass() {
 				if (isTmp(res)) {
 					res = dealTmpOpe(res);
 					CodeItem tmp(MOV, "", res, "R0");
-					setInstr(instr, res, ope1, ope2);
+					instr.setInstr(res, ope1, ope2);
 					dst.push_back(instr);
 					dst.push_back(tmp);
 				}
@@ -178,7 +174,7 @@ void MIR2LIRpass() {
 					dst.push_back(tmp);
 				}
 				ope1 = "R0";
-				setInstr(instr, res, ope1, ope2);
+				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
 			else if (op == PUSH || op == POP) {
@@ -188,7 +184,7 @@ void MIR2LIRpass() {
 					dst.push_back(tmp);
 				}
 				res = dealTmpOpe(res);
-				setInstr(instr, res, ope1, ope2);
+				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
 			else if (op == BR) {
@@ -198,7 +194,7 @@ void MIR2LIRpass() {
 					dst.push_back(tmp);
 				}
 				ope1 = dealTmpOpe(ope1);
-				setInstr(instr, res, ope1, ope2);
+				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
 			else {
@@ -223,24 +219,38 @@ void printLIR(string outputFile) {
 	irtxt.close();
 }
 
+
+vector<vector<string>> stackVars;
+
+void countVars() {
+	stackVars.push_back(vector<string>());
+	for (int i = 1; i < codetotal.size(); i++) {
+		auto func = codetotal.at(i);
+		vector<string> vars;
+		for (int i = 1; i < func.size(); i++) {
+			auto instr = func.at(i);
+			if (instr.getCodetype() == PARA || instr.getCodetype() == ALLOC) {
+				vars.push_back(instr.getResult());
+			}
+		}
+		stackVars.push_back(vars);
+	}
+}
+
 //=============================================================
 // 优化函数
 //=============================================================
 
 void irOptimize() {
-
-
+	
 	//寄存器分配优化
 	MIR2LIRpass();
-}
+	printLIR("LIR.txt");
+	countVars();
 
-void sortMIR() {
-	for (int i = 0; i < codetotal.size(); i++) {
-		vector<CodeItem>& func = codetotal.at(i);
-		int index = 0;
-		for (int j = 0; j < func.size(); j++) {
-			CodeItem& instr = func.at(j);
-
-		}
+	for (int i = 1; i < LIR.size(); i++) {
+		registerAllocation(LIR.at(i), stackVars.at(i));
 	}
+	printLIR("armIR.txt");
 }
+

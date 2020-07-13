@@ -33,11 +33,11 @@ public:
 	string getReg(string vreg);
 	string getAndAllocReg(string vreg);
 	void releaseReg(string vreg);
-	CodeItem loadVreg(string vreg);
+	pair<string, string> spillReg();	//返回 <寄存器, 虚拟寄存器> 
+	int getStackOffset(string vreg);
 private:
 	string haveAvailReg();
 	string allocReg();
-	pair<string, string> spillReg();	//返回 <寄存器, 虚拟寄存器> 
 };
 
 struct Allocation {
@@ -46,7 +46,7 @@ struct Allocation {
 	string reg;		//分配的物理寄存器或者内存位置
 };
 
-void registerAllocation(vector<CodeItem>& func);
+void registerAllocation(vector<CodeItem>& func, vector<string> vars);
 
 //=============================================
 //2. 线性扫描算法

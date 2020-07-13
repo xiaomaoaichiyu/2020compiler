@@ -49,7 +49,6 @@ int main(int argc, char* argv[])
 
 	irOptimize();
 
-	printLIR("LIR.txt");
 	//运行后端，生成arm代码
 
 	//arm_generate_without_register(sname);
