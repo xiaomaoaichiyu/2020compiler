@@ -19,25 +19,25 @@ string standardOutput(string str)
 // 可用于通过判断br语句的result操作数选出相应的标签名称
 // br tmpReg label1 label2
 // br label
-bool ifTempVariable(string name) {
+bool SSA::ifTempVariable(string name) {
 	regex r("%\\d+");
 	return regex_match(name, r);
 }
 
 // 判断字符串是否是数字
-bool ifDigit(string name) {
+bool SSA::ifDigit(string name) {
 	regex r("(\\+|\\-)?\\d+");
 	return regex_match(name, r);
 }
 
 // 判断字符串是否是全局变量
-bool ifGlobalVariable(string name) {
+bool SSA::ifGlobalVariable(string name) {
 	regex r("@.+");
 	return regex_match(name, r);
 }
 
 // 判断是否是局部变量
-bool ifLocalVariable(string name) {
+bool SSA::ifLocalVariable(string name) {
 	regex r("%.+");
 	return regex_match(name, r) && (name.find(".") == string::npos) && !ifTempVariable(name);
 }
@@ -391,13 +391,13 @@ void SSA::build_dom_frontier() {
 void SSA::use_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	if (blockCore[funNum][blkNum].def.find(varName) != blockCore[funNum][blkNum].def.end()) return;	// use变量的定义为使用前未被定义的变量
-	if (ifLocalVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
 }
 
 // 在基本块的def链中插入变量名称
 void SSA::def_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
-	if (ifLocalVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
 }
 
 // 计算ud链，即分析每个基本块的use和def变量
@@ -423,7 +423,7 @@ void SSA::build_def_use_chain() {
 				case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
 				case LOAD: case LOADARR:
 				case RET:
-				case PUSH: case POP:
+				case PUSH: 
 				case BR:
 				case PARA:
 				case MOV:
@@ -432,9 +432,10 @@ void SSA::build_def_use_chain() {
 					def_insert(i, j, ci.getResult());
 					break;
 				case STORE: case STOREARR:
-					def_insert(i, j, ci.getOperand1());
+				case POP:
 					use_insert(i, j, ci.getResult());
 					use_insert(i, j, ci.getOperand2());
+					def_insert(i, j, ci.getOperand1());
 					break;
 				// 无需处理的部分，当然也与上面合并也无妨
 				case ALLOC: case GLOBAL:
@@ -759,7 +760,8 @@ void SSA::renameVar() {
 	}
 }
 
-string deleteSuffix(string name) {
+// 删除后缀，如输入参数为% a ^ 1，返回 % a; 若不含^ 则直接返回；
+string SSA::deleteSuffix(string name) {
 	if (name.find("^") != string::npos)
 		name.erase(name.begin() + name.find("^"), name.end());
 	return name;
@@ -898,6 +900,9 @@ void SSA::generate() {
 
 	// 处理\phi函数
 	deal_phi_function();
+
+	// 优化
+	// ssa_optimize();
 
 	// 恢复变量命名
 	// rename_back();
