@@ -30,6 +30,60 @@ string dealTmpOpe(string operand) {
 	return operand;
 }
 
+void dealNumber(CodeItem& instr) {
+	auto op = instr.getCodetype();
+	string res = instr.getResult();
+	string ope1 = instr.getOperand1();
+	string ope2 = instr.getOperand2();
+	if (op == ADD || op == MUL || op == AND || op == OR || op == EQL || op == NEQ) {
+		if (isNumber(ope1)) {
+			string tmp = ope2;
+			ope2 = ope1;
+			ope1 = tmp;
+			instr.setInstr(res, ope1, ope2);
+		}
+	}
+	else if (op == SGT) {
+		if (isNumber(ope1)) {
+			string tmp = ope2;
+			ope2 = ope1;
+			ope1 = tmp;
+			instr.setInstr(res, ope1, ope2);
+			instr.setCodetype(SLE);
+		}
+	}
+	else if (op == SLT) {
+		if (isNumber(ope1)) {
+			string tmp = ope2;
+			ope2 = ope1;
+			ope1 = tmp;
+			instr.setInstr(res, ope1, ope2);
+			instr.setCodetype(SGE);
+		}
+	}
+	else if (op == SGE) {
+		if (isNumber(ope1)) {
+			string tmp = ope2;
+			ope2 = ope1;
+			ope1 = tmp;
+			instr.setInstr(res, ope1, ope2);
+			instr.setCodetype(SLT);
+		}
+	}
+	else if (op == SLE) {
+		if (isNumber(ope1)) {
+			string tmp = ope2;
+			ope2 = ope1;
+			ope1 = tmp;
+			instr.setInstr(res, ope1, ope2);
+			instr.setCodetype(SGT);
+		}
+	}
+	else {
+
+	}
+}
+
 void MIR2LIRpass() {
 	LIR.push_back(codetotal.at(0));
 	for (int i = 1; i < codetotal.size(); i++) {
@@ -40,13 +94,27 @@ void MIR2LIRpass() {
 		tmp2vr.clear();
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
+			dealNumber(instr);
 			irCodeType op = instr.getCodetype();
 			string res = instr.getResult();
 			string ope1 = instr.getOperand1();
 			string ope2 = instr.getOperand2();
-			if (op == ADD || op == SUB || op == MUL || op == DIV || op == REM ||
-				op == AND || op == OR || op == NOT ||
-				op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SGE) {
+			if (op == NOT) {
+				if (isNumber(ope1)) {
+					int tmp = A2I(ope1);
+					if (tmp == 0) {
+						dst.push_back(CodeItem(MOV, "", res, "1"));
+					}
+					else {
+						dst.push_back(CodeItem(MOV, "", res, "0"));
+					}
+				}
+				else {
+					dst.push_back(instr);
+				}
+			}else if (op == ADD || op == SUB || op == MUL || op == DIV || op == REM ||
+					  op == AND || op == OR ||
+					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SGE) {
 				if (isNumber(ope1)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
@@ -107,18 +175,40 @@ void MIR2LIRpass() {
 				}
 			}
 			else if (op == STORE) {
-				if(isGlobal(ope1)) {	//全局变量
-					CodeItem address(LEA, "", getVreg(), ope1);
-					ope1 = curVreg;
-					res = dealTmpOpe(res);
-					instr.setInstr(res, ope1, ope2);
-					dst.push_back(address);
-					dst.push_back(instr);
+				if (isNumber(res)) {	//存一个立即数
+					if (isGlobal(ope1)) {	//全局变量
+						CodeItem movNumber(MOV, "", getVreg(), res);
+						res = curVreg;
+						CodeItem address(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						res = dealTmpOpe(res);
+						instr.setInstr(res, ope1, ope2);
+						dst.push_back(movNumber);
+						dst.push_back(address);
+						dst.push_back(instr);
+					}
+					else {
+						CodeItem movNumber(MOV, "", getVreg(), res);
+						res = curVreg;
+						instr.setInstr(res, ope1, ope2);
+						dst.push_back(movNumber);
+						dst.push_back(instr);
+					}
 				}
-				else {
-					res = dealTmpOpe(res);
-					instr.setInstr(res, ope1, ope2);
-					dst.push_back(instr);
+				else {					//存一个寄存器
+					if (isGlobal(ope1)) {	//全局变量
+						CodeItem address(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						res = dealTmpOpe(res);
+						instr.setInstr(res, ope1, ope2);
+						dst.push_back(address);
+						dst.push_back(instr);
+					}
+					else {
+						res = dealTmpOpe(res);
+						instr.setInstr(res, ope1, ope2);
+						dst.push_back(instr);
+					}
 				}
 			}
 			else if (op == STOREARR) {
