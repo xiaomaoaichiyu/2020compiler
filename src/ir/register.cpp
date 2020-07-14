@@ -248,12 +248,13 @@ void registerAllocation(vector<CodeItem>& func, vector<string> vars) {
 					instr.setInstr(resReg, ope1Reg, ope2Reg);
 				}
 				else {					//栈数组
-					if (vreg2varReg[ope1] == "memory") {
+					if (var2reg[ope1] == "memory") {
 						resReg = allocTmpReg(regpool, res, func, i);
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 					else {
-						resReg = vreg2varReg[ope1];
+						resReg = var2reg[ope1];
+						vreg2varReg[res] = resReg;
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 				}
@@ -266,14 +267,15 @@ void registerAllocation(vector<CodeItem>& func, vector<string> vars) {
 					instr.setInstr(resReg, ope1Reg, ope2Reg);
 				}
 				else {					//栈数组
-					if (vreg2varReg[ope1] == "memory") {
+					if (var2reg[ope1] == "memory") {
 						ope2Reg = getTmpReg(regpool, ope2, func, i);
 						resReg = allocTmpReg(regpool, res, func, i);
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 					else {
 						ope2Reg = getTmpReg(regpool, ope2, func, i);
-						resReg = vreg2varReg[ope1];
+						resReg = var2reg[ope1];
+						vreg2varReg[res] = resReg;
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 				}
@@ -300,7 +302,32 @@ void registerAllocation(vector<CodeItem>& func, vector<string> vars) {
 			}
 		}
 		else if (op == STOREARR) {
-			
+			if (isNumber(ope2)) {	//偏移是立即数
+				if (isVreg(ope1)) {		//全局数组
+					ope1Reg = getTmpReg(regpool, ope1, func, i);
+					resReg = getTmpReg(regpool, res, func, i);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+				else {					//栈数组
+					//因为是数组，分配的寄存器没有意义，不考虑 “memory”
+					resReg = getTmpReg(regpool, res, func, i);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+			}
+			else {					//偏移是寄存器
+				if (isVreg(ope1)) {		//全局数组
+					ope1Reg = getTmpReg(regpool, ope1, func, i);
+					ope2Reg = getTmpReg(regpool, ope2, func, i);
+					resReg = getTmpReg(regpool, res, func, i);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+				else {					//栈数组
+					//因为是数组，分配的寄存器没有意义，不考虑 “memory”
+					resReg = getTmpReg(regpool, res, func, i);
+					ope2Reg = getTmpReg(regpool, ope2, func, i);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+			}
 		}
 		else if (op == PUSH) {
 			ope1Reg = getTmpReg(regpool, ope1, func, i);

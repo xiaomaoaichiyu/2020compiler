@@ -222,8 +222,10 @@ void MIR2LIRpass() {
 						dst.push_back(instr);
 					}
 					else {
-						res = dealTmpOpe(res);
+						CodeItem movNumber(MOV, "", getVreg(), res);
+						res = curVreg;
 						instr.setInstr(res, ope1, ope2);
+						dst.push_back(movNumber);
 						dst.push_back(instr);
 					}
 				}

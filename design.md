@@ -153,7 +153,7 @@
    - 偏移是一个寄存器
 
      ```assembly
-     ;1. 全局数组， STORE R0, R1, R2
+     ;1. 全局数组, STORE R0, R1, R2
      SDR R0, [R1, R2]
      ;2. 栈数组，STORE R0, 变量名，R1
      add R1, sp, R1
