@@ -216,16 +216,28 @@ void MIR2LIRpass() {
 					if (isGlobal(ope1)) {	//全局数组
 						CodeItem address(LEA, "", getVreg(), ope1);
 						ope1 = curVreg;
-						res = dealTmpOpe(res);
+						if (isNumber(res)) {
+							CodeItem movNumber(MOV, "", getVreg(), res);
+							dst.push_back(movNumber);
+							res = curVreg;
+						}
+						else {
+							res = dealTmpOpe(res);
+						}
 						dst.push_back(address);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
-						CodeItem movNumber(MOV, "", getVreg(), res);
-						res = curVreg;
+						if (isNumber(res)) {
+							CodeItem movNumber(MOV, "", getVreg(), res);
+							dst.push_back(movNumber);
+							res = curVreg;
+						}
+						else {
+							res = dealTmpOpe(res);
+						}
 						instr.setInstr(res, ope1, ope2);
-						dst.push_back(movNumber);
 						dst.push_back(instr);
 					}
 				}
@@ -233,14 +245,28 @@ void MIR2LIRpass() {
 					if (isGlobal(ope1)) {
 						CodeItem address(LEA, "", getVreg(), ope1);
 						ope1 = curVreg;
-						res = dealTmpOpe(res);
+						if (isNumber(res)) {
+							CodeItem movNumber(MOV, "", getVreg(), res);
+							dst.push_back(movNumber);
+							res = curVreg;
+						}
+						else {
+							res = dealTmpOpe(res);
+						}
 						ope2 = dealTmpOpe(ope2);
 						dst.push_back(address);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
-						res = dealTmpOpe(res);
+						if (isNumber(res)) {
+							CodeItem movNumber(MOV, "", getVreg(), res);
+							dst.push_back(movNumber);
+							res = curVreg;
+						}
+						else {
+							res = dealTmpOpe(res);
+						}
 						ope2 = dealTmpOpe(ope2);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
