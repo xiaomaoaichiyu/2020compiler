@@ -13,16 +13,16 @@ void SSA::Test_SSA() {
 	debug_ssa.open("debug_ssa.txt");
 	/* Test_* 函数用于对每个函数进行测试，输出相关信息 */
 	Test_Divide_Basic_Block();// 测试函数：输出所有的基本块信息
-	Test_Build_Dom_Tree();// 测试函数：输出构建的必经节点
-	Test_Build_Idom_Tree();// 测试函数：输出直接必经节点
-	Test_Build_Reverse_Idom_Tree();// 测试函数：输出反向必经节点
+	// Test_Build_Dom_Tree();// 测试函数：输出构建的必经节点
+	// Test_Build_Idom_Tree();// 测试函数：输出直接必经节点
+	// Test_Build_Reverse_Idom_Tree();// 测试函数：输出反向必经节点
 	// Test_Build_Post_Order();// 测试函数：输出后序遍历序列
 	// Test_Build_Pre_Order();// 测试函数：输出前序遍历序列
 	Test_Build_Def_Use_Chain();// 测试函数：输出基本块的def-use链
-	// Test_Active_Var_Analyse();// 测试函数：输出基本块的in-out信息
-	Test_Build_Dom_Frontier();// 测试函数：输出必经边界
-	Test_Build_Var_Chain();// 测试函数：输出函数变量的迭代必经边界
-	Test_Add_Phi_Fun();// 测试函数，输出添加\phi函数的信息
+	Test_Active_Var_Analyse();// 测试函数：输出基本块的in-out信息
+	// Test_Build_Dom_Frontier();// 测试函数：输出必经边界
+	// Test_Build_Var_Chain();// 测试函数：输出函数变量的迭代必经边界
+	// Test_Add_Phi_Fun();// 测试函数，输出添加\phi函数的信息
 	// 关闭文件
 	debug_ssa.close();
 }

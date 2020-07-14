@@ -390,7 +390,7 @@ void SSA::build_dom_frontier() {
 // 在基本块的use链中插入变量名称
 void SSA::use_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
-	if (blockCore[funNum][blkNum].def.find(varName) == blockCore[funNum][blkNum].def.end()) return;	// use变量的定义为使用前未被定义的变量
+	if (blockCore[funNum][blkNum].def.find(varName) != blockCore[funNum][blkNum].def.end()) return;	// use变量的定义为使用前未被定义的变量
 	if (ifLocalVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
 }
 
