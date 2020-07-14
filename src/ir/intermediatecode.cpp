@@ -79,9 +79,9 @@ string CodeItem::getContent()
 		}
 		content = "alloc      " + standardLength(result) + " " + standardLength(ope1) + " " + standardLength(operand2);
 		break;
-	}  
+	}
 	case STORE: {
-		content = "store      " + standardLength(result) + " " + standardLength(operand1) ;
+		content = "store      " + standardLength(result) + " " + standardLength(operand1);
 		break;
 	}
 	case STOREARR: {
@@ -89,14 +89,14 @@ string CodeItem::getContent()
 		break;
 	}
 	case LOAD: {
-		content = "load       " + standardLength(result) + " " + standardLength(operand1) ;
+		content = "load       " + standardLength(result) + " " + standardLength(operand1);
 		break;
 	}
 	case LOADARR: {
 		content = "loadarr    " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
-	case INDEX: {     
+	case INDEX: {
 		break;
 	}
 	case CALL: {
@@ -108,7 +108,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case PUSH: {
-		content = "push       " + standardLength(result) + " "+standardLength(operand1) +" "+ standardLength(operand2);
+		content = "push       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case POP: {
@@ -151,7 +151,12 @@ string CodeItem::getContent()
 		break;
 	}
 	case NOTE: {
-		content = "note                 " + standardLength(operand1);
+		if (result.size() == 0) {
+			content = "note                 " + standardLength(operand1) + "---------------";
+		}
+		else {
+			content = "note       " + standardLength(result) + " " + standardLength(operand1) + "---------------";
+		}
 		break;
 	}case LEA: {
 		content = "LEA                  " + standardLength(operand1) + " " + standardLength(operand2);
@@ -250,7 +255,7 @@ vector<int> CodeItem::getFatherBlock()
 #define ENUM_TO_STRING(enumName) (#enumName)
 
 
-void CodeItem::changeContent(string res, string ope1, string ope2) 
+void CodeItem::changeContent(string res, string ope1, string ope2)
 {
 	this->result = res;
 	this->operand1 = ope1;

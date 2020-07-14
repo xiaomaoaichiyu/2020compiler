@@ -1080,7 +1080,11 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			int nowDimenson = 0;   //记录当前维度
 			string indexBegin = "index count begin";
 			string indexEnd = "index count end";
-			CodeItem citem1 = CodeItem(NOTE, "", indexBegin, "");
+			string b = "%";
+			if (range == 0) {
+				b = "@";	//全局变量
+			}
+			CodeItem citem1 = CodeItem(NOTE, b+name_tag, indexBegin, "");
 			citem1.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem1);
 			while (symbol == LBRACK) {
@@ -1132,7 +1136,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				codetotal[Funcindex].pop_back();
 			}
 			else {
-				CodeItem citem2 = CodeItem(NOTE, "", indexEnd, "");
+				CodeItem citem2 = CodeItem(NOTE, b + name_tag, indexEnd, "");
 				citem2.setFatherBlock(fatherBlock);
 				codetotal[Funcindex].push_back(citem2);
 			}
@@ -1144,10 +1148,6 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				else {
 					interRegister = "%" + numToString(Temp);
 					Temp++;
-					string b = "%";
-					if (range == 0) {
-						b = "@";	//全局变量
-					}
 					CodeItem citem = CodeItem(LOADARR,interRegister, b + name_tag, registerA); //数组取值
 					citem.setFatherBlock(fatherBlock);    //保存当前作用域
 					codetotal[Funcindex].push_back(citem);
@@ -1369,7 +1369,7 @@ void assignStmt()        //赋值语句 LVal = Exp
 	int nowDimenson = 0;   //记录当前维度
 	string indexBegin = "index count begin";
 	string indexEnd = "index count end";
-	CodeItem citem1 = CodeItem(NOTE, "", indexBegin, "");
+	CodeItem citem1 = CodeItem(NOTE, b+name_tag, indexBegin, "");
 	citem1.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem1);
 	while (symbol == LBRACK) {
@@ -1425,7 +1425,7 @@ void assignStmt()        //赋值语句 LVal = Exp
 		codetotal[Funcindex].pop_back();
 	}
 	else {
-		CodeItem citem1 = CodeItem(NOTE, "", indexEnd, "");
+		CodeItem citem1 = CodeItem(NOTE, b+name_tag, indexEnd, "");
 		citem1.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem1);
 	}
@@ -1854,7 +1854,7 @@ void change(int index)	//修改中间代码、符号表
 	codetotal.pop_back();
 	for (i = 0; i < b.size(); i++) {
 		irCodeType codetype = b[i].getCodetype();
-		if (codetype == LABEL || codetype == GLOBAL || codetype == CALL || codetype == BR || codetype == DEFINE || codetype == NOTE) {
+		if (codetype == LABEL || codetype == GLOBAL || codetype == CALL || codetype == BR || codetype == DEFINE) {
 			continue;
 		}
 		string res = b[i].getResult();
