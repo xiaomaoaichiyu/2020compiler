@@ -31,11 +31,12 @@ void RegPool::releaseReg(string vreg) {
 	string useReg = vreg2reg[vreg];
 	vreg2reg.erase(vreg);
 	reg2avail[useReg] = true;
-	for (auto it = vreguse.begin(); it != vreguse.end(); it++) {
+	for (auto it = vreguse.begin(); it != vreguse.end();) {
 		if (*it == vreg) {
-			vreguse.erase(it);
-			//break;
+			it = vreguse.erase(it);
+			continue;
 		}
+		it++;
 	}
 }
 
@@ -241,27 +242,40 @@ void registerAllocation(vector<CodeItem>& func, vector<string> vars) {
 		}
 		else if (op == LOADARR) {
 			if (isNumber(ope2)) {	//偏移是立即数
-				if (isVreg(ope1)) {		//栈数组
-					resReg = vreg2varReg[ope1];
-					instr.setInstr(resReg, ope1Reg, ope2Reg);
-				}
-				else {					//全局数组
+				if (isVreg(ope1)) {		//全局数组
 					ope1Reg = getTmpReg(regpool, ope1, func, i);
 					resReg = allocTmpReg(regpool, res, func, i);
 					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+				else {					//栈数组
+					if (vreg2varReg[ope1] == "memory") {
+						resReg = allocTmpReg(regpool, res, func, i);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {
+						resReg = vreg2varReg[ope1];
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
 				}
 			}
 			else {					//偏移是寄存器
-				if (isVreg(ope1)) {		//栈数组
-					ope2Reg = getTmpReg(regpool, ope2, func, i);
-					resReg = vreg2varReg[ope1];
-					instr.setInstr(resReg, ope1Reg, ope2Reg);
-				}
-				else {					//全局数组
+				if (isVreg(ope1)) {		//全局数组
 					ope1Reg = getTmpReg(regpool, ope1, func, i);
 					ope2Reg = getTmpReg(regpool, ope2, func, i);
 					resReg = allocTmpReg(regpool, res, func, i);
 					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+				else {					//栈数组
+					if (vreg2varReg[ope1] == "memory") {
+						ope2Reg = getTmpReg(regpool, ope2, func, i);
+						resReg = allocTmpReg(regpool, res, func, i);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {
+						ope2Reg = getTmpReg(regpool, ope2, func, i);
+						resReg = vreg2varReg[ope1];
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
 				}
 			}
 		}
