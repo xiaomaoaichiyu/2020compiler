@@ -297,14 +297,26 @@ void MIR2LIRpass() {
 				dst.push_back(instr);
 			}
 			else if (op == PUSH || op == POP) {
-				if (isNumber(ope1)) {
-					CodeItem tmp(MOV, "", getVreg(), ope1);
+				if (res == "int*") {
+					CodeItem lea(LEA, "", getVreg(), ope1);
 					ope1 = curVreg;
-					dst.push_back(tmp);
+					instr.setOperand1(ope1);
+					dst.push_back(lea);
+					dst.push_back(instr);
 				}
-				ope1 = dealTmpOpe(ope1);
-				instr.setInstr(res, ope1, ope2);
-				dst.push_back(instr);
+				else if (res == "string") {
+
+				}
+				else {
+					if (isNumber(ope1)) {
+						CodeItem tmp(MOV, "", getVreg(), ope1);
+						ope1 = curVreg;
+						dst.push_back(tmp);
+					}
+					ope1 = dealTmpOpe(ope1);
+					instr.setInstr(res, ope1, ope2);
+					dst.push_back(instr);
+				}
 			}
 			else if (op == BR) {
 				if (isNumber(ope1)) {

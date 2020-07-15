@@ -228,7 +228,7 @@ void registerAllocation() {
 				if (isVreg(ope1)) {		//全局变量
 					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
 					regpool.releaseReg(ope1);
-					resReg = allocTmpReg(regpool, ope1, funcTmp);
+					resReg = allocTmpReg(regpool, res, funcTmp);
 					instr.setInstr(resReg, ope1Reg, ope2Reg);
 				}
 				else {					//栈变量
