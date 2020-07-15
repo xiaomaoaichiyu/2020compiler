@@ -359,9 +359,18 @@ void registerAllocation() {
 				}
 			}
 			else if (op == PUSH) {
-				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
-				regpool.releaseReg(ope1);
-				instr.setInstr(resReg, ope1Reg, ope2Reg);
+				if (A2I(ope2) <= 4) {
+					int num = A2I(ope2);
+					instr.setCodetype(MOV);
+					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+					regpool.releaseReg(ope1);
+					instr.setInstr("", FORMAT("R{}", num), ope1Reg);
+				}
+				else {
+					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+					regpool.releaseReg(ope1);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
 			}
 			else if (op == POP) {	//Ã²ËÆÓÃ²»µ½
 				WARN_MSG("will use this Pop??");
@@ -376,6 +385,17 @@ void registerAllocation() {
 			else if (op == ALLOC) {
 				ope1Reg = var2reg[res];
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == PARA) {
+				ope1Reg = var2reg[res];
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+
+#define isReg(x) ((x.size() > 1) && (x.at(0) == 'R'))
+
+				if (isReg(ope1)) {
+					funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
+					first[res] = false;
+				}
 			}
 			else {
 				//do nothing!
