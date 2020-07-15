@@ -46,7 +46,7 @@ struct Allocation {
 	string reg;		//分配的物理寄存器或者内存位置
 };
 
-void registerAllocation(vector<CodeItem>& func, vector<string> vars);
+void registerAllocation();
 
 //=============================================
 //2. 线性扫描算法

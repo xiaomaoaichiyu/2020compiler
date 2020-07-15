@@ -413,12 +413,11 @@ void irOptimize() {
 	countVars();
 
 	//寄存器直接指派
-	for (int i = 1; i < LIR.size(); i++) {
-		registerAllocation(LIR.at(i), stackVars.at(i));
-	}
+	registerAllocation();
 
 	printLIR("armIR.txt");
 
+	//窥孔优化
 	peepholeOptimization();
 
 	printLIR("armIR_2.txt");
