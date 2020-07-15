@@ -151,12 +151,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case NOTE: {
-		if (result.size() == 0) {
-			content = "note                 " + standardLength(operand1) + "---------------";
-		}
-		else {
-			content = "note       " + standardLength(result) + " " + standardLength(operand1) + "---------------";
-		}
+		content = "note       " + standardLength(result) + " " + standardLength(operand1) + " "+standardLength(operand2)+"---------------";
 		break;
 	}case LEA: {
 		content = "LEA                   " + standardLength(operand1) + " " + standardLength(operand2);

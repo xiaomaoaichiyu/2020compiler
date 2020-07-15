@@ -1053,9 +1053,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					Functionname = "_sysy_stoptime";
 				}
 			}
-			string noteFuncBegin = "func " + Functionname + "() begin";
-			string noteFuncEnd = "func " + Functionname + "() end";
-			CodeItem citem1 = CodeItem(NOTE, "", noteFuncBegin, "");          //call @foo %3 3
+			CodeItem citem1 = CodeItem(NOTE, "@"+Functionname, "func", "begin");          //call @foo %3 3
 			citem1.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem1);//函数开始注释
 			if (symbol != RPARENT) {
@@ -1075,7 +1073,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			codetotal[Funcindex].push_back(citem3);//函数引用
 			interRegister = "%" + numToString(Temp);
 			Temp++;*/
-			CodeItem citem4 = CodeItem(NOTE, "", noteFuncEnd, "");          //call @foo %3 3
+			CodeItem citem4 = CodeItem(NOTE, "@"+Functionname, "func", "end");          //call @foo %3 3
 			citem4.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem4);//函数结束注释
 		}
@@ -1087,13 +1085,11 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				registerA = "0";	//偏移量为0
 			}
 			int nowDimenson = 0;   //记录当前维度
-			string indexBegin = "index count begin";
-			string indexEnd = "index count end";
 			string b = "%";
 			if (range == 0) {
 				b = "@";	//全局变量
 			}
-			CodeItem citem1 = CodeItem(NOTE, b + name_tag, indexBegin, "");
+			CodeItem citem1 = CodeItem(NOTE, b + name_tag, "array", "begin");
 			citem1.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem1);
 			while (symbol == LBRACK) {
@@ -1141,11 +1137,12 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				token = wordAnalysis.getToken();//预读
 			}
 			int nowSize = codetotal[Funcindex].size();
-			if (codetotal[Funcindex][nowSize - 1].getOperand1() == indexBegin) {	//计算偏移的注释没用
+			if (codetotal[Funcindex][nowSize - 1].getOperand1() == "array"&& codetotal[Funcindex][nowSize - 1].getOperand2() == "begin"
+				&& codetotal[Funcindex][nowSize - 1].getResult() == b+name_tag) {	//计算偏移的注释没用
 				codetotal[Funcindex].pop_back();
 			}
 			else {
-				CodeItem citem2 = CodeItem(NOTE, b + name_tag, indexEnd, "");
+				CodeItem citem2 = CodeItem(NOTE, b + name_tag, "array", "end");
 				citem2.setFatherBlock(fatherBlock);
 				codetotal[Funcindex].push_back(citem2);
 			}
@@ -1376,9 +1373,7 @@ void assignStmt()        //赋值语句 LVal = Exp
 		registerA = "0";
 	}
 	int nowDimenson = 0;   //记录当前维度
-	string indexBegin = "index count begin";
-	string indexEnd = "index count end";
-	CodeItem citem1 = CodeItem(NOTE, b + name_tag, indexBegin, "");
+	CodeItem citem1 = CodeItem(NOTE, b + name_tag, "array", "begin");
 	citem1.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem1);
 	while (symbol == LBRACK) {
@@ -1430,11 +1425,12 @@ void assignStmt()        //赋值语句 LVal = Exp
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
 	int nowSize = codetotal[Funcindex].size();
-	if (codetotal[Funcindex][nowSize - 1].getOperand1() == indexBegin) {	//计算偏移的注释没用
+	if (codetotal[Funcindex][nowSize - 1].getOperand1() == "array" && codetotal[Funcindex][nowSize - 1].getOperand2() == "begin"
+		&& codetotal[Funcindex][nowSize - 1].getResult() == b + name_tag) {	//计算偏移的注释没用
 		codetotal[Funcindex].pop_back();
 	}
 	else {
-		CodeItem citem1 = CodeItem(NOTE, b + name_tag, indexEnd, "");
+		CodeItem citem1 = CodeItem(NOTE, b + name_tag, "array", "end");
 		citem1.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem1);
 	}
