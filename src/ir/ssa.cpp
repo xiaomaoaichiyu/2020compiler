@@ -572,13 +572,10 @@ int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited
 	if (vs.blockNums.find(blkNum) != vs.blockNums.end()) return blkNum;
 	// 在该基本块的前驱节点中再继续找
 	set<int> pred = blockCore[funNum][blkNum].pred;
-	int cnt = 0, result = 0;
 	for (set<int>::iterator iter = pred.begin(); iter != pred.end(); iter++) {
 		int t = phi_loc_block(funNum, *iter, name, visited);
-		if (t != 0 && result != t) { result = t; cnt++; }		// 我认为正常情况下只会使cnt=1或者cnt=0
+		if (t != 0) { return t; }
 	}
-	if (cnt == 1) return result;
-	if (cnt > 1) cout << "Function phi_loc_block: 我认为有问题" << endl;
 	return 0;
 }
 

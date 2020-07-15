@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <map>
 #include "intermediatecode.h"
 #include "../front/syntax.h"
 
@@ -67,6 +68,10 @@ private:
 	std::vector<std::vector<int>> postOrder;					// 必经节点数的后序遍历序列
 	std::vector<std::vector<int>> preOrder;					// 必经节点数的前序遍历序列
 	std::vector<std::vector<varStruct>> varChain;			// 函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
+	// 优化要用到的数据结构
+	std::vector<bool> inlineFlag;									// 函数能否内联的标志
+	std::map<std::string, int> funName2Num;				// 对应第几个函数的函数名是什么
+
 	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块
 	void build_pred_and_succeeds();							// 建立基本块间的前序和后序关系
@@ -105,6 +110,8 @@ private:
 	// 优化函数
 	void ssa_optimize();		// 优化函数入口
 	void delete_dead_codes();	// 删除死代码
+	void judge_inline_function();	// 判断内联函数
+	void inline_function();	// 函数内联
 	// 功能函数，可能在各个地方都会用到
 	std::string deleteSuffix(std::string name);	// 删除后缀，如输入参数为%a^1，返回%a; 若不含^则直接返回；
 	bool ifTempVariable(std::string name);		// 判断是否是临时变量

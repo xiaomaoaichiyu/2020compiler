@@ -20,9 +20,9 @@ void SSA::Test_SSA() {
 	// Test_Build_Pre_Order();// 测试函数：输出前序遍历序列
 	Test_Build_Def_Use_Chain();// 测试函数：输出基本块的def-use链
 	Test_Active_Var_Analyse();// 测试函数：输出基本块的in-out信息
-	// Test_Build_Dom_Frontier();// 测试函数：输出必经边界
-	// Test_Build_Var_Chain();// 测试函数：输出函数变量的迭代必经边界
-	// Test_Add_Phi_Fun();// 测试函数，输出添加\phi函数的信息
+	Test_Build_Dom_Frontier();// 测试函数：输出必经边界
+	Test_Build_Var_Chain();// 测试函数：输出函数变量的迭代必经边界
+	Test_Add_Phi_Fun();// 测试函数，输出添加\phi函数的信息
 	// 关闭文件
 	debug_ssa.close();
 }
