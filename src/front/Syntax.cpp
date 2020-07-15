@@ -1775,6 +1775,9 @@ void FuncRParams()    //函数实参数表
 	int paranum = 1;
 	if (paraIntNode == 0) {
 		if (interRegister[0] == '\"') {
+			int stringSize = interRegister.size();
+			interRegister.erase(stringSize - 1,stringSize);
+			interRegister = interRegister + "\\0\"";
 			CodeItem citem = CodeItem(PUSH, "string", interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem);
