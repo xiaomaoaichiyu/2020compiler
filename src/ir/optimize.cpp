@@ -304,9 +304,9 @@ void MIR2LIRpass() {
 					dst.push_back(lea);
 					dst.push_back(instr);
 				}
-				else if (res == "string") {
+				/*else if (res == "string") {
 
-				}
+				}*/
 				else {
 					if (isNumber(ope1)) {
 						CodeItem tmp(MOV, "", getVreg(), ope1);

@@ -55,7 +55,7 @@
 | 局部常量\|变量         | alloc             | variableName                       | value               | size                      |
 | 全局变量\|常量         | global            | variableName                       | value               | size                      |
 | 注释                   | note              |                                    | 注释内容            |                           |
-|                        |                   |                                    |                     |                           |
+| 取返回值               | getRet            |                                    | TmpReg              |                           |
 |                        |                   |                                    |                     |                           |
 |                        |                   |                                    |                     |                           |
 |                        |                   |                                    |                     |                           |
