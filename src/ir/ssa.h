@@ -85,7 +85,6 @@ private:
 	std::set<int> DF_Set(int funNum, std::set<int> s);
 	void build_var_chain();											// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
 	void renameVar();													// SSA变量重命名
-	void simplify_br();													// 简化条件判断为常值的跳转指令
 	void add_phi_function();											// 在需要添加基本块的开始添加\phi函数
 	int phi_loc_block(int funNum, int blkNum, std::string name, std::vector<bool> visited);			// 查找该节点开始对应的name变量的基本块位置
 	void deal_phi_function();										// 处理\phi函数
@@ -103,6 +102,16 @@ private:
 	void Test_Active_Var_Analyse();
 	void Test_Build_Var_Chain();
 	void Test_Add_Phi_Fun();
+	// 优化函数
+	void ssa_optimize();		// 优化函数入口
+	void delete_dead_codes();	// 删除死代码
+	// 功能函数，可能在各个地方都会用到
+	std::string deleteSuffix(std::string name);	// 删除后缀，如输入参数为%a^1，返回%a; 若不含^则直接返回；
+	bool ifTempVariable(std::string name);		// 判断是否是临时变量
+	bool ifDigit(std::string name);						// 判断是否是数字
+	bool ifGlobalVariable(std::string name);		// 判断是否是全局变量
+	bool ifLocalVariable(std::string name);		// 判断是否是局部变量
+	void simplify_br();										// 简化条件判断为常值的跳转指令
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
