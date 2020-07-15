@@ -1759,6 +1759,10 @@ void FuncRParams()    //函数实参数表
 	if (symbol == RPARENT) {
 		return;
 	}
+	vector<vector<CodeItem>> save;  //保存当前函数每个参数所有的中间代码，一个参数占一个vector<CodeItem>
+	int sizeBefore = codetotal[Funcindex].size();	//第一个参数push前的中间代码下标
+	int sizeBegin = sizeBefore;		//函数实参最开始时中间代码下标
+	vector<CodeItem> aa;
 	if (symbol == STRING) {
 		interRegister = wordAnalysis.getToken();
 		wordAnalysis.getsym();
@@ -1790,11 +1794,18 @@ void FuncRParams()    //函数实参数表
 		codetotal[Funcindex].push_back(citem);
 		paraIntNode = 0;
 	}
+	int sizeAfter = codetotal[Funcindex].size();  //第一个参数push完后的中间代码
+	for (int j = sizeBefore; j < sizeAfter; j++) {  //将第一个参数所有中间代码暂存
+		aa.push_back(codetotal[Funcindex][j]);
+	}
+	save.push_back(aa);
 	while (symbol == COMMA) {
+		vector<CodeItem> aaa;
 		printMessage();    //输出,信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
+		sizeBefore = codetotal[Funcindex].size();	//第i个参数push前的中间代码
 		Exp();
 		paranum++;
 		if (paraIntNode == 0) {
@@ -1808,8 +1819,25 @@ void FuncRParams()    //函数实参数表
 			codetotal[Funcindex].push_back(citem);
 			paraIntNode = 0;
 		}
+		sizeAfter = codetotal[Funcindex].size();  //第i个参数push完后的中间代码
+		for (int j = sizeBefore; j < sizeAfter; j++) {  //将第i个参数所有中间代码暂存
+			aaa.push_back(codetotal[Funcindex][j]);
+		}
+		save.push_back(aaa);
 	}
 	paraNum = paranum;
+	int start = codetotal[Funcindex].size();
+	while (start > sizeBegin) {		//把跟参数有关所有中间代码全扔掉
+		codetotal[Funcindex].pop_back();
+		start--;
+	}
+	//开始倒叙保存中间代码，从save最后的vector倒叙复制
+	int o, p, q;
+	for (p = save.size()-1; p >=0; p--) {
+		for (o = 0; o < save[p].size(); o++) {
+			codetotal[Funcindex].push_back(save[p][o]);
+		}
+	}
 	//退出循环前已经预读
 	outfile << "<函数实参数表>" << endl;
 }
