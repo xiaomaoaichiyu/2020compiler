@@ -115,7 +115,7 @@ void MIR2LIRpass() {
 				}
 			}else if (op == ADD || op == SUB || op == MUL || op == DIV || op == REM ||
 					  op == AND || op == OR ||
-					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SGE) {
+					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
 				if (isNumber(ope1)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
@@ -302,7 +302,7 @@ void MIR2LIRpass() {
 					ope1 = curVreg;
 					dst.push_back(tmp);
 				}
-				res = dealTmpOpe(res);
+				ope1 = dealTmpOpe(ope1);
 				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
