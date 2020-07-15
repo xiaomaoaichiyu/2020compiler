@@ -7,7 +7,9 @@
 #include <sstream>
 #include <cstdio>
 
-#define isNumber(x) (x.size() > 0 && (isdigit(x.at(0))))
+#define isString(x) (x.size() > 1 && (x.at(0) == '\"'))
+
+#define isNumber(x) meow::Meow::isNum(x)
 
 #define isTmp(x) (x.size() > 1 && (x.at(0) == '%') && (isdigit(x.at(1))))
 
@@ -52,6 +54,21 @@ namespace meow {
 
 		static int a2i(std::string str) {
 			return atoi(str.c_str());
+		}
+
+		static bool isNum(std::string x) {
+			if (x.size() > 0 && isdigit(x.at(0))) {
+				return true;
+			}
+			else if (x.size() > 1 && x.at(0) == '-' && isdigit(x.at(1))) {
+				return true;
+			}
+			else if (x.size() > 1 && x.at(0) == '+' && isdigit(x.at(1))) {
+
+			}
+			else {
+				return false;
+			}
 		}
 
 		template <typename T>

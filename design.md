@@ -49,15 +49,15 @@
 | 标签                   | label             | name                               |                     |                           |
 | 直接跳转(变了)         | br                |                                    | label               |                           |
 | 条件跳转(变了)         | br                | lable2(错误)                       | tmpReg              | label1(正确)              |
+| 取返回值               | getRet            |                                    | tmpReg              |                           |
 |                        |                   |                                    |                     |                           |
 | 函数定义               | define            | name                               | funcType            |                           |
 | 函数形参               | para              | name                               | paraType(int\|int*) | dimension(维度)           |
 | 局部常量\|变量         | alloc             | variableName                       | value               | size                      |
 | 全局变量\|常量         | global            | variableName                       | value               | size                      |
 | 注释                   | note              |                                    | 注释内容            |                           |
-|                        |                   |                                    |                     |                           |
-|                        |                   |                                    |                     |                           |
-|                        |                   |                                    |                     |                           |
+| 函数参数压栈           | note              | funcName                           | func                | ---------------------     |
+| 数组索引计算           | note              | arrayName                          | array               | ---------------------     |
 |                        |                   |                                    |                     |                           |
 
 *****

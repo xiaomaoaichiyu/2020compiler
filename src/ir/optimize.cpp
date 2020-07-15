@@ -115,7 +115,7 @@ void MIR2LIRpass() {
 				}
 			}else if (op == ADD || op == SUB || op == MUL || op == DIV || op == REM ||
 					  op == AND || op == OR ||
-					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SGE) {
+					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
 				if (isNumber(ope1)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
@@ -277,7 +277,7 @@ void MIR2LIRpass() {
 			else if (op == CALL) {
 				if (isTmp(res)) {
 					res = dealTmpOpe(res);
-					CodeItem tmp(MOV, "", res, "R0");
+					CodeItem tmp(GETREG, "", res, "");
 					instr.setInstr(res, ope1, ope2);
 					dst.push_back(instr);
 					dst.push_back(tmp);
@@ -297,14 +297,30 @@ void MIR2LIRpass() {
 				dst.push_back(instr);
 			}
 			else if (op == PUSH || op == POP) {
-				if (isNumber(ope1)) {
+				if (res == "int*") {
+					CodeItem lea(LEA, "", getVreg(), ope1);
+					ope1 = curVreg;
+					instr.setOperand1(ope1);
+					dst.push_back(lea);
+					dst.push_back(instr);
+				}
+				else if (res == "string") {
 					CodeItem tmp(MOV, "", getVreg(), ope1);
 					ope1 = curVreg;
+					instr.setInstr(res, ope1, ope2);
 					dst.push_back(tmp);
+					dst.push_back(instr);
 				}
-				res = dealTmpOpe(res);
-				instr.setInstr(res, ope1, ope2);
-				dst.push_back(instr);
+				else {
+					if (isNumber(ope1)) {
+						CodeItem tmp(MOV, "", getVreg(), ope1);
+						ope1 = curVreg;
+						dst.push_back(tmp);
+					}
+					ope1 = dealTmpOpe(ope1);
+					instr.setInstr(res, ope1, ope2);
+					dst.push_back(instr);
+				}
 			}
 			else if (op == BR) {
 				if (isNumber(ope1)) {
@@ -330,6 +346,32 @@ void MIR2LIRpass() {
 			}
 		}
 		LIR.push_back(dst);
+	}
+}
+
+void argumentOrder() {
+	vector<vector<CodeItem>> Tmp;
+	Tmp.push_back(LIR.at(0));
+	for (int i = 1; i < LIR.size(); i++) {
+		vector<CodeItem> src = LIR.at(i);
+		vector<CodeItem> dst;
+		//处理参数压栈顺序
+		for (int j = 0; j < src.size(); j++) {
+			auto instr = src.at(j);
+			auto op = instr.getCodetype();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			vector<CodeItem> tmp;
+			int mark = -1;
+			if (op == NOTE && ope1 == "func" && ope2 == "begin") {
+				
+
+
+			}
+			else {
+				dst.push_back(instr);
+			}
+		}
 	}
 }
 
@@ -430,6 +472,8 @@ void irOptimize() {
 	MIR2LIRpass();
 	printLIR("LIR.txt");
 	countVars();
+	//argumentOrder();
+	//printLIR("LIR_2.txt");
 
 	//寄存器直接指派
 	registerAllocation();

@@ -29,6 +29,7 @@ enum irCodeType {
 	NOTE,							//注释
 	MOV,							//移动
 	LEA,							//取地址
+	GETREG,							//取返回值
 };
 
 class CodeItem

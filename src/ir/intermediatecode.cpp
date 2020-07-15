@@ -147,19 +147,18 @@ string CodeItem::getContent()
 		break;
 	}
 	case MOV: {
-		content = "mov                  " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "mov                   " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case NOTE: {
-		if (result.size() == 0) {
-			content = "note                 " + standardLength(operand1) + "---------------";
-		}
-		else {
-			content = "note       " + standardLength(result) + " " + standardLength(operand1) + "---------------";
-		}
+		content = "note       " + standardLength(result) + " " + standardLength(operand1) + " "+standardLength(operand2)+"---------------";
 		break;
 	}case LEA: {
-		content = "LEA                  " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "LEA                   " + standardLength(operand1) + " " + standardLength(operand2);
+		break;
+	}
+	case GETREG: {
+		content = "getReg                " + standardLength(operand1);
 		break;
 	}
 	default:
