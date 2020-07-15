@@ -147,7 +147,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case MOV: {
-		content = "mov                  " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "mov                   " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case NOTE: {
@@ -159,7 +159,11 @@ string CodeItem::getContent()
 		}
 		break;
 	}case LEA: {
-		content = "LEA                  " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "LEA                   " + standardLength(operand1) + " " + standardLength(operand2);
+		break;
+	}
+	case GETREG: {
+		content = "getReg                " + standardLength(operand1);
 		break;
 	}
 	default:

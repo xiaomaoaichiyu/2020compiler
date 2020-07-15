@@ -277,7 +277,7 @@ void MIR2LIRpass() {
 			else if (op == CALL) {
 				if (isTmp(res)) {
 					res = dealTmpOpe(res);
-					CodeItem tmp(MOV, "", res, "R0");
+					CodeItem tmp(GETREG, "", res, "");
 					instr.setInstr(res, ope1, ope2);
 					dst.push_back(instr);
 					dst.push_back(tmp);
@@ -304,9 +304,13 @@ void MIR2LIRpass() {
 					dst.push_back(lea);
 					dst.push_back(instr);
 				}
-				/*else if (res == "string") {
-
-				}*/
+				else if (res == "string") {
+					CodeItem tmp(MOV, "", getVreg(), ope1);
+					ope1 = curVreg;
+					instr.setInstr(res, ope1, ope2);
+					dst.push_back(tmp);
+					dst.push_back(instr);
+				}
 				else {
 					if (isNumber(ope1)) {
 						CodeItem tmp(MOV, "", getVreg(), ope1);
@@ -340,6 +344,10 @@ void MIR2LIRpass() {
 			else {
 				dst.push_back(instr);
 			}
+		}
+		//处理参数压栈顺序
+		for (int j = 0; j < ) {
+
 		}
 		LIR.push_back(dst);
 	}

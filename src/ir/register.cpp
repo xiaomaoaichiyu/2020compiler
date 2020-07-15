@@ -219,6 +219,9 @@ void registerAllocation() {
 					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 					regpool.releaseReg(ope2);
 				}
+				else if (isString(ope2)) {
+					
+				}
 				if (isVreg(ope1)) {
 					ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
 				}
@@ -359,18 +362,9 @@ void registerAllocation() {
 				}
 			}
 			else if (op == PUSH) {
-				if (A2I(ope2) <= 4) {
-					int num = A2I(ope2);
-					instr.setCodetype(MOV);
-					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
-					regpool.releaseReg(ope1);
-					instr.setInstr("", FORMAT("R{}", num), ope1Reg);
-				}
-				else {
-					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
-					regpool.releaseReg(ope1);
-					instr.setInstr(resReg, ope1Reg, ope2Reg);
-				}
+				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+				regpool.releaseReg(ope1);
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else if (op == POP) {	//Ã²ËÆÓÃ²»µ½
 				WARN_MSG("will use this Pop??");
@@ -396,6 +390,10 @@ void registerAllocation() {
 					funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
 					first[res] = false;
 				}
+			}
+			else if (op == GETREG) {
+				ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else {
 				//do nothing!

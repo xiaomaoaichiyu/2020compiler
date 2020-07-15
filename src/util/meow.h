@@ -7,6 +7,8 @@
 #include <sstream>
 #include <cstdio>
 
+#define isString(x) (x.size() > 1 && (x.at(0) == '\"'))
+
 #define isNumber(x) meow::Meow::isNum(x)
 
 #define isTmp(x) (x.size() > 1 && (x.at(0) == '%') && (isdigit(x.at(1))))
