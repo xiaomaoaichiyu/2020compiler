@@ -51,7 +51,7 @@
 | 条件跳转(变了)         | br                | lable2(错误)                       | tmpReg              | label1(正确)              |
 |                        |                   |                                    |                     |                           |
 | 函数定义               | define            | name                               | funcType            |                           |
-| 函数形参               | para              | name                               | paraType(int\|int*) |                           |
+| 函数形参               | para              | name                               | paraType(int\|int*) | dimension(维度)           |
 | 局部常量\|变量         | alloc             | variableName                       | value               | size                      |
 | 全局变量\|常量         | global            | variableName                       | value               | size                      |
 | 注释                   | note              |                                    | 注释内容            |                           |
