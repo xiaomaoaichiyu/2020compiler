@@ -92,6 +92,7 @@ void MIR2LIRpass() {
 		vrIndex = 0;
 		curVreg = "";
 		tmp2vr.clear();
+		int paraNum = 0;
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
 			dealNumber(instr);
@@ -315,6 +316,15 @@ void MIR2LIRpass() {
 				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
+			else if (op == PARA) {
+				if (paraNum < 4) {
+					instr.setOperand1(FORMAT("R{}", paraNum++));
+				}
+				else {
+					instr.setOperand1("stack");
+				}
+				dst.push_back(instr);
+			}
 			else {
 				dst.push_back(instr);
 			}
@@ -378,6 +388,15 @@ void peepholeOptimization() {
 				string nextOpe2 = next.getOperand2();
 				if (res == nextOpe2) {
 					instr.setResult(nextOpe1);
+					next.setOperand2(nextOpe1);
+				}
+			}
+			else if (instr.getCodetype() == MOV && next.getCodetype() == MOV) {
+				string instrOpe1 = instr.getOperand1();
+				string nextOpe1 = next.getOperand1();
+				string nextOpe2 = next.getOperand2();
+				if (instrOpe1 == nextOpe2) {
+					instr.setOperand1(nextOpe1);
 					next.setOperand2(nextOpe1);
 				}
 			}

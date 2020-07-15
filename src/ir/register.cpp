@@ -42,7 +42,7 @@ void RegPool::releaseReg(string vreg) {
 		}
 	}
 	else {
-		WARN_MSG(vreg.c_str());
+		//WARN_MSG(vreg.c_str());
 	}
 }
 
@@ -202,19 +202,9 @@ void registerAllocation() {
 				op == AND || op == OR ||
 				op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
 				if (!isNumber(ope2)) {	//不是立即数
-					if (isFind(ope2, vreg2varReg)) {	//vreg是变量寄存器的映射
-						ope2Reg = vreg2varReg[ope2];
-					}
-					else {	//之前申请的临时寄存器
-						ope2Reg = getTmpReg(regpool, ope2, funcTmp);
-					}
+					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 				}
-				if (isFind(ope1, vreg2varReg)) {
-					ope1Reg = vreg2varReg[ope1];
-				}
-				else {
-					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
-				}
+				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
 				regpool.releaseReg(ope1);
 				regpool.releaseReg(ope2);
 				resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
@@ -227,11 +217,11 @@ void registerAllocation() {
 			else if (op == MOV) {	//分配临时寄存器
 				if (isVreg(ope2)) {
 					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+					regpool.releaseReg(ope2);
 				}
 				if (isVreg(ope1)) {
 					ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
 				}
-				regpool.releaseReg(ope2);
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else if (op == LOAD) {
