@@ -364,13 +364,9 @@ void argumentOrder() {
 			vector<CodeItem> tmp;
 			int mark = -1;
 			if (op == NOTE && ope1 == "func" && ope2 == "begin") {
-				tmp.push_back(instr);
-				while (1) {
+				
 
-					if () {
 
-					}
-				}
 			}
 			else {
 				dst.push_back(instr);
@@ -476,8 +472,8 @@ void irOptimize() {
 	MIR2LIRpass();
 	printLIR("LIR.txt");
 	countVars();
-	argumentOrder();
-	printLIR("LIR_2.txt");
+	//argumentOrder();
+	//printLIR("LIR_2.txt");
 
 	//寄存器直接指派
 	registerAllocation();
