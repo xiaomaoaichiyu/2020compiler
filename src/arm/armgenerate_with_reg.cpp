@@ -607,7 +607,8 @@ void _getreg(CodeItem* ir) {
 
 void _note(CodeItem* ir) {
 	string status = ir->getOperand2();
-	if (status == "begin") {
+	string note = ir->getOperand1();
+	if (status == "begin" && note == "func") {
 		OUTPUT("PUSH {R0}");
 		OUTPUT("PUSH {" + reglist_without0 + "}");
 		sp -= 56;
