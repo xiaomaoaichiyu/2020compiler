@@ -746,7 +746,7 @@ void InitVal(int index)
 				CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, "");	//赋值单值
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
-			}
+			}   
 			else {  //全局变量且带初始化定义需改成 global     @b         value         1 的形式     
 				int nowsize = codetotal[index].size();
 				CodeItem citem1 = codetotal[index][nowsize - 1];
