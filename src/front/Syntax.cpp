@@ -651,9 +651,16 @@ void VarDef(int index, int block)             //变量定义
 		codetype = GLOBAL;
 		b = "@";
 	}
-	CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
-	citem.setFatherBlock(fatherBlock);
-	codetotal[index].push_back(citem);
+	if (b == "@" && dimenson == 0) {
+		CodeItem citem = CodeItem(codetype, b + name, "0", numToString(totalSize));
+		citem.setFatherBlock(fatherBlock);
+		codetotal[index].push_back(citem);
+	}
+	else {
+		CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
+		citem.setFatherBlock(fatherBlock);
+		codetotal[index].push_back(citem);
+	}
 	if (symbol == ASSIGN) {
 		printMessage();   //输出=
 		wordAnalysis.getsym();
@@ -746,9 +753,9 @@ void InitVal(int index)
 				CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, "");	//赋值单值
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
-			}   
+			}
 			else {  //全局变量且带初始化定义需改成 global     @b         value         1 的形式     
-				int nowsize = codetotal[index].size();
+				int nowsize = codetotal[index].size(); //全局变量的Exp()一定是constExp()
 				CodeItem citem1 = codetotal[index][nowsize - 1];
 				citem1.changeContent(citem1.getResult(), interRegister, citem1.getOperand2());
 				codetotal[index].pop_back();
