@@ -278,7 +278,8 @@ void _div(CodeItem* ir)
 	string target = ir->getResult();
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
-	OUTPUT("PUSH {R1,R2,R3,R12,LR,R0}");
+	OUTPUT("PUSH {R0}");
+	OUTPUT("PUSH {R1,R2,R3,R12,LR}");
 	OUTPUT("MOV R0," + op1);
 	if (op2[0] == 'R') {
 		OUTPUT("MOV R1," + op2);
@@ -303,7 +304,8 @@ void _rem(CodeItem* ir)
 	string target = ir->getResult();
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
-	OUTPUT("PUSH {R0,R2,R3,R12,LR,R1}");
+	OUTPUT("PUSH {R1}");
+	OUTPUT("PUSH {R0,R2,R3,R12,LR}");
 	OUTPUT("MOV R0," + op1);
 	if (op2[0] == 'R') {
 		OUTPUT("MOV R1," + op2);
@@ -504,10 +506,11 @@ void _push(CodeItem* ir)
 	}
 	string name = ir->getOperand1();
 	pushNum = stoi(ir->getOperand2());
+	/*
 	if (pushNum == 1) {
 		OUTPUT("PUSH {" + reglist + "}");
-		sp -= 52;
-	}
+		sp -= 56;
+	}*/
 	if (pushNum <= 4) {
 		OUTPUT("MOV R" + to_string(pushNum - 1) + "," + name);
 	}
@@ -589,7 +592,8 @@ void _getreg(CodeItem* ir) {
 		sp += 4;
 	}
 	else if (ret == "") {
-		OUTPUT("POP {" + reglist + "}");
+		OUTPUT("POP {" + reglist_without0 + "}");
+		OUTPUT("POP {R0}");
 		sp += 56;
 	}
 	else {
@@ -598,6 +602,15 @@ void _getreg(CodeItem* ir) {
 		OUTPUT("MOV " + ret + ",R0");
 		OUTPUT("POP {R0}");
 		sp += 4;
+	}
+}
+
+void _note(CodeItem* ir) {
+	string status = ir->getOperand2();
+	if (status == "begin") {
+		OUTPUT("PUSH {R0}");
+		OUTPUT("PUSH {" + reglist_without0 + "}");
+		sp -= 56;
 	}
 }
 
@@ -707,6 +720,8 @@ void arm_generate(string sname)
 				break;
 			case GETREG:
 				_getreg(ir_now);
+			case NOTE:
+				_note(ir_now);
 			default:
 				break;
 			}
