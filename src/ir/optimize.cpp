@@ -283,7 +283,10 @@ void MIR2LIRpass() {
 					dst.push_back(tmp);
 				}
 				else {
+					CodeItem tmp(GETREG, "", "", "");
+					
 					dst.push_back(instr);
+					dst.push_back(tmp);
 				}
 			}
 			else if (op == RET) {
@@ -346,32 +349,6 @@ void MIR2LIRpass() {
 			}
 		}
 		LIR.push_back(dst);
-	}
-}
-
-void argumentOrder() {
-	vector<vector<CodeItem>> Tmp;
-	Tmp.push_back(LIR.at(0));
-	for (int i = 1; i < LIR.size(); i++) {
-		vector<CodeItem> src = LIR.at(i);
-		vector<CodeItem> dst;
-		//处理参数压栈顺序
-		for (int j = 0; j < src.size(); j++) {
-			auto instr = src.at(j);
-			auto op = instr.getCodetype();
-			auto ope1 = instr.getOperand1();
-			auto ope2 = instr.getOperand2();
-			vector<CodeItem> tmp;
-			int mark = -1;
-			if (op == NOTE && ope1 == "func" && ope2 == "begin") {
-				
-
-
-			}
-			else {
-				dst.push_back(instr);
-			}
-		}
 	}
 }
 
@@ -472,8 +449,6 @@ void irOptimize() {
 	MIR2LIRpass();
 	printLIR("LIR.txt");
 	countVars();
-	//argumentOrder();
-	//printLIR("LIR_2.txt");
 
 	//寄存器直接指派
 	registerAllocation();
