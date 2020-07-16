@@ -392,7 +392,9 @@ void registerAllocation() {
 				}
 			}
 			else if (op == GETREG) {
-				ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
+				if (isVreg(ope1)) {
+					ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
+				}
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else {

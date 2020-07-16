@@ -284,7 +284,6 @@ void MIR2LIRpass() {
 				}
 				else {
 					CodeItem tmp(GETREG, "", "", "");
-					
 					dst.push_back(instr);
 					dst.push_back(tmp);
 				}
