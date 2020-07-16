@@ -484,8 +484,7 @@ void _br(CodeItem* ir)
 	if (res[0] != '%') {
 		string label1 = ir->getOperand2().substr(1);
 		string label2 = ir->getResult().substr(1);
-		string reg = get_location(res).first;
-		OUTPUT("CMP " + reg + ",#0");
+		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
 		OUTPUT("BNE " + label1);
 	}
