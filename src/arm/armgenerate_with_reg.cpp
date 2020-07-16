@@ -141,7 +141,13 @@ void _define(CodeItem* ir)
 			break;
 		}
 	}
-	OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
+	if (sp - sp_without_para < -127) {
+		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
+		OUTPUT("ADD SP,SP,R12");
+	}
+	else {
+		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
+	}
 }
 
 void _alloc(CodeItem* ir)
