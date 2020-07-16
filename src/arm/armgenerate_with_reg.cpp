@@ -555,7 +555,13 @@ void _ret(CodeItem* ir)
 			}
 		}
 	}
-	OUTPUT("ADD SP,SP,#" + to_string(-sp));
+	if (-sp > 128) {
+		OUTPUT("LDR R12,=" + to_string(-sp));
+		OUTPUT("ADD SP,SP,R12");
+	}
+	else {
+		OUTPUT("ADD SP,SP,#" + to_string(-sp));
+	}
 	OUTPUT("MOV PC,LR");
 }
 
