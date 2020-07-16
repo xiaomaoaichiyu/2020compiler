@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 	irOptimize();
 
 	//运行后端，生成arm代码
-	//arm_generate_without_register(sname);
+	arm_generate(sname);
 
 	return 0;
 }
