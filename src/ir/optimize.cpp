@@ -11,11 +11,13 @@ int vrIndex;
 string curVreg = "";
 map<string, string> tmp2vr;
 
+//获取一个虚拟寄存器
 string getVreg() {
 	curVreg = FORMAT("VR{}", vrIndex++);
 	return curVreg;
 }
 
+//将临时变量转换为对应的虚拟寄存器
 string dealTmpOpe(string operand) {
 	if (isTmp(operand)) {
 		if (tmp2vr.find(operand) != tmp2vr.end()) {
@@ -30,6 +32,9 @@ string dealTmpOpe(string operand) {
 	return operand;
 }
 
+//中间代码保证不会出现两个立即数的情况
+
+//如果第一操作数是立即数，和第二个操作数进行交换
 void dealNumber(CodeItem& instr) {
 	auto op = instr.getCodetype();
 	string res = instr.getResult();
@@ -113,12 +118,31 @@ void MIR2LIRpass() {
 				else {
 					dst.push_back(instr);
 				}
-			}else if (op == ADD || op == SUB || op == MUL || op == DIV || op == REM ||
+			}else if (op == ADD || op == SUB || op == DIV || op == REM ||
 					  op == AND || op == OR ||
 					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
 				if (isNumber(ope1)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
+				}
+				if (isNumber(ope2) && (A2I(ope2) < -128 || A2I(ope2) > 127)) {
+					dst.push_back(CodeItem(MOV, "", getVreg(), ope2));
+					ope2 = curVreg;
+				}
+				res = dealTmpOpe(res);
+				ope1 = dealTmpOpe(ope1);
+				ope2 = dealTmpOpe(ope2);
+				instr.setInstr(res, ope1, ope2);
+				dst.push_back(instr);
+			}
+			else if (op == MUL) {
+				if (isNumber(ope1)) {
+					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
+					ope1 = curVreg;
+				}
+				if (isNumber(ope2)) {
+					dst.push_back(CodeItem(MOV, "", getVreg(), ope2));
+					ope2 = curVreg;
 				}
 				res = dealTmpOpe(res);
 				ope1 = dealTmpOpe(ope1);
@@ -283,7 +307,9 @@ void MIR2LIRpass() {
 					dst.push_back(tmp);
 				}
 				else {
+					CodeItem tmp(GETREG, "", "", "");
 					dst.push_back(instr);
+					dst.push_back(tmp);
 				}
 			}
 			else if (op == RET) {
@@ -346,32 +372,6 @@ void MIR2LIRpass() {
 			}
 		}
 		LIR.push_back(dst);
-	}
-}
-
-void argumentOrder() {
-	vector<vector<CodeItem>> Tmp;
-	Tmp.push_back(LIR.at(0));
-	for (int i = 1; i < LIR.size(); i++) {
-		vector<CodeItem> src = LIR.at(i);
-		vector<CodeItem> dst;
-		//处理参数压栈顺序
-		for (int j = 0; j < src.size(); j++) {
-			auto instr = src.at(j);
-			auto op = instr.getCodetype();
-			auto ope1 = instr.getOperand1();
-			auto ope2 = instr.getOperand2();
-			vector<CodeItem> tmp;
-			int mark = -1;
-			if (op == NOTE && ope1 == "func" && ope2 == "begin") {
-				
-
-
-			}
-			else {
-				dst.push_back(instr);
-			}
-		}
 	}
 }
 
@@ -472,8 +472,6 @@ void irOptimize() {
 	MIR2LIRpass();
 	printLIR("LIR.txt");
 	countVars();
-	//argumentOrder();
-	//printLIR("LIR_2.txt");
 
 	//寄存器直接指派
 	registerAllocation();

@@ -651,9 +651,16 @@ void VarDef(int index, int block)             //变量定义
 		codetype = GLOBAL;
 		b = "@";
 	}
-	CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
-	citem.setFatherBlock(fatherBlock);
-	codetotal[index].push_back(citem);
+	if (b == "@" && dimenson == 0) {
+		CodeItem citem = CodeItem(codetype, b + name, "0", numToString(totalSize));
+		citem.setFatherBlock(fatherBlock);
+		codetotal[index].push_back(citem);
+	}
+	else {
+		CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
+		citem.setFatherBlock(fatherBlock);
+		codetotal[index].push_back(citem);
+	}
 	if (symbol == ASSIGN) {
 		printMessage();   //输出=
 		wordAnalysis.getsym();
@@ -742,9 +749,18 @@ void InitVal(int index)
 			if (Range != 0) {
 				b = "%";
 			}
-			CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, "");	//赋值单值
-			citem.setFatherBlock(fatherBlock);
-			codetotal[index].push_back(citem);
+			if (b == "%") {
+				CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, "");	//赋值单值
+				citem.setFatherBlock(fatherBlock);
+				codetotal[index].push_back(citem);
+			}
+			else {  //全局变量且带初始化定义需改成 global     @b         value         1 的形式     
+				int nowsize = codetotal[index].size(); //全局变量的Exp()一定是constExp()
+				CodeItem citem1 = codetotal[index][nowsize - 1];
+				citem1.changeContent(citem1.getResult(), interRegister, citem1.getOperand2());
+				codetotal[index].pop_back();
+				codetotal[index].push_back(citem1);
+			}
 		}
 		else {
 			if (offset <= totalSize) {
@@ -1849,7 +1865,21 @@ void returnStmt()        //返回语句
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
 	if (symbol != SEMICN) {
-		Exp();
+		Exp();/*
+		if (total[Funcindex][0].getName() == "main") {
+			CodeItem citem1 = CodeItem(NOTE, "@putint", "func", "begin");          //call @foo %3 3
+			citem1.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem1);//函数开始注释
+			CodeItem citem2 = CodeItem(PUSH, "int", interRegister, numToString(1));  //传参
+			citem2.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem2);
+			CodeItem citem3 = CodeItem(CALL, "VOID", "@putint", numToString(1));          //call @foo %3 3
+			citem3.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem3);//函数引用
+			CodeItem citem4 = CodeItem(NOTE, "@putint", "func", "end");          //call @foo %3 3
+			citem4.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem4);//函数开始注释
+		}*/
 		CodeItem citem = CodeItem(RET, "", interRegister, "int");  //有返回值返回
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
