@@ -567,7 +567,13 @@ void _mov(CodeItem* ir) {
 		OUTPUT("LDR " + dst + ",=" + slabel);
 	}
 	else {
-		OUTPUT("MOV " + dst + ",#" + src);
+		int im = stoi(src);
+		if (im < -127 || im > 128) {
+			OUTPUT("LDR " + dst + ",=" + src);
+		}
+		else {
+			OUTPUT("MOV " + dst + ",#" + src);
+		}
 	}
 }
 
