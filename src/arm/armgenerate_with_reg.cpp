@@ -85,7 +85,7 @@ void _global(CodeItem* ir)
 	}
 	else {
 		OUTPUT(".data");
-		if (ini_value == "_") {
+		if (ini_value == "") {
 			OUTPUT(name + ": .zero 4");
 		}
 		else {
@@ -583,15 +583,22 @@ void _lea(CodeItem* ir) {
 
 void _getreg(CodeItem* ir) {
 	string ret = ir->getOperand1();
-	OUTPUT("POP {" + reglist_without0 + "}");
-	sp += 52;
 	if (ret == "R0") {
+		OUTPUT("POP {" + reglist_without0 + "}");
+		sp += 52;
 		OUTPUT("ADD SP,SP,#4");
 		sp += 4;
 	}
+	else if (ret == "") {
+		OUTPUT("POP {" + reglist + "}");
+		sp += 56;
+	}
 	else {
+		OUTPUT("POP {" + reglist_without0 + "}");
+		sp += 52;
 		OUTPUT("MOV " + ret + ",R0");
 		OUTPUT("POP {R0}");
+		sp += 4;
 	}
 }
 
