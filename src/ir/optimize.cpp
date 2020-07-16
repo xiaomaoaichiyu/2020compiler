@@ -11,11 +11,13 @@ int vrIndex;
 string curVreg = "";
 map<string, string> tmp2vr;
 
+//获取一个虚拟寄存器
 string getVreg() {
 	curVreg = FORMAT("VR{}", vrIndex++);
 	return curVreg;
 }
 
+//将临时变量转换为对应的虚拟寄存器
 string dealTmpOpe(string operand) {
 	if (isTmp(operand)) {
 		if (tmp2vr.find(operand) != tmp2vr.end()) {
