@@ -141,7 +141,13 @@ void _define(CodeItem* ir)
 			break;
 		}
 	}
-	OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
+	if (sp - sp_without_para < -127) {
+		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
+		OUTPUT("ADD SP,SP,R12");
+	}
+	else {
+		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
+	}
 }
 
 void _alloc(CodeItem* ir)
@@ -549,7 +555,13 @@ void _ret(CodeItem* ir)
 			}
 		}
 	}
-	OUTPUT("ADD SP,SP,#" + to_string(-sp));
+	if (-sp > 128) {
+		OUTPUT("LDR R12,=" + to_string(-sp));
+		OUTPUT("ADD SP,SP,R12");
+	}
+	else {
+		OUTPUT("ADD SP,SP,#" + to_string(-sp));
+	}
 	OUTPUT("MOV PC,LR");
 }
 
@@ -567,7 +579,13 @@ void _mov(CodeItem* ir) {
 		OUTPUT("LDR " + dst + ",=" + slabel);
 	}
 	else {
-		OUTPUT("MOV " + dst + ",#" + src);
+		int im = stoi(src);
+		if (im < -127 || im > 128) {
+			OUTPUT("LDR " + dst + ",=" + src);
+		}
+		else {
+			OUTPUT("MOV " + dst + ",#" + src);
+		}
 	}
 }
 
@@ -607,7 +625,8 @@ void _getreg(CodeItem* ir) {
 
 void _note(CodeItem* ir) {
 	string status = ir->getOperand2();
-	if (status == "begin") {
+	string note = ir->getOperand1();
+	if (status == "begin" && note == "func") {
 		OUTPUT("PUSH {R0}");
 		OUTPUT("PUSH {" + reglist_without0 + "}");
 		sp -= 56;

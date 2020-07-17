@@ -427,9 +427,8 @@ void SSA::build_def_use_chain() {
 				case BR:
 				case PARA:
 				case MOV:
-					use_insert(i, j, ci.getOperand1());
 					use_insert(i, j, ci.getOperand2());
-					def_insert(i, j, ci.getResult());
+					def_insert(i, j, ci.getOperand1());
 					break;
 				case STORE: case STOREARR:
 				case POP:
@@ -615,11 +614,14 @@ void SSA::add_phi_function() {
 void SSA::renameVar() {
 	int i, j, k;
 	int size1 = blockCore.size();
+	map<string, int> varPool;
 	for (i = 1; i < size1; i++) {
 		// 建立该函数的变量池，同时指定变量的下标
-		map<string, int> varPool;
+		// map<string, int> varPool;
 		int size2 = total[i].size();
-		for (j = 0; j < size2; j++) if (total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) varPool[total[i][j].getName()] = 0;
+		for (j = 0; j < size2; j++) 
+			if ((total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) && varPool.find(total[i][j].getName()) == varPool.end()) 
+				varPool[total[i][j].getName()] = 0;
 		// 记录每个基本块中最后出现的变量名
 		map<string, map<int, string>> lastVarName;
 		for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) { map<int, string> m;  lastVarName[iter->first] = m; }

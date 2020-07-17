@@ -1,4 +1,6 @@
 ﻿#include "ssa.h"
+#include "../front/symboltable.h"
+#include "../front/syntax.h"
 
 void SSA::ssa_optimize() {
 	// 重新计算use-def关系
@@ -47,12 +49,70 @@ void SSA::inline_function() {
 			// int size3 = blockCore[i][j].Ir.size(); 不能事先求好size3，因为其大小可能会变
 			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
-				if (ci.getCodetype() == CALL) {
-					int funNum = funName2Num[ci.getOperand1()];
-					if (inlineFlag[funNum]) {
-						// 要调用的函数可以内联
-
+				if (ci.getCodetype() == NOTE && ci.getOperand1().compare("func") == 0 && ci.getOperand2().compare("begin") == 0) {
+					string funName = ci.getResult();				// 要调用的函数名
+					int funNum = funName2Num[funName];	// 该函数对应的序号
+					if (!inlineFlag[funNum]) continue;
+					// 要调用的函数可以内联
+					symbolTable st;								// 函数结构
+					for (int iter1 = 1; iter1 < total.size(); iter1++) {
+						if (total[iter1][0].getName().compare(funName) == 0) {
+							st = total[iter1][0]; 
+							break;
+						}
 					}
+					int paraNum = st.getparaLength();	// 参数个数
+					vector<string> paraTable;				// 参数列表
+					for (int iter1 = 1; iter1 <= paraNum; iter1++) {
+						paraTable.push_back(blockCore[funNum][1].Ir[iter1].getResult());
+					}
+					/* 1. 处理传参指令 */
+					k = k + 1;
+					for (int iter2 = paraNum; iter2 > 0; iter2--, k++) {	// 中间代码倒序，而符号表顺序
+						ci = blockCore[i][j].Ir[k];
+						if (ci.getCodetype() == LOAD || ci.getCodetype() == LOADARR) {
+							k++;
+							ci = blockCore[i][j].Ir[k];
+							if (ci.getCodetype() == PUSH) {
+								CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
+								blockCore[i][j].Ir[k] = nci;
+							}
+							else { cout << "inline_function: 我没有考虑到的情况1" << endl; }
+						}
+						else if (ci.getCodetype() == PUSH) {
+							CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else { cout << "inline_function: 我没有考虑到的情况2" << endl; }
+					}
+					/* 2. 插入调用函数的除函数和参数声明之外的指令 */
+					vector<CodeItem> v = blockCore[funNum][1].Ir;
+					for (int iter2 = paraNum + 1; iter2 < v.size(); iter2++, k++) {
+						blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin() + k, v[iter2]);
+					}
+					/* 3. 删除call指令 */
+					ci = blockCore[i][j].Ir[k];
+					if (ci.getCodetype() == CALL) {
+						if (st.getValuetype() == INT) {	// 有返回值函数调用
+							k--;	ci = blockCore[i][j].Ir[k];
+							if (ci.getCodetype() == RET) {
+								CodeItem nci(MOV, "", blockCore[i][j].Ir[k + 1].getResult(), ci.getOperand1());
+								blockCore[i][j].Ir[k] = nci;
+								blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k + 1);
+							}
+							else { cout << "inline_function: 我没有考虑到的情况3" << endl; }
+						}
+						else {	// 无返回值函数调用
+							k--;	ci = blockCore[i][j].Ir[k];
+							if (ci.getCodetype() == RET) {
+								blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+								blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+								k--;
+							}
+							else { cout << "inline_function: 我没有考虑到的情况4" << endl; }
+						}					
+					}
+					else { cout << "inline_function: 我没有考虑到的情况5" << endl; }
 				}
 			}
 		}
