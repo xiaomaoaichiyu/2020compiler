@@ -1,11 +1,13 @@
 ﻿#include "optimize.h"
 #include "register.h"
 
+vector<vector<CodeItem>> LIR;
+vector<vector<string>> func2gReg;
+vector<map<string, int>> func2Vr;
+
 //===============================================================
 //将MIR转换为LIR，把临时变量都用虚拟寄存器替换，vrIndex从0开始编号
 //===============================================================
-
-vector<vector<CodeItem>> LIR;
 
 int vrIndex;
 string curVreg = "";

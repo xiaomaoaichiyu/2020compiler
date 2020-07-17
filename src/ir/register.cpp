@@ -119,17 +119,15 @@ bool isFind(string vreg, map<string, string> container) {
 
 //中间变量的存储----------------------------------------
 map<string, int> vr2index;
+int vrNum = 0;
 
 void setVrIndex(string vr) {
 	if (vr2index.find(vr) != vr2index.end()) {
 		return;
 	}
 	else {
-		for (auto it = vr2index.begin(); it != vr2index.end(); it++) {
-			it->second = it->second + 1;
-		}
 		//将先前push到栈的中间变量(VR)加一个位置
-		vr2index[vr] = 0;
+		vr2index[vr] = vrNum++;
 	}
 }
 
@@ -151,7 +149,7 @@ string allocTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& fun
 	if (reg == res) {	//没有临时寄存器了
 		pair<string, string> tmp = regpool.spillReg();
 		setVrIndex(tmp.first);
-		CodeItem pushInstr(STORE, tmp.second, tmp.first, "need offset");
+		CodeItem pushInstr(STORE, tmp.second, tmp.first, "");
 		func.push_back(pushInstr);
 		reg = regpool.getAndAllocReg(res);
 	}
@@ -166,7 +164,7 @@ string getTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func)
 	string reg = regpool.getReg(res);
 	if (reg == "spilled") {
 		string tmpReg = allocTmpReg(regpool, res, func);
-		CodeItem tmp(LOAD, tmpReg, res, "need offset");
+		CodeItem tmp(LOAD, tmpReg, res, "");
 		func.push_back(tmp);
 		reg = tmpReg;
 	}
@@ -178,7 +176,10 @@ string getTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func)
 
 void registerAllocation() {
 	vector<vector<CodeItem>> LIRTmp;
+	func2gReg.push_back(vector<string>());
+	func2Vr.push_back(map<string, int>());
 	LIRTmp.push_back(LIR.at(0));
+
 	for (int k = 1; k < LIR.size(); k++) {
 		auto func = LIR.at(k);
 		auto vars = stackVars.at(k);
@@ -453,7 +454,7 @@ void registerAllocation() {
 				funcTmp.push_back(instr);
 				for (auto one : save) {
 					setVrIndex(one.first);
-					CodeItem pushTmp(STORE, one.second, one.first, "need offset");
+					CodeItem pushTmp(STORE, one.second, one.first, "");
 					funcTmp.push_back(pushTmp);
 				}
 				continue;
@@ -464,21 +465,27 @@ void registerAllocation() {
 			funcTmp.push_back(instr);
 		}
 		//处理中间变量的offset
-		for (int j = 0; j < funcTmp.size(); j++) {
-			CodeItem& instr = funcTmp.at(j);
-			auto op = instr.getCodetype();
-			auto ope1 = instr.getOperand1();
-			if (op == LOAD && isVreg(ope1)) {
-				instr.setOperand2(getVrOffset(ope1));
-			}
-			else if (op == STORE && isVreg(ope1)){
-				instr.setOperand2(getVrOffset(ope1));
-			}
-			else {
-				//nothing
-			}
-		}
+		//for (int j = 0; j < funcTmp.size(); j++) {
+		//	CodeItem& instr = funcTmp.at(j);
+		//	auto op = instr.getCodetype();
+		//	auto ope1 = instr.getOperand1();
+		//	if (op == LOAD && isVreg(ope1)) {
+		//		instr.setOperand2(getVrOffset(ope1));
+		//	}
+		//	else if (op == STORE && isVreg(ope1)){
+		//		instr.setOperand2(getVrOffset(ope1));
+		//	}
+		//	else {
+		//		//nothing
+		//	}
+		//}
 		LIRTmp.push_back(funcTmp);
+		func2Vr.push_back(vr2index);
+		vector<string> globalReg;
+		for (auto one : var2reg) {
+			globalReg.push_back(one.second);
+		}
+		func2gReg.push_back(globalReg);
 	}
 	LIR = LIRTmp;
 }

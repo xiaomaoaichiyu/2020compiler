@@ -16,6 +16,11 @@ extern vector<vector<CodeItem>> LIR;
 
 extern vector<vector<string>> stackVars;
 
+//保存每个函数使用的全局寄存器，从1开始编号，和LIR一样
+extern vector<vector<string>> func2gReg;
+//保存每个函数用到的临时变量，VR->定义顺序
+extern vector<map<string, int>> func2Vr;
+
 void irOptimize();
 
 void countVars();
