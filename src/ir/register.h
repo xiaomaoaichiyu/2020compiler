@@ -34,6 +34,7 @@ public:
 	string getAndAllocReg(string vreg);
 	void releaseReg(string vreg);
 	pair<string, string> spillReg();	//·µ»Ø <¼Ä´æÆ÷, ÐéÄâ¼Ä´æÆ÷> 
+	vector<pair<string, string>> spillAllRegs();
 	int getStackOffset(string vreg);
 private:
 	string haveAvailReg();

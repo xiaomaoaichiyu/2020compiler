@@ -81,7 +81,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case STORE: {
-		content = "store      " + standardLength(result) + " " + standardLength(operand1);
+		content = "store      " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case STOREARR: {

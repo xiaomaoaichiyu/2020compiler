@@ -62,6 +62,15 @@ pair<string, string> RegPool::spillReg() {
 	return pair<string, string>(vReg, spillReg);
 }
 
+//将当前全部的临时寄存器都溢出，在call前调用保存后续可能用到的中间值
+vector<pair<string, string>> RegPool::spillAllRegs() {
+	vector<pair<string, string>> res;
+	while (!vreguse.empty()) {
+		res.push_back(spillReg());
+	}
+	return res;
+}
+
 int RegPool::getStackOffset(string vreg)
 {
 	return vreg2Offset[vreg];
@@ -108,18 +117,48 @@ bool isFind(string vreg, map<string, string> container) {
 	return false;
 }
 
+//中间变量的存储----------------------------------------
+map<string, int> vr2index;
+
+void setVrIndex(string vr) {
+	if (vr2index.find(vr) != vr2index.end()) {
+		return;
+	}
+	else {
+		for (auto it = vr2index.begin(); it != vr2index.end(); it++) {
+			it->second = it->second + 1;
+		}
+		//将先前push到栈的中间变量(VR)加一个位置
+		vr2index[vr] = 0;
+	}
+}
+
+//返回vr在栈的地址，相对于sp
+string getVrOffset(string vr) {
+	if (vr2index.find(vr) != vr2index.end()) {
+		return I2A(vr2index[vr] * 4);
+	}
+	else {
+		return "0";
+	}
+}
+//中间变量的存储----------------------------------------
+
+//临时寄存器申请
 string allocTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func)
 {
 	string reg = regpool.getAndAllocReg(res);
 	if (reg == res) {	//没有临时寄存器了
 		pair<string, string> tmp = regpool.spillReg();
-		CodeItem pushInstr(PUSH, "", tmp.second, tmp.first);
+		setVrIndex(tmp.first);
+		CodeItem pushInstr(STORE, tmp.second, tmp.first, "need offset");
 		func.push_back(pushInstr);
 		reg = regpool.getAndAllocReg(res);
 	}
 	return reg;
 }
 
+//获取VR对应的临时寄存器
 string getTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func) {
 	if (vreg2varReg.find(res) != vreg2varReg.end()) {
 		return vreg2varReg[res];
@@ -127,8 +166,7 @@ string getTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func)
 	string reg = regpool.getReg(res);
 	if (reg == "spilled") {
 		string tmpReg = allocTmpReg(regpool, res, func);
-		int offset = regpool.getStackOffset(res);
-		CodeItem tmp(LOAD, tmpReg, res, I2A(offset));
+		CodeItem tmp(LOAD, tmpReg, res, "need offset");
 		func.push_back(tmp);
 		reg = tmpReg;
 	}
@@ -137,11 +175,7 @@ string getTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func)
 	}
 	return reg;
 }
-//
-//for (int i = 1; i < LIR.size(); i++) {
-//	registerAllocation(LIR.at(i), stackVars.at(i));
-//}
-//
+
 void registerAllocation() {
 	vector<vector<CodeItem>> LIRTmp;
 	LIRTmp.push_back(LIR.at(0));
@@ -157,6 +191,7 @@ void registerAllocation() {
 		first.clear();
 		var2reg.clear();
 		regBegin = 4;
+		vr2index.clear();
 
 		//无脑指派局部变量
 		int i = 0;
@@ -176,6 +211,7 @@ void registerAllocation() {
 
 #define isVreg(reg) (reg.size() > 2 && (reg.substr(0,2) == "VR"))
 
+		string funcName = "";
 		for (int i = 0; i < func.size(); i++) {
 			CodeItem instr = func.at(i);
 			irCodeType op = instr.getCodetype();
@@ -187,7 +223,9 @@ void registerAllocation() {
 			string ope2Reg = ope2;
 
 			//res字段分配临时寄存器
-			if (op == NOT) {
+			if (op == DEFINE) {
+				funcName = res;
+			}else if (op == NOT) {
 				if (isFind(ope1, vreg2varReg)) {
 					ope1Reg = vreg2varReg[ope2];
 				}
@@ -228,29 +266,42 @@ void registerAllocation() {
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else if (op == LOAD) {
-				if (isVreg(ope1)) {		//全局变量
-					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
-					regpool.releaseReg(ope1);
-					resReg = allocTmpReg(regpool, res, funcTmp);
-					instr.setInstr(resReg, ope1Reg, ope2Reg);
-				}
-				else {					//栈变量
-					if (var2reg[ope1] == "memory") {	//分配临时寄存器
+				if (ope2 == "para") {	//加载数组参数的地址
+					if (var2reg.find(ope1) != var2reg.end()) {	//有寄存器
+						instr.setCodetype(MOV);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr("", resReg, var2reg[ope1]);
+					}
+					else {
 						resReg = allocTmpReg(regpool, res, funcTmp);
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
-					else {								//指派的全局寄存器
-						if (first[ope1] == false) {
-							ope1Reg = var2reg[ope1];
-							vreg2varReg[res] = ope1Reg;		//vreg <-> varReg
-							instr.setCodetype(MOV);
-							instr.setInstr("", ope1Reg, ope1Reg);
-						}
-						else {
-							first[ope1] = false;
-							resReg = var2reg[ope1];
-							vreg2varReg[res] = resReg;		//vreg <-> varReg
+				}
+				else {	//非数组参数
+					if (isVreg(ope1)) {		//全局变量
+						ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+						regpool.releaseReg(ope1);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {					//栈变量
+						if (var2reg[ope1] == "memory") {	//分配临时寄存器
+							resReg = allocTmpReg(regpool, res, funcTmp);
 							instr.setInstr(resReg, ope1Reg, ope2Reg);
+						}
+						else {								//指派的全局寄存器
+							if (first[ope1] == false) {
+								ope1Reg = var2reg[ope1];
+								vreg2varReg[res] = ope1Reg;		//vreg <-> varReg
+								instr.setCodetype(MOV);
+								instr.setInstr("", ope1Reg, ope1Reg);
+							}
+							else {
+								first[ope1] = false;
+								resReg = var2reg[ope1];
+								vreg2varReg[res] = resReg;		//vreg <-> varReg
+								instr.setInstr(resReg, ope1Reg, ope2Reg);
+							}
 						}
 					}
 				}
@@ -397,10 +448,35 @@ void registerAllocation() {
 				}
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
+			else if (op == NOTE && ope1 == "func" && ope2 == "begin") {
+				auto save = regpool.spillAllRegs();
+				funcTmp.push_back(instr);
+				for (auto one : save) {
+					setVrIndex(one.first);
+					CodeItem pushTmp(STORE, one.second, one.first, "need offset");
+					funcTmp.push_back(pushTmp);
+				}
+				continue;
+			}
 			else {
 				//do nothing!
 			}
 			funcTmp.push_back(instr);
+		}
+		//处理中间变量的offset
+		for (int j = 0; j < funcTmp.size(); j++) {
+			CodeItem& instr = funcTmp.at(j);
+			auto op = instr.getCodetype();
+			auto ope1 = instr.getOperand1();
+			if (op == LOAD && isVreg(ope1)) {
+				instr.setOperand2(getVrOffset(ope1));
+			}
+			else if (op == STORE && isVreg(ope1)){
+				instr.setOperand2(getVrOffset(ope1));
+			}
+			else {
+				//nothing
+			}
 		}
 		LIRTmp.push_back(funcTmp);
 	}

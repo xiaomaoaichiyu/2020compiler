@@ -98,6 +98,8 @@ void MIR2LIRpass() {
 		curVreg = "";
 		tmp2vr.clear();
 		int paraNum = 0;
+		set<string> paras;
+
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
 			dealNumber(instr);
@@ -177,6 +179,11 @@ void MIR2LIRpass() {
 						dst.push_back(instr);
 					}
 					else {
+						if (paras.find(ope1) != paras.end()) {
+							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+							ope1 = curVreg;
+							dst.push_back(loadTmp);
+						}
 						res = dealTmpOpe(res);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
@@ -193,6 +200,11 @@ void MIR2LIRpass() {
 						dst.push_back(instr);
 					}
 					else {
+						if (paras.find(ope1) != paras.end()) {
+							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+							ope1 = curVreg;
+							dst.push_back(loadTmp);
+						}
 						res = dealTmpOpe(res);
 						ope2 = dealTmpOpe(ope2);
 						instr.setInstr(res, ope1, ope2);
@@ -263,12 +275,17 @@ void MIR2LIRpass() {
 						else {
 							res = dealTmpOpe(res);
 						}
+						if (paras.find(ope1) != paras.end()) {
+							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+							ope1 = curVreg;
+							dst.push_back(loadTmp);
+						}
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 				}
-				else {
-					if (isGlobal(ope1)) {
+				else {		//偏移是寄存器
+					if (isGlobal(ope1)) {		//全局数组
 						CodeItem address(LEA, "", getVreg(), ope1);
 						ope1 = curVreg;
 						if (isNumber(res)) {
@@ -292,6 +309,11 @@ void MIR2LIRpass() {
 						}
 						else {
 							res = dealTmpOpe(res);
+						}
+						if (paras.find(ope1) != paras.end()) {
+							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+							ope1 = curVreg;
+							dst.push_back(loadTmp);
 						}
 						ope2 = dealTmpOpe(ope2);
 						instr.setInstr(res, ope1, ope2);
@@ -367,6 +389,7 @@ void MIR2LIRpass() {
 					instr.setOperand1("stack");
 				}
 				dst.push_back(instr);
+				paras.insert(res);
 			}
 			else {
 				dst.push_back(instr);
@@ -397,8 +420,8 @@ void countVars() {
 	for (int i = 1; i < codetotal.size(); i++) {
 		auto func = codetotal.at(i);
 		vector<string> vars;
-		for (int i = 1; i < func.size(); i++) {
-			auto instr = func.at(i);
+		for (int j = 1; j < func.size(); j++) {
+			auto instr = func.at(j);
 			if (instr.getCodetype() == PARA || instr.getCodetype() == ALLOC) {
 				vars.push_back(instr.getResult());
 			}
