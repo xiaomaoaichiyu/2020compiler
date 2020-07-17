@@ -45,11 +45,13 @@
 | 函数返回(变了)         | ret               |                                    | retValue            | int\|void                 |
 | 函数传参(变了)         | push              | type(int\|int*\|string)            | tmpReg              | num(第几个)               |
 | 压栈                   | push              |                                    | reg物理寄存器       | vReg(reg存储的虚拟寄存器) |
-| 退栈                   | $\color{red}pop$  | type(int\|int*)                    | tmpReg              |                           |
+| 退栈                   | $\color{red}pop$  |                                    |                     | offset                    |
+| 退栈                   | pop               |                                    | tmpReg              |                           |
 | 标签                   | label             | name                               |                     |                           |
 | 直接跳转(变了)         | br                |                                    | label               |                           |
 | 条件跳转(变了)         | br                | lable2(错误)                       | tmpReg              | label1(正确)              |
 | 取返回值               | getRet            |                                    | tmpReg              |                           |
+| 取返回值               | getReg            |                                    |                     |                           |
 |                        |                   |                                    |                     |                           |
 | 函数定义               | define            | name                               | funcType            |                           |
 | 函数形参               | para              | name                               | paraType(int\|int*) | dimension(维度)           |
@@ -58,6 +60,9 @@
 | 注释                   | note              |                                    | 注释内容            |                           |
 | 函数参数压栈           | note              | funcName                           | func                | begin \| end              |
 | 数组索引计算           | note              | arrayName                          | array               | begin \| end              |
+|                        |                   |                                    |                     |                           |
+|                        |                   |                                    |                     |                           |
+|                        |                   |                                    |                     |                           |
 |                        |                   |                                    |                     |                           |
 
 *****

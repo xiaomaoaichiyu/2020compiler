@@ -105,6 +105,7 @@ void MIR2LIRpass() {
 			string res = instr.getResult();
 			string ope1 = instr.getOperand1();
 			string ope2 = instr.getOperand2();
+
 			if (op == NOT) {
 				if (isNumber(ope1)) {
 					int tmp = A2I(ope1);
