@@ -99,6 +99,7 @@ void _global(CodeItem* ir)
 void _define(CodeItem* ir)
 {
 	string name = getname(ir->getResult());
+	OUTPUT("");
 	OUTPUT(name + ":");
 	var2addr.clear();
 	int paraNum;
@@ -699,13 +700,15 @@ void _getreg(CodeItem* ir) {
 }
 
 void _note(CodeItem* ir) {
+	OUTPUT("@note " + ir->getResult() + " " + ir->getOperand1() + " " + ir->getOperand2());
+	/*
 	string status = ir->getOperand2();
 	string note = ir->getOperand1();
 	if (status == "begin" && note == "func") {
 		OUTPUT("PUSH {R0}");
 		OUTPUT("PUSH {" + reglist_without0 + "}");
 		sp -= 56;
-	}
+	}*/
 }
 
 void arm_generate(string sname)
@@ -814,8 +817,9 @@ void arm_generate(string sname)
 				break;
 			case GETREG:
 				//_getreg(ir_now);
+				break;
 			case NOTE:
-				//_note(ir_now);
+				_note(ir_now);
 			default:
 				break;
 			}
