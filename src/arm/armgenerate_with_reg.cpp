@@ -33,10 +33,10 @@ void global_flush()
 	for (string v : ini_value) {
 		out += v + ",";
 	}
-	out = out.substr(0, out.size() - 1);
 	for (int i = ini_value.size(); i < global_var_size; i++) {
-		out += ",0";
+		out += "0,";
 	}
+	out = out.substr(0, out.size() - 1);
 	OUTPUT(out);
 	OUTPUT(".text");
 	ini_value.clear();
@@ -163,7 +163,9 @@ void _define(CodeItem* ir)
 		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
 	}
 	sp -= regN * 4;
-	OUTPUT("PUSH {" + global_reg_list.substr(1) + "}");
+	if (global_reg_list != "") {
+		OUTPUT("PUSH {" + global_reg_list.substr(1) + "}");
+	}
 	OUTPUT("PUSH {LR}");
 }
 
@@ -624,8 +626,10 @@ void _ret(CodeItem* ir)
 	int fake_sp = sp;
 	OUTPUT("POP {LR}");
 	fake_sp += 4;
-	OUTPUT("POP {" + global_reg_list.substr(1) + "}");
-	fake_sp += func2gReg[symbol_pointer].size() * 4;
+	if (global_reg_list != "") {
+		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
+		fake_sp += func2gReg[symbol_pointer].size() * 4;
+	}
 	if (-fake_sp > 128) {
 		OUTPUT("LDR R12,=" + to_string(-fake_sp));
 		OUTPUT("ADD SP,SP,R12");
