@@ -21,6 +21,7 @@ bool is_global = true;
 string reglist = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR,R0";
 string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
+map<string, int> func2para;
 
 void global_flush()
 {
@@ -134,6 +135,7 @@ void _define(CodeItem* ir)
 		}
 		case FUNCTION: {
 			paraNum = st.getparaLength();
+			func2para[name] = paraNum;
 			if (paraNum > 4) {
 				sp -= (paraNum - 4) * 4;
 			}
@@ -709,6 +711,16 @@ void _note(CodeItem* ir) {
 		OUTPUT("PUSH {" + reglist_without0 + "}");
 		sp -= 56;
 	}*/
+	string name = ir->getResult();
+	string type = ir->getOperand1();
+	string status = ir->getOperand2();
+	if (type == "func" && status == "end") {
+		int paraN = func2para[name.substr(1)];
+		if (paraN > 4) {
+			int off = (paraN - 4) * 4;
+			sp += off;
+		}
+	}
 }
 
 void arm_generate(string sname)
