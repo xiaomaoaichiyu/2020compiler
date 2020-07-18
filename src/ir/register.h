@@ -31,9 +31,13 @@ public:
 		}
 	}
 	string getReg(string vreg);
+	void markParaReg(string reg, string Vreg);
+	bool checkParaRegUsed(string reg);
 	string getAndAllocReg(string vreg);
-	void releaseReg(string vreg);
-	pair<string, string> spillReg();	//·µ»Ø <¼Ä´æÆ÷, ÐéÄâ¼Ä´æÆ÷> 
+	void releaseReg(string reg);
+	void releaseVreg(string vreg);
+	pair<string, string> spillReg();				//·µ»Ø <¼Ä´æÆ÷, ÐéÄâ¼Ä´æÆ÷> 
+	pair<string, string> spillReg(string reg);		//Òç³öÖ¸¶¨µÄ¼Ä´æÆ÷
 	vector<pair<string, string>> spillAllRegs();
 	int getStackOffset(string vreg);
 private:

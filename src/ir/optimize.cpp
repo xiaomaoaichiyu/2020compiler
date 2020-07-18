@@ -9,6 +9,7 @@ vector<map<string, int>> func2Vr;
 //将MIR转换为LIR，把临时变量都用虚拟寄存器替换，vrIndex从0开始编号
 //===============================================================
 
+vector<int> func2vrIndex;
 int vrIndex;
 string curVreg = "";
 map<string, string> tmp2vr;
@@ -93,6 +94,7 @@ void dealNumber(CodeItem& instr) {
 
 void MIR2LIRpass() {
 	LIR.push_back(codetotal.at(0));
+	func2vrIndex.push_back(0);
 	for (int i = 1; i < codetotal.size(); i++) {
 		vector<CodeItem> src = codetotal.at(i);
 		vector<CodeItem> dst;
@@ -406,6 +408,7 @@ void MIR2LIRpass() {
 				dst.push_back(instr);
 			}
 		}
+		func2vrIndex.push_back(vrIndex);
 		LIR.push_back(dst);
 	}
 }

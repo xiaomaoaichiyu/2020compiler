@@ -28,6 +28,9 @@ void countVars();
 void printLIR(string outputFile);
 
 
+//vr寄存器的使用
+extern vector<int> func2vrIndex;
+
 //将MIR转换为LIR，主要是替换操作数，全部放到虚拟寄存器中VR中，编号从0开始
 //void MIR2LIRpass();
 
