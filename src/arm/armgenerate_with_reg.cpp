@@ -20,6 +20,7 @@ vector<string> ini_value;
 bool is_global = true;
 string reglist = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR,R0";
 string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
+string global_reg_list;
 
 void global_flush()
 {
@@ -32,10 +33,10 @@ void global_flush()
 	for (string v : ini_value) {
 		out += v + ",";
 	}
-	out = out.substr(0, out.size() - 1);
 	for (int i = ini_value.size(); i < global_var_size; i++) {
-		out += ",0";
+		out += "0,";
 	}
+	out = out.substr(0, out.size() - 1);
 	OUTPUT(out);
 	OUTPUT(".text");
 	ini_value.clear();
@@ -122,10 +123,11 @@ void _define(CodeItem* ir)
 				var2addr[st.getName] = sp + 4 * (paraIndex - 5);
 			}*/
 			if (paraIndex < 5) {
-				var2addr[st.getName()] = paraIndex;
+				sp -= 4;
+				var2addr[st.getName()] = sp;
 			}
 			else {
-				var2addr[st.getName()] = sp + 4 * (paraIndex - 5);//当值大于等于零时表示在寄存器里
+				var2addr[st.getName()] = sp + 16 + 4 * (paraIndex - 5);
 			}
 			break;
 		}
@@ -141,6 +143,18 @@ void _define(CodeItem* ir)
 			break;
 		}
 	}
+
+	for (auto m : func2Vr[symbol_pointer]) {
+		sp -= 4;
+		var2addr[m.first] = sp;
+	}
+
+	global_reg_list = "";
+	int regN = 1;
+	for (string reg : func2gReg[symbol_pointer]) {
+		global_reg_list += "," + reg;
+		regN++;
+	}
 	if (sp - sp_without_para < -127) {
 		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
 		OUTPUT("ADD SP,SP,R12");
@@ -148,6 +162,11 @@ void _define(CodeItem* ir)
 	else {
 		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
 	}
+	sp -= regN * 4;
+	if (global_reg_list != "") {
+		OUTPUT("PUSH {" + global_reg_list.substr(1) + "}");
+	}
+	OUTPUT("PUSH {LR}");
 }
 
 void _alloc(CodeItem* ir)
@@ -170,7 +189,13 @@ void _load(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(var);
-		OUTPUT("LDR " + target + ",[SP,#" + to_string(p.second-sp) + "]");
+		if (p.second - sp > 128) {
+			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			OUTPUT("LDR " + target + ",[SP,LR]");
+		}
+		else {
+			OUTPUT("LDR " + target + ",[SP,#" + to_string(p.second - sp) + "]");
+		}
 	}
 }
 
@@ -185,18 +210,36 @@ void _loadarr(CodeItem* ir)
 		}
 		else {
 			auto p = get_location(var);
+			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			OUTPUT("ADD LR,LR," + offset);
+			OUTPUT("LDR " + target + ",[SP,LR]");
+			/*
 			OUTPUT("ADD " + offset + "," + offset + ",SP");
 			OUTPUT("ADD " + offset + "," + offset + ",#" + to_string(p.second - sp));
 			OUTPUT("LDR " + target + ",[" + offset + "]");
+			*/
 		}
 	}
 	else {
 		if (var[0] == 'R') {
-			OUTPUT("LDR " + target + ",[" + var + ",#" + offset + "]");
+			if (stoi(offset) > 128) {
+				OUTPUT("LDR LR,=" + offset);
+				OUTPUT("LDR " + target + ",[" + var + ",LR]");
+			}
+			else {
+				OUTPUT("LDR " + target + ",[" + var + ",#" + offset + "]");
+			}
 		}
 		else {
 			auto p = get_location(var);
-			OUTPUT("LDR " + target + ",[SP,#" + to_string(p.second - sp + stoi(offset)) + "]");
+			int im = p.second - sp + stoi(offset);
+			if (im > 128 || im < -127) {
+				OUTPUT("LDR LR,=" + to_string(im));
+				OUTPUT("LDR " + target + ",[SP,LR]");
+			}
+			else {
+				OUTPUT("LDR " + target + ",[SP,#" + to_string(im) + "]");
+			}
 		}
 	}
 }
@@ -210,7 +253,13 @@ void _store(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(loca);
-		OUTPUT("STR " + value + ",[SP,#" + to_string(p.second - sp) + "]");
+		if (p.second - sp > 128) {
+			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			OUTPUT("STR " + value + ",[SP,LR]");
+		}
+		else {
+			OUTPUT("STR " + value + ",[SP,#" + to_string(p.second - sp) + "]");
+		}
 	}
 }
 
@@ -230,18 +279,36 @@ void _storearr(CodeItem* ir)
 		}
 		else {
 			auto p = get_location(var);
+			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			OUTPUT("ADD LR,LR," + offset);
+			OUTPUT("STR " + value + ",[SP,LR]");
+			/*
 			OUTPUT("ADD " + offset + ",SP," + offset);
 			OUTPUT("ADD " + offset + "," + offset + ",#" + to_string(p.second - sp));
 			OUTPUT("STR " + value + ",[" + offset + "]");
+			*/
 		}
 	}
 	else {
 		if (var[0] == 'R') {
-			OUTPUT("STR " + value + ",[" + var + ",#" + offset + "]");
+			if (stoi(offset) > 128) {
+				OUTPUT("LDR LR,=" + offset);
+				OUTPUT("STR " + value + ",[" + var + ",LR]");
+			}
+			else {
+				OUTPUT("STR " + value + ",[" + var + ",#" + offset + "]");
+			}
 		}
 		else {
 			auto p = get_location(var);
-			OUTPUT("STR " + value + ",[SP,#" + to_string(p.second - sp + stoi(offset)) + "]");
+			int im = p.second - sp + stoi(offset);
+			if (im > 128 || im < -127) {
+				OUTPUT("LDR LR,=" + to_string(im));
+				OUTPUT("STR " + value + ",[SP,LR]");
+			}
+			else {
+				OUTPUT("STR " + value + ",[SP,#" + to_string(im) + "]");
+			}
 		}
 	}
 }
@@ -537,6 +604,7 @@ void _ret(CodeItem* ir)
 {
 	string re = ir->getOperand1();
 	string type = ir->getOperand2();
+	/*
 	if (type == "int") {
 		if (re[0] == 'R') {
 			OUTPUT("MOV R0," + re);
@@ -554,13 +622,20 @@ void _ret(CodeItem* ir)
 				OUTPUT("LDR R0,[SP,#" + to_string(p.second - sp) + "]");
 			}
 		}
+	}*/
+	int fake_sp = sp;
+	OUTPUT("POP {LR}");
+	fake_sp += 4;
+	if (global_reg_list != "") {
+		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
+		fake_sp += func2gReg[symbol_pointer].size() * 4;
 	}
-	if (-sp > 128) {
-		OUTPUT("LDR R12,=" + to_string(-sp));
+	if (-fake_sp > 128) {
+		OUTPUT("LDR R12,=" + to_string(-fake_sp));
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(-sp));
+		OUTPUT("ADD SP,SP,#" + to_string(-fake_sp));
 	}
 	OUTPUT("MOV PC,LR");
 }
@@ -738,9 +813,9 @@ void arm_generate(string sname)
 				_lea(ir_now);
 				break;
 			case GETREG:
-				_getreg(ir_now);
+				//_getreg(ir_now);
 			case NOTE:
-				_note(ir_now);
+				//_note(ir_now);
 			default:
 				break;
 			}
