@@ -316,15 +316,15 @@ void registerAllocation() {
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 					else {					//栈数组
-						if (var2reg[ope1] == "memory") {
-							resReg = allocTmpReg(regpool, res, funcTmp);
-							instr.setInstr(resReg, ope1Reg, ope2Reg);
-						}
+						/*if (var2reg[ope1] == "memory") {*/
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+						/*}
 						else {
 							resReg = var2reg[ope1];
 							vreg2varReg[res] = resReg;
 							instr.setInstr(resReg, ope1Reg, ope2Reg);
-						}
+						}*/
 					}
 				}
 				else {					//偏移是寄存器
@@ -337,19 +337,19 @@ void registerAllocation() {
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 					else {					//栈数组
-						if (var2reg[ope1] == "memory") {
-							ope2Reg = getTmpReg(regpool, ope2, funcTmp);
-							regpool.releaseReg(ope2);
-							resReg = allocTmpReg(regpool, res, funcTmp);
-							instr.setInstr(resReg, ope1Reg, ope2Reg);
-						}
+						/*if (var2reg[ope1] == "memory") {*/
+						ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+						regpool.releaseReg(ope2);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+						/*}
 						else {
 							ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 							regpool.releaseReg(ope2);
 							resReg = var2reg[ope1];
 							vreg2varReg[res] = resReg;
 							instr.setInstr(resReg, ope1Reg, ope2Reg);
-						}
+						}*/
 					}
 				}
 			}
