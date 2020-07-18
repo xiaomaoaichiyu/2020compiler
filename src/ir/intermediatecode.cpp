@@ -152,10 +152,10 @@ string CodeItem::getContent()
 	}
 	case NOTE: {
 		if (operand1 == "func") {
-			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "--------";
+			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "----------------";
 		}
 		else {
-			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "---------------";
+			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "--------";
 		}
 		break;
 	}case LEA: {

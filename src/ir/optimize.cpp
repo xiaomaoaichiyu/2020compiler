@@ -347,13 +347,22 @@ void MIR2LIRpass() {
 				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
-			else if (op == PUSH || op == POP) {
+			else if (op == PUSH) {
 				if (res == "int*") {
-					CodeItem lea(LEA, "", getVreg(), ope1);
-					ope1 = curVreg;
-					instr.setOperand1(ope1);
-					dst.push_back(lea);
-					dst.push_back(instr);
+					if (paras.find(ope1) != paras.end()) {	//数组是一个参数
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+						ope1 = curVreg;
+						instr.setOperand1(ope1);
+						dst.push_back(loadTmp);
+						dst.push_back(instr);
+					}
+					else {
+						CodeItem lea(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						instr.setOperand1(ope1);
+						dst.push_back(lea);
+						dst.push_back(instr);
+					}
 				}
 				else if (res == "string") {
 					CodeItem tmp(MOV, "", getVreg(), ope1);
