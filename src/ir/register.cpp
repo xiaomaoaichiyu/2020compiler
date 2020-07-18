@@ -482,8 +482,8 @@ void registerAllocation() {
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);
 		vector<string> globalReg;
-		for (auto one : var2reg) {
-			globalReg.push_back(one.second);
+		for (int l = 4; l < regBegin; l++) {
+			globalReg.push_back(FORMAT("R{}", l));
 		}
 		func2gReg.push_back(globalReg);
 	}
