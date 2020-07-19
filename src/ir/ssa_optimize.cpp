@@ -2,6 +2,187 @@
 #include "../front/symboltable.h"
 #include "../front/syntax.h"
 
+// 简化条件判断为常值的跳转指令
+void SSA::simplify_br() {
+	int i, j, k;
+	int size1 = codetotal.size();
+	for (i = 1; i < size1; i++) {
+		int size2 = codetotal[i].size();
+		for (j = 0; j < size2; j++) {
+			CodeItem ci = codetotal[i][j];
+			if (ci.getCodetype() == BR && ifDigit(ci.getOperand1())) {
+				// CodeItem nci(BR, "", "", "");
+				if (ci.getOperand1().compare("0") == 0) {
+					CodeItem nci(BR, "", ci.getResult(), "");
+					codetotal[i].erase(codetotal[i].begin() + j);
+					codetotal[i].insert(codetotal[i].begin() + j, nci);
+					// nci.setResult(ci.getOperand1());
+				}
+				else {
+					CodeItem nci(BR, "", ci.getOperand2(), "");
+					codetotal[i].erase(codetotal[i].begin() + j);
+					codetotal[i].insert(codetotal[i].begin() + j, nci);
+					// nci.setResult(ci.getOperand2());
+				}
+			}
+		}
+	}
+}
+
+// 简化load和store指令相邻的指令
+/*
+ a = a;
+ load       %0         %a
+ store      %0         %a
+ */
+void SSA::load_and_store() {
+	int i, j, k;
+	int size = codetotal.size();
+	for (i = 1; i < codetotal.size(); i++) {
+		for (j = 0; j < codetotal[i].size() - 1; j++) {
+			CodeItem ci1 = codetotal[i][j];
+			CodeItem ci2 = codetotal[i][j + 1];
+			if (((ci1.getCodetype() == LOAD && ci2.getCodetype() == STORE) || 
+				(ci1.getCodetype() == STORE && ci2.getCodetype() == LOAD) || 
+				(ci1.getCodetype() == LOADARR && ci2.getCodetype() == STOREARR) || 
+				(ci1.getCodetype() == STOREARR && ci2.getCodetype() == LOADARR))
+				&& ci1.getResult().compare(ci2.getResult()) == 0
+				&& ci1.getOperand1().compare(ci2.getOperand1()) == 0
+				&& ci1.getOperand2().compare(ci2.getOperand2()) == 0) {
+				codetotal[i].erase(codetotal[i].begin() + j);
+				codetotal[i].erase(codetotal[i].begin() + j);
+				j--;
+			}
+		}
+	}
+}
+
+// 简化加减0、乘除模1这样的指令
+/*
+ b = a + 0;
+ load       %1         %a
+ add        %2         %1         0
+ store      %2         %b
+ -->
+ load       %2         %a
+store      %2         %b
+ */
+void SSA::simplify_add_minus_multi_div_mod() {
+	int i, j, k;
+	int size = codetotal.size();
+	for (i = 1; i < codetotal.size(); i++) {
+		for (j = 1; j < codetotal[i].size(); j++) {
+			CodeItem ci = codetotal[i][j];
+			CodeItem ci0 = codetotal[i][j - 1]; // 前一条中间代码
+			if (ci.getCodetype() == ADD) {
+				if (ci.getOperand1().compare("0") == 0) {
+					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
+						&& (ci0.getResult().compare(ci.getOperand2()) == 0)) {
+						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
+						codetotal[i].insert(codetotal[i].begin() + j - 1, nci);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						j--;
+					}
+				}
+				else if (ci.getOperand2().compare("0") == 0) {
+					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
+						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
+						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
+						codetotal[i].insert(codetotal[i].begin() + j - 1, nci);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						j --;
+					}
+				}
+			}
+			else if (ci.getCodetype() == SUB) {
+				if (ci.getOperand2().compare("0") == 0) {
+					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
+						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
+						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
+						codetotal[i].insert(codetotal[i].begin() + j - 1, nci);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						j --;
+					}
+				}
+			}
+			else if (ci.getCodetype() == MUL) {
+				if (ci.getOperand1().compare("1") == 0) {
+					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
+						&& (ci0.getResult().compare(ci.getOperand2()) == 0)) {	// 只有这句不同
+						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
+						codetotal[i].insert(codetotal[i].begin() + j - 1, nci);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						j --;
+					}
+				}
+				else if (ci.getOperand2().compare("1") == 0) {
+					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
+						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
+						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
+						codetotal[i].insert(codetotal[i].begin() + j - 1, nci);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						j --;
+					}
+				}
+			}
+			else if (ci.getCodetype() == DIV) {
+				if (ci.getOperand2().compare("1") == 0) {
+					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
+						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
+						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
+						codetotal[i].insert(codetotal[i].begin() + j - 1, nci);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						codetotal[i].erase(codetotal[i].begin() + j);
+						j --;
+					}
+				}
+			}
+			else if (ci.getCodetype() == REM) {
+				if (ci.getOperand2().compare("1") == 0 || ci.getOperand2().compare(ci.getOperand1()) == 0) {
+
+				}
+			}
+		}
+	}
+}
+
+// 简化紧邻的跳转
+/*
+ br                    %if.end_0            
+ label      %if.end_0 
+ */
+void SSA::simplify_br_label() {
+	int i, j, k;
+	int size = codetotal.size();
+	for (i = 1; i < codetotal.size(); i++) {
+		for (j = 0; j < codetotal[i].size() - 1; j++) {
+			CodeItem ci1 = codetotal[i][j];
+			CodeItem ci2 = codetotal[i][j + 1];
+			if (ci1.getCodetype() == BR && ci2.getCodetype() == LABEL && ci1.getOperand1().compare(ci2.getResult()) == 0) {
+				codetotal[i].erase(codetotal[i].begin() + j);
+				// label就不删了
+			}
+		}
+	}
+}
+
+// 在睿轩生成的中间代码做优化
+void SSA::pre_optimize() {
+	// 简化条件判断为常值的跳转指令
+	simplify_br();
+	// 简化load和store指令相邻的指令
+	load_and_store();
+	// 简化加减0、乘除模1这样的指令
+	simplify_add_minus_multi_div_mod();	
+	// 简化紧邻的跳转
+	simplify_br_label();
+}
+
 void SSA::ssa_optimize() {
 	// 重新计算use-def关系
 	build_def_use_chain();

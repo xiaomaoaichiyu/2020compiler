@@ -108,6 +108,11 @@ private:
 	void Test_Build_Var_Chain();
 	void Test_Add_Phi_Fun();
 	// 优化函数
+	void pre_optimize();	// 在睿轩生成的中间代码上做优化
+	void simplify_br();		// 简化条件判断为常值的跳转指令
+	void load_and_store();// 简化load和store指令相邻的指令
+	void simplify_add_minus_multi_div_mod();	// 简化加减0、乘除模1这样的指令
+	void simplify_br_label();	// 简化紧邻的跳转
 	void ssa_optimize();		// 优化函数入口
 	void delete_dead_codes();	// 删除死代码
 	void judge_inline_function();	// 判断内联函数
@@ -118,7 +123,6 @@ private:
 	bool ifDigit(std::string name);						// 判断是否是数字
 	bool ifGlobalVariable(std::string name);		// 判断是否是全局变量
 	bool ifLocalVariable(std::string name);		// 判断是否是局部变量
-	void simplify_br();										// 简化条件判断为常值的跳转指令
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
