@@ -476,6 +476,10 @@ void registerAllocation() {
 					funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
 					first[res] = false;
 				}
+				else if (ope1 == "stack" && var2reg[res] != "memory") {
+					funcTmp.push_back(CodeItem(LOAD, var2reg[res], res, "para"));
+					first[res] = false;
+				}
 			}
 			else if (op == GETREG) {
 				if (isVreg(ope1)) {

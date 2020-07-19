@@ -1,6 +1,7 @@
 ﻿#include "ssa.h"
 #include "../front/symboltable.h"
 #include "../front/syntax.h"
+#include "../util/meow.h"
 
 // 简化条件判断为常值的跳转指令
 void SSA::simplify_br() {
@@ -355,4 +356,44 @@ void SSA::delete_dead_codes() {
 			}
 		}
 	}
+}
+
+
+void SSA::back_edge() {
+	for (int i = 1; i < blockCore.size(); i++) {
+		//每一个函数的基本块
+		auto blocks = blockCore.at(i);
+		//存储找到的回边
+		vector<pair<int, int>> backEdges;
+		for (auto blk : blocks) {
+			int num = blk.number;
+			auto succs = blk.succeeds;
+			auto doms = blk.domin;
+			for (auto suc : succs) {
+				//后继结点是必经节点说明是一条回边
+				if (doms.find(suc) != doms.end()) {
+					backEdges.push_back(pair<int, int>(num, suc));
+					if (suc > num) {
+						WARN_MSG("出了问题！");
+					}
+				}
+			}
+		}
+
+		//查找循环的基本块
+		
+
+	}
+}
+
+void SSA::code_outside()
+{
+}
+
+void SSA::strength_reduction()
+{
+}
+
+void SSA::protocol_variable_deletion()
+{
 }

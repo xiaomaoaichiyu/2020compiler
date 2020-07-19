@@ -117,6 +117,12 @@ private:
 	void delete_dead_codes();	// 删除死代码
 	void judge_inline_function();	// 判断内联函数
 	void inline_function();	// 函数内联
+	//ly：循环优化：代码外提、强度削弱、规约变量删除
+	void back_edge();	//计算回边+查找循环
+	void code_outside();	//代码外提
+	void strength_reduction();	//强度削弱
+	void protocol_variable_deletion(); //规约变量删除
+
 	// 功能函数，可能在各个地方都会用到
 	std::string deleteSuffix(std::string name);	// 删除后缀，如输入参数为%a^1，返回%a; 若不含^则直接返回；
 	bool ifTempVariable(std::string name);		// 判断是否是临时变量
