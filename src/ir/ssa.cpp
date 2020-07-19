@@ -786,33 +786,6 @@ void SSA::rename_back() {
 	}
 }
 
-// 简化条件判断为常值的跳转指令
-void SSA::simplify_br() {
-	int i, j, k;
-	int size1 = codetotal.size();
-	for (i = 1; i < size1; i++) {
-		int size2 = codetotal[i].size();
-		for (j = 0; j < size2; j++) {
-			CodeItem ci = codetotal[i][j];
-			if (ci.getCodetype() == BR && ifDigit(ci.getOperand1())) {
-				// CodeItem nci(BR, "", "", "");
-				if (ci.getOperand1().compare("0") == 0) {
-					CodeItem nci(BR, "", ci.getResult(), "");
-					codetotal[i].erase(codetotal[i].begin() + j);
-					codetotal[i].insert(codetotal[i].begin() + j, nci);
-					// nci.setResult(ci.getOperand1());
-				}
-				else {
-					CodeItem nci(BR, "", ci.getOperand2(), "");
-					codetotal[i].erase(codetotal[i].begin() + j);
-					codetotal[i].insert(codetotal[i].begin() + j, nci);
-					// nci.setResult(ci.getOperand2());
-				}
-			}
-		}
-	}
-}
-
 // 处理\phi函数
 void SSA::deal_phi_function() {
 	int i, j, k, m, n;
@@ -854,8 +827,8 @@ void SSA::deal_phi_function() {
 // 入口函数
 void SSA::generate() {
 
-	// 简化条件判断为常值的跳转指令
-	simplify_br();
+	// 在睿轩生成的中间代码上做优化
+	pre_optimize();
 
 	// 计算每个基本块的起始语句
 	find_primary_statement();

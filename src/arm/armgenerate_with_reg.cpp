@@ -29,16 +29,22 @@ void global_flush()
 		return;
 	}
 	OUTPUT(".data");
-	string out = global_var_name + ": ";
-	out += ".word ";
+	OUTPUT(global_var_name + ":");
+	string out = "";
 	for (string v : ini_value) {
-		out += v + ",";
+		out += "," + v;
 	}
+	if (out != "") {
+		OUTPUT("	.word " + out.substr(1));
+	}
+	/*
 	for (int i = ini_value.size(); i < global_var_size; i++) {
-		out += "0,";
+		out += ",0";
+	}*/
+	int zero_space = (global_var_size - ini_value.size())*4;
+	if (zero_space > 0) {
+		OUTPUT("	.zero " + to_string(zero_space));
 	}
-	out = out.substr(0, out.size() - 1);
-	OUTPUT(out);
 	OUTPUT(".text");
 	ini_value.clear();
 }
@@ -355,21 +361,29 @@ void _div(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	OUTPUT("PUSH {R0}");
-	OUTPUT("PUSH {R1,R2,R3,R12,LR}");
+	OUTPUT("PUSH {R1,R2,R3,R12}");
+	if (op2 == "R0") {
+		OUTPUT("MOV LR,R0");
+	}
 	OUTPUT("MOV R0," + op1);
 	if (op2[0] == 'R') {
-		OUTPUT("MOV R1," + op2);
+		if (op2 == "R0") {
+			OUTPUT("MOV R1,LR");
+		}
+		else {
+			OUTPUT("MOV R1," + op2);
+		}
 	}
 	else {
-		OUTPUT("MOV R1,#" + op2);
+		OUTPUT("LDR R1,=" + op2);
 	}
 	OUTPUT("BL __aeabi_idiv");
 	if (target == "R0") {
-		OUTPUT("POP {R1,R2,R3,R12,LR}");
+		OUTPUT("POP {R1,R2,R3,R12}");
 		OUTPUT("ADD SP,SP,#4");
 	}
 	else {
-		OUTPUT("POP {R1,R2,R3,R12,LR}");
+		OUTPUT("POP {R1,R2,R3,R12}");
 		OUTPUT("MOV " + target + ",R0");
 		OUTPUT("POP {R0}");
 	}
@@ -381,21 +395,29 @@ void _rem(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	OUTPUT("PUSH {R1}");
-	OUTPUT("PUSH {R0,R2,R3,R12,LR}");
+	OUTPUT("PUSH {R0,R2,R3,R12}");
+	if (op2 == "R0") {
+		OUTPUT("MOV LR,R0");
+	}
 	OUTPUT("MOV R0," + op1);
 	if (op2[0] == 'R') {
-		OUTPUT("MOV R1," + op2);
+		if (op2 == "R0") {
+			OUTPUT("MOV R1,LR");
+		}
+		else {
+			OUTPUT("MOV R1," + op2);
+		}
 	}
 	else {
-		OUTPUT("MOV R1,#" + op2);
+		OUTPUT("LDR R1,=" + op2);
 	}
 	OUTPUT("BL __aeabi_idivmod");
 	if (target == "R1") {
-		OUTPUT("POP {R0,R2,R3,R12,LR}");
+		OUTPUT("POP {R0,R2,R3,R12}");
 		OUTPUT("ADD SP,SP,#4");
 	}
 	else {
-		OUTPUT("POP {R0,R2,R3,R12,LR}");
+		OUTPUT("POP {R0,R2,R3,R12}");
 		OUTPUT("MOV " + target + ",R1");
 		OUTPUT("POP {R1}");
 	}

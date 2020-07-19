@@ -1,3 +1,5 @@
+### SSA
+
 SSA涉及到的两个文件 **ssa.h** 和 **ssa.cpp**.
 
 SSA测试文件 **ssa_test.cpp**.
@@ -244,7 +246,58 @@ https://blog.csdn.net/u014713475/article/details/78224433
 ​																													刘泽华 2020.7.14
 
 ------
-2020.7.14 更新
+### 优化部分
+
+#### 第一版优化 pre_optimize()
+
+针对睿轩生成的第一版中间代码做的部分优化
+
+##### 优化1 简化条件为常值的跳转指令 simplify_br()
+
+key：将有条件跳转转化为无条件跳转
+
+e.g. `br label2 0 label1` --> `br label2`
+
+e.g. `br label2 1 label1` --> `br label1`
+
+##### 优化2 简化load和store指令相邻的指令 load_and_store()
+
+e.g. `a = a;`
+
+```
+ load       %0         %a
+ store      %0         %a
+```
+
+##### 优化3 简化加减0、乘除模1这样的指令 simplify_add_minus_multi_div_mod()
+
+key：如果前一个是load指令，则直接将load进该指令即可。
+
+e.g. `b = a + 0;`
+
+```
+load       %1         %a                   
+add        %2         %1         0         
+store      %2         %b                   
+```
+
+```
+load       %2         %a       
+store      %2         %b               
+```
+
+##### 优化4 简化紧邻的跳转 simplify_br_label()
+
+key：如果一个br无条件跳转指令后面是要跳转到的标签，则可以删除该跳转指令
+
+e.g. 
+
+```
+br                    %if.end_0            
+label      %if.end_0 
+```
+
+#### 第二版优化 ssa_optimize()
 
 **计算def-use及之后的活跃变量分析时加入中间变量**
 
