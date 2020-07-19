@@ -92,7 +92,8 @@ string token;   //分析出来的单词
 enum Memory symbol;  //分析出来的单词类别
 ofstream outfile;
 Word wordAnalysis = Word();
-void printMessage()
+/*
+void //printMessage()
 {
 	string message;
 	if (symbol > 9 && symbol != 36) {
@@ -104,6 +105,7 @@ void printMessage()
 	}
 	outfile << message << endl;
 }
+*/
 void CompUnit();			   //编译单元
 void ConstDecl(int index, int block);		       //常量说明
 void ConstDef(int index, int block);			   //常量定义
@@ -151,7 +153,7 @@ void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 int frontExecute(string syname)
 {
 	wordAnalysis.setFilepath(syname);
-	outfile.open("output.txt");
+	//outfile.open("output.txt");
 	//先读一个单词然后进入分析程序
 	wordAnalysis.getsym();   //这里不需要使用其返回的bool类型值
 	symbol = wordAnalysis.getSymbol();
@@ -222,8 +224,8 @@ int frontExecute(string syname)
 	}
 	*/
 	//检测中间代码正确性
-	TestIrCode("ir.txt");
-	outfile.close();
+	//TestIrCode("ir.txt");
+	//outfile.close();
 	return 0;
 }
 
@@ -301,40 +303,40 @@ void CompUnit()
 		}
 	}
 	func2tmpIndex.push_back(Temp);
-	outfile << "<编译单元>" << endl;
+	//outfile << "<编译单元>" << endl;
 }
 void ConstDecl(int index, int block) 		   //常量说明
 {
-	printMessage();    //输出const信息
+	//printMessage();    //输出const信息
 	//判断symbol==CONSTTK
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();    //输出int信息
+	//printMessage();    //输出int信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken(); //预读
 	ConstDef(index, block);  //常量定义
 	//判断symbol=;
 	while (symbol == COMMA) {
-		printMessage();   //输出,信息
+		//printMessage();   //输出,信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
 		ConstDef(index, block);  //常量定义
 	}
-	printMessage();    //输出；信息
+	//printMessage();    //输出；信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken(); //预读
 	//退出循环前已经预读单词
-	outfile << "<常量说明>" << endl;
+	//outfile << "<常量说明>" << endl;
 }
 void ConstDef(int index, int block)			   //常量定义
 {
 	int value;
 	vector<int> length; //记录每个维度大小
-	printMessage();   //输出标识符信息
+	//printMessage();   //输出标识符信息
 	string name = token;	//保存常量名
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
@@ -346,7 +348,7 @@ void ConstDef(int index, int block)			   //常量定义
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();  //预读
 		length.push_back(ConstExp());   //记录常量维度
-		printMessage();   //输出]信息
+		//printMessage();   //输出]信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
@@ -355,7 +357,7 @@ void ConstDef(int index, int block)			   //常量定义
 	item.setMatrixLength(length);
 	total[index].push_back(item);
 	names[index][name]++;
-	printMessage();   //输出=信息
+	//printMessage();   //输出=信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken(); //预读
@@ -397,7 +399,7 @@ void ConstDef(int index, int block)			   //常量定义
 		codetotal[index].push_back(citem);
 	}
 	//退出循环前均已经预读单词
-	outfile << "<常量定义>" << endl;
+	//outfile << "<常量定义>" << endl;
 }
 int ConstExp()
 {
@@ -405,7 +407,7 @@ int ConstExp()
 	valueL = ConstMulExp();  //退出前读了一个单词
 	while (symbol == PLUS || symbol == MINU) {
 		Memory tag = symbol;
-		printMessage();    //输出+或-信息
+		//printMessage();    //输出+或-信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -414,7 +416,7 @@ int ConstExp()
 		else valueL = valueL - valueR;
 	}
 	//退出前已经预读
-	outfile << "<常量表达式>" << endl;
+	//outfile << "<常量表达式>" << endl;
 	return valueL;
 }
 int ConstMulExp()
@@ -423,7 +425,7 @@ int ConstMulExp()
 	valueL = ConstUnaryExp();
 	while (symbol == MULT || symbol == DIV_WORD || symbol == MOD) {
 		Memory tag = symbol;
-		printMessage();    //输出*或/信息
+		//printMessage();    //输出*或/信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -433,26 +435,26 @@ int ConstMulExp()
 		else valueL = valueL % valueR;
 	}
 	//退出前已经预读
-	outfile << "<常量项>" << endl;
+	//outfile << "<常量项>" << endl;
 	return valueL;
 }
 int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' | +|- UnaryExp 			
 {				//Ident '(' [FuncRParams] ')'不可能有
 	int value;
 	if (symbol == LPARENT) {  //'(' Exp ')'
-		printMessage();
+		//printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
 		value = ConstExp();
-		printMessage();			//输出)
+		//printMessage();			//输出)
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
 	}
 	else if (symbol == INTCON) {      //symbol == INTCON
 		value = wordAnalysis.getNumber();   //获取数值
-		printMessage();
+		//printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
@@ -460,7 +462,7 @@ int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' 
 	else if (symbol == PLUS || symbol == MINU) {  //+|- UnaryExp
 		int flag = 1;
 		if (symbol == MINU) flag = -1;
-		printMessage();
+		//printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
@@ -477,7 +479,7 @@ int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' 
 		int nowDimenson = 0;
 		while (symbol == LBRACK) {
 			nowDimenson++;
-			printMessage();//输出[信息
+			//printMessage();//输出[信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
@@ -487,14 +489,14 @@ int ConstUnaryExp()	//'(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' 
 				offset = offset * dimenLength[j];
 			}
 			totaloffset += value * offset;
-			printMessage();//输出]信息
+			//printMessage();//输出]信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
 		}
 		value = item.getIntValue()[totaloffset];
 	}
-	outfile << "<常量因子>" << endl;
+	//outfile << "<常量因子>" << endl;
 	return value;
 }
 void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } ] '}'  
@@ -533,7 +535,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 				mod = mod / matrixLength[Ndimension - 1];
 			}
 		}
-		printMessage();
+		//printMessage();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken(); //预读
@@ -541,7 +543,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 			ConstInitVal(index);
 			while (symbol == COMMA) {   //读到逗号需要判断左右两个数的维度
 				isNesting = 0;
-				printMessage();
+				//printMessage();
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken(); //预读
@@ -557,7 +559,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 				offset++;
 			}
 		}
-		printMessage();   //输出 } 信息
+		//printMessage();   //输出 } 信息
 		//每次读到 } ，偏移量offset变成lastDimension倍数即可
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
@@ -588,34 +590,34 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 			}
 		}
 	}
-	outfile << "<常量初值>" << endl;
+	//outfile << "<常量初值>" << endl;
 }
 void VarDecl(int index, int block)			   //变量说明
 {
-	printMessage();   //输出int信息
+	//printMessage();   //输出int信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读 
 	VarDef(index, block);   //已经预读一个单词，直接进入即可
 	while (symbol == COMMA) {
-		printMessage();    //输出,信息
+		//printMessage();    //输出,信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读 
 		VarDef(index, block);   //已经预读一个单词，直接进入即可
 	}
-	printMessage();    //输出；信息
+	//printMessage();    //输出；信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读 
 	//退出循环前均已经预读单词
-	outfile << "<变量说明>" << endl;
+	//outfile << "<变量说明>" << endl;
 }
 void VarDef(int index, int block)             //变量定义
 {
 	int value;
 	vector<int> length; //记录每个维度大小
-	printMessage();	//输出变量名信息
+	//printMessage();	//输出变量名信息
 	string name = token;	//记录变量名
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
@@ -623,12 +625,12 @@ void VarDef(int index, int block)             //变量定义
 	int dimenson = 0;			//维度信息
 	while (symbol == LBRACK) {
 		dimenson++;
-		printMessage();   //输出[
+		//printMessage();   //输出[
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 		length.push_back(ConstExp());   //记录常量维度
-		printMessage();   //输出]
+		//printMessage();   //输出]
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -651,18 +653,18 @@ void VarDef(int index, int block)             //变量定义
 		codetype = GLOBAL;
 		b = "@";
 	}
-	if (b == "@" && dimenson == 0) {
+	if (b == "@" && dimenson == 0) {			//全局变量初值默认为0
 		CodeItem citem = CodeItem(codetype, b + name, "0", numToString(totalSize));
 		citem.setFatherBlock(fatherBlock);
 		codetotal[index].push_back(citem);
 	}
-	else {
+	else {		//局部变量或数组做变量，没有初值
 		CodeItem citem = CodeItem(codetype, b + name, "", numToString(totalSize));
 		citem.setFatherBlock(fatherBlock);
 		codetotal[index].push_back(citem);
 	}
 	if (symbol == ASSIGN) {
-		printMessage();   //输出=
+		//printMessage();   //输出=
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -679,7 +681,7 @@ void VarDef(int index, int block)             //变量定义
 		InitVal(index);
 	}
 	//退出循环前已经预读单词
-	outfile << "<变量定义>" << endl;
+	//outfile << "<变量定义>" << endl;
 }
 void InitVal(int index)
 {
@@ -710,7 +712,7 @@ void InitVal(int index)
 				mod = mod / matrixLength[Ndimension - 1];
 			}
 		}
-		printMessage();   //输出{
+		//printMessage();   //输出{
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -718,7 +720,7 @@ void InitVal(int index)
 			InitVal(index);
 			while (symbol == COMMA) {
 				isNesting = 0;
-				printMessage();   //输出,
+				//printMessage();   //输出,
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
@@ -734,7 +736,7 @@ void InitVal(int index)
 				offset++;
 			}
 		}
-		printMessage();   //输出}
+		//printMessage();   //输出}
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -776,16 +778,16 @@ void InitVal(int index)
 			}
 		}
 	}
-	outfile << "<变量初值>" << endl;
+	//outfile << "<变量初值>" << endl;
 }
 void valueFuncDef()    //有返回值函数定义
 {
-	printMessage();    //输出int信息
+	//printMessage();    //输出int信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
 	string name = token;   //获取函数名
-	printMessage();   //获得标识符并输出
+	//printMessage();   //获得标识符并输出
 	symbolTable item(FUNCTION, INT, name);
 	total[Funcindex].push_back(item);
 	CodeItem citem(DEFINE, "@" + name, "int", "");           //define @foo int
@@ -793,19 +795,19 @@ void valueFuncDef()    //有返回值函数定义
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //获得(并输出
+	//printMessage();   //获得(并输出
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
 	if (symbol == RPARENT) {  //参数表为空
 		total[Funcindex][0].setparaLength(0);   //函数参数为0
-		outfile << "<参数表>" << endl;
-		printMessage();    //输出)信息
+		//outfile << "<参数表>" << endl;
+		//printMessage();    //输出)信息
 	}
 	else {
 		fatherBlock.push_back(1);
 		FuncFParams();  //进入前已经预读
-		printMessage();    //输出)信息
+		//printMessage();    //输出)信息
 		fatherBlock.pop_back();
 		//判断symbol=)
 	}
@@ -814,11 +816,11 @@ void valueFuncDef()    //有返回值函数定义
 	token = wordAnalysis.getToken(); //预读
 	Blockindex = 0;
 	Block();
-	outfile << "<有返回值函数定义>" << endl;
+	//outfile << "<有返回值函数定义>" << endl;
 }
 void novalueFuncDef()  //无返回值函数定义
 {
-	printMessage();    //输出void信息
+	//printMessage();    //输出void信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//获得标识符
@@ -827,23 +829,23 @@ void novalueFuncDef()  //无返回值函数定义
 	total[Funcindex].push_back(item);
 	CodeItem citem(DEFINE, "@" + name, "void", "");           //define @foo int
 	codetotal[Funcindex].push_back(citem);
-	printMessage();   //输出标识符
+	//printMessage();   //输出标识符
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //获得(并输出
+	//printMessage();   //获得(并输出
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
 	if (symbol == RPARENT) {
 		total[Funcindex][0].setparaLength(0);   //函数参数为0
-		outfile << "<参数表>" << endl;
-		printMessage();    //先输出参数表后输出)信息
+		//outfile << "<参数表>" << endl;
+		//printMessage();    //先输出参数表后输出)信息
 	}
 	else {
 		fatherBlock.push_back(1);
 		FuncFParams();
-		printMessage();    //输出)信息
+		//printMessage();    //输出)信息
 		fatherBlock.pop_back();
 		//判断)
 	}
@@ -852,14 +854,14 @@ void novalueFuncDef()  //无返回值函数定义
 	token = wordAnalysis.getToken();//预读
 	Blockindex = 0;
 	Block();
-	outfile << "<无返回值函数定义>" << endl;
+	//outfile << "<无返回值函数定义>" << endl;
 }
 void Block()      //语句块
 {
 	Blockindex++;
 	fatherBlock.push_back(Blockindex);
 	int block = Blockindex;
-	printMessage();    //输出{信息
+	//printMessage();    //输出{信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
@@ -874,12 +876,12 @@ void Block()      //语句块
 			Stmt();
 		}
 	}
-	printMessage();    //输出}信息
+	//printMessage();    //输出}信息
 	fatherBlock.pop_back();    //删除末尾元素
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
-	outfile << "<语句块>" << endl;
+	//outfile << "<语句块>" << endl;
 }
 void FuncFParams()         //参数表
 {
@@ -887,7 +889,7 @@ void FuncFParams()         //参数表
 	FuncFParam();
 	while (symbol == COMMA) {
 		paraLength++;
-		printMessage();    //输出,信息
+		//printMessage();    //输出,信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
@@ -895,40 +897,40 @@ void FuncFParams()         //参数表
 	}
 	total[Funcindex][0].setparaLength(paraLength);
 	//退出前已经预读
-	outfile << "<函数形参表>" << endl;
+	//outfile << "<函数形参表>" << endl;
 }
 void FuncFParam()
 {
 	vector<int> length; //记录每个维度大小
-	printMessage();    //输出int信息
+	//printMessage();    //输出int信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
 	string name = token;   //保存参数名
-	printMessage();    //输出变量名信息
+	//printMessage();    //输出变量名信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
 	int dimenson = 0;
 	if (symbol == LBRACK) {
 		dimenson++;
-		printMessage();    //输出[信息
+		//printMessage();    //输出[信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
-		printMessage();    //输出]信息
+		//printMessage();    //输出]信息
 		length.push_back(0);
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();
 		while (symbol == LBRACK) {
 			dimenson++;
-			printMessage();    //输出[信息
+			//printMessage();    //输出[信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
 			length.push_back(ConstExp());
-			printMessage();    //输出]信息
+			//printMessage();    //输出]信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();  //预读
@@ -945,7 +947,7 @@ void FuncFParam()
 	CodeItem citem = CodeItem(PARA, "%" + name, b, numToString(dimenson));//函数形参
 	citem.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem);
-	outfile << "<函数形参>" << endl;
+	//outfile << "<函数形参>" << endl;
 }
 void Exp()	//MulExp{('+'|'-')MulExp}
 {
@@ -955,7 +957,7 @@ void Exp()	//MulExp{('+'|'-')MulExp}
 	registerL = interRegister;
 	while (symbol == PLUS || symbol == MINU) {
 		symbol_tag = symbol;
-		printMessage();    //输出+或-信息
+		//printMessage();    //输出+或-信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -982,7 +984,7 @@ void Exp()	//MulExp{('+'|'-')MulExp}
 		registerL = interRegister;
 	}
 	//退出前已经预读
-	outfile << "<表达式>" << endl;
+	//outfile << "<表达式>" << endl;
 	return;
 }
 void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
@@ -991,7 +993,7 @@ void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 	string registerL = interRegister;	//获取左计算数
 	while (symbol == MULT || symbol == DIV_WORD || symbol == MOD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //输出*或/信息
+		//printMessage();    //输出*或/信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1020,30 +1022,30 @@ void MulExp()	//UnaryExp {('*'|'/'|'%') UnaryExp  }
 		registerL = interRegister;
 	}
 	//退出前已经预读
-	outfile << "<项>" << endl;
+	//outfile << "<项>" << endl;
 }
 void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' | +|-|! UnaryExp 
 {
 	if (symbol == LPARENT) {   //'(' Exp ')'
-		printMessage();    //输出(信息
+		//printMessage();    //输出(信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 		Exp();
-		printMessage();    //输出)信息
+		//printMessage();    //输出)信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
 	else if (symbol == INTCON) {  //number
-		printMessage();
+		//printMessage();
 		interRegister = numToString(wordAnalysis.getNumber());		//将数值转换成字符串模式
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
 	else if (symbol == IDENFR) {  //标识符 (函数实参表) | 标识符 {'['表达式']'}
-		printMessage();    //输出变量信息
+		//printMessage();    //输出变量信息
 		string name_tag = wordAnalysis.getToken();
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
@@ -1054,7 +1056,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		if (symbol == LPARENT) {  //标识符 (函数实参表)
 			paraNum = 0;
 			Functionname = name_tag;
-			printMessage();    //输出(信息
+			//printMessage();    //输出(信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
@@ -1075,7 +1077,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			if (symbol != RPARENT) {
 				FuncRParams();
 			}
-			printMessage();    //输出)信息
+			//printMessage();    //输出)信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
@@ -1110,7 +1112,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			codetotal[Funcindex].push_back(citem1);
 			while (symbol == LBRACK) {
 				nowDimenson++;
-				printMessage();    //输出[信息
+				//printMessage();    //输出[信息
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
@@ -1147,7 +1149,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 					codetotal[Funcindex].push_back(citem);
 					registerA = interRegister;
 				}
-				printMessage();    //输出]信息
+				//printMessage();    //输出]信息
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
@@ -1205,14 +1207,14 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		string op, registerL, registerR;
 		int typeL, typeR;
 		if (symbol == PLUS) {
-			printMessage();    //输出+信息
+			//printMessage();    //输出+信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
 			UnaryExp();
 		}
 		else if (symbol == MINU) {
-			printMessage();    //输出-信息
+			//printMessage();    //输出-信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
@@ -1231,7 +1233,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			}
 		}
 		else {
-			printMessage();    //输出!信息
+			//printMessage();    //输出!信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
@@ -1257,7 +1259,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		}
 	}
 	//退出前已经预读
-	outfile << "<因子>" << endl;
+	//outfile << "<因子>" << endl;
 }
 void Stmt()              //语句
 {
@@ -1268,27 +1270,27 @@ void Stmt()              //语句
 		loopStmt();
 	}
 	else if (symbol == BREAKTK) {	//break ;
-		printMessage();    //输出break信息
+		//printMessage();    //输出break信息
 		CodeItem citem = CodeItem(BR, "", whileLabel[whileLabel.size() - 2], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
-		printMessage();    //输出;信息
+		//printMessage();    //输出;信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
 	else if (symbol == CONTINUETK) {	//continue ;
-		printMessage();    //输出continue信息
+		//printMessage();    //输出continue信息
 		CodeItem citem = CodeItem(BR, "", whileLabel[whileLabel.size() - 1], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
-		printMessage();    //输出;信息
+		//printMessage();    //输出;信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1298,14 +1300,14 @@ void Stmt()              //语句
 	}
 	else if (symbol == RETURNTK) { //＜返回语句＞;
 		returnStmt();
-		printMessage();    //输出;信息
+		//printMessage();    //输出;信息
 		//判断symbol=;
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
 	else if (symbol == SEMICN) {
-		printMessage();    //输出;信息
+		//printMessage();    //输出;信息
 		//判断symbol=;
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
@@ -1324,7 +1326,7 @@ void Stmt()              //语句
 			wordAnalysis.setToken(token_tag);
 			symbol = sym_tag;
 			Exp();					//CALL函数在EXP中存在
-			printMessage();  //输出分号
+			//printMessage();  //输出分号
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();  //预读
@@ -1341,7 +1343,7 @@ void Stmt()              //语句
 			if (symbol == ASSIGN) {  	//LVal = Exp; 
 				symbol = sym_tag;
 				assignStmt();
-				printMessage();    //输出;信息
+				//printMessage();    //输出;信息
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
@@ -1351,7 +1353,7 @@ void Stmt()              //语句
 					wordAnalysis.getsym();
 					symbol = wordAnalysis.getSymbol();
 				}
-				printMessage();    //输出;信息
+				//printMessage();    //输出;信息
 				wordAnalysis.getsym();
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
@@ -1363,17 +1365,17 @@ void Stmt()              //语句
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 		}
-		printMessage();    //输出;信息
+		//printMessage();    //输出;信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
 	//退出前均预读
-	outfile << "<语句>" << endl;
+	//outfile << "<语句>" << endl;
 }
 void assignStmt()        //赋值语句 LVal = Exp
 {
-	printMessage();    //输出变量信息
+	//printMessage();    //输出变量信息
 	string name_tag = wordAnalysis.getToken();		//变量名
 	string registerL, registerR, registerA, registerC;
 	wordAnalysis.getsym();
@@ -1394,7 +1396,7 @@ void assignStmt()        //赋值语句 LVal = Exp
 	codetotal[Funcindex].push_back(citem1);
 	while (symbol == LBRACK) {
 		nowDimenson++;
-		printMessage();    //输出[信息
+		//printMessage();    //输出[信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1431,12 +1433,12 @@ void assignStmt()        //赋值语句 LVal = Exp
 			codetotal[Funcindex].push_back(citem);
 			registerA = interRegister;
 		}
-		printMessage();    //输出]信息
+		//printMessage();    //输出]信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 	}
-	printMessage();    //输出=信息
+	//printMessage();    //输出=信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
@@ -1462,21 +1464,21 @@ void assignStmt()        //赋值语句 LVal = Exp
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
-	outfile << "<赋值语句>" << endl;
+	//outfile << "<赋值语句>" << endl;
 }
 void ifStmt()            //条件语句
 {
-	printMessage();    //输出if信息
+	//printMessage();    //输出if信息
 	//判断symbol=if
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //获得(并输出
+	//printMessage();   //获得(并输出
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken(); //预读
 	Cond();
-	printMessage();    //输出)信息
+	//printMessage();    //输出)信息
 	//判断symbol=)
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
@@ -1500,7 +1502,7 @@ void ifStmt()            //条件语句
 		CodeItem citem4 = CodeItem(LABEL, if_else_label, "", "");	//label if.else
 		citem4.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem4);
-		printMessage();    //输出else信息
+		//printMessage();    //输出else信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1517,7 +1519,7 @@ void ifStmt()            //条件语句
 	citem6.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem6);
 	//退出前Stmt均预读
-	outfile << "<条件语句>" << endl;
+	//outfile << "<条件语句>" << endl;
 }
 void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
@@ -1531,7 +1533,7 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 	}
 	while (symbol == OR_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //输出逻辑运算符
+		//printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1576,7 +1578,7 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 		}
 		interRegister = numToString(1);
 	}
-	outfile << "<条件>" << endl;
+	//outfile << "<条件>" << endl;
 }
 void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 {
@@ -1590,7 +1592,7 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 	}
 	while (symbol == AND_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //输出逻辑运算符
+		//printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1644,7 +1646,7 @@ void EqExp()		  //相等性表达式
 	registerL = interRegister;
 	while (symbol == EQL_WORD || symbol == NEQ_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //输出逻辑运算符
+		//printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1684,7 +1686,7 @@ void RelExp()			  //关系表达式
 	registerL = interRegister;
 	while (symbol == LSS || symbol == LEQ || symbol == GRE || symbol == GEQ) {
 		Memory symbol_tag = symbol;
-		printMessage();    //输出逻辑运算符
+		//printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1730,11 +1732,11 @@ void RelExp()			  //关系表达式
 void loopStmt()          //循环语句
 {
 	//?while '('＜条件＞')'＜语句＞
-	printMessage();    //输出while信息
+	//printMessage();    //输出while信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	printMessage();   //获得(并输出信息
+	//printMessage();   //获得(并输出信息
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
@@ -1746,7 +1748,7 @@ void loopStmt()          //循环语句
 	citem1.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem1);
 	Cond();						//cond
-	printMessage();    //输出)信息
+	//printMessage();    //输出)信息
 	CodeItem citem2 = CodeItem(BR, while_end_label, interRegister, while_body_label); //br 条件 %while.body %while.end  
 	citem2.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem2);
@@ -1768,7 +1770,7 @@ void loopStmt()          //循环语句
 	citem5.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem5);
 	//退出前均预读
-	outfile << "<循环语句>" << endl;
+	//outfile << "<循环语句>" << endl;
 }
 void FuncRParams()    //函数实参数表
 {
@@ -1817,7 +1819,7 @@ void FuncRParams()    //函数实参数表
 	save.push_back(aa);
 	while (symbol == COMMA) {
 		vector<CodeItem> aaa;
-		printMessage();    //输出,信息
+		//printMessage();    //输出,信息
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1855,11 +1857,11 @@ void FuncRParams()    //函数实参数表
 		}
 	}
 	//退出循环前已经预读
-	outfile << "<函数实参数表>" << endl;
+	//outfile << "<函数实参数表>" << endl;
 }
 void returnStmt()        //返回语句
 {
-	printMessage();    //输出return信息
+	//printMessage();    //输出return信息
 	//判断symbol=return
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
@@ -1889,7 +1891,7 @@ void returnStmt()        //返回语句
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 	}
-	outfile << "<返回语句>" << endl;
+	//outfile << "<返回语句>" << endl;
 }
 symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock)  //function_number为函数下标,fatherBlock为代码所在作用域             
 {
