@@ -508,18 +508,18 @@ void irOptimize() {
 
 	//寄存器分配优化
 	MIR2LIRpass();
-	printLIR("LIR.txt");
+	//printLIR("LIR.txt");
 	countVars();
 
 	//寄存器直接指派
 	registerAllocation();
 
-	printLIR("armIR.txt");
+	//printLIR("armIR.txt");
 
 	//窥孔优化
 	peepholeOptimization();
 
-	printLIR("armIR_2.txt");
+	//printLIR("armIR_2.txt");
 
 }
 
