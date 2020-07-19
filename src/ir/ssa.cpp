@@ -874,7 +874,7 @@ void SSA::generate() {
 	deal_phi_function();
 
 	// 优化
-	// ssa_optimize();
+	ssa_optimize();
 
 	// 恢复变量命名
 	// rename_back();

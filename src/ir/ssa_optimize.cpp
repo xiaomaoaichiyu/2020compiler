@@ -2,6 +2,7 @@
 #include "../front/symboltable.h"
 #include "../front/syntax.h"
 #include "../util/meow.h"
+#include <queue>
 
 // 简化条件判断为常值的跳转指令
 void SSA::simplify_br() {
@@ -186,14 +187,16 @@ void SSA::pre_optimize() {
 
 void SSA::ssa_optimize() {
 	// 重新计算use-def关系
-	build_def_use_chain();
+	//build_def_use_chain();
 	// 重新进行活跃变量分析
-	active_var_analyse();
+	//active_var_analyse();
 	// 死代码删除
-	delete_dead_codes();
+	//delete_dead_codes();
 	// 函数内联
-	judge_inline_function();
-	inline_function();
+	//judge_inline_function();
+	//inline_function();
+	//循环优化
+	back_edge();
 }
 
 void SSA::judge_inline_function() {
@@ -358,6 +361,8 @@ void SSA::delete_dead_codes() {
 	}
 }
 
+//每个函数的循环，已连续的基本块构成；
+vector<vector<set<int>>> circles;
 
 void SSA::back_edge() {
 	for (int i = 1; i < blockCore.size(); i++) {
@@ -380,9 +385,31 @@ void SSA::back_edge() {
 			}
 		}
 
+		vector<set<int>> xunhuan;
 		//查找循环的基本块
-		
+		for (auto backEdge : backEdges) {
+			set<int> one;
+			int end = backEdge.first;
+			int begin = backEdge.second;
+			one.insert(end);
+			one.insert(begin);
 
+			queue<int> work;
+			work.push(end);
+			while (!work.empty()) {
+				int tmp = work.front();
+				work.pop();
+				auto preds = blocks.at(tmp).pred;
+				for (auto pred : preds) {
+					if (pred != begin) {
+						work.push(pred);
+						one.insert(pred);
+					}
+				}
+			}
+			xunhuan.push_back(one);
+		}
+		circles.push_back(xunhuan);
 	}
 }
 
