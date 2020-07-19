@@ -7,6 +7,8 @@
 #include <sstream>
 #include <cstdio>
 
+#define TIJIAO 1
+
 #define isString(x) (x.size() > 1 && (x.at(0) == '\"'))
 
 #define isNumber(x) meow::Meow::isNum(x)

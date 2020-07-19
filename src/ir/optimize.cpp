@@ -414,17 +414,19 @@ void MIR2LIRpass() {
 }
 
 void printLIR(string outputFile) {
-	ofstream irtxt(outputFile);
-	for (int i = 0; i < LIR.size(); i++) {
-		vector<CodeItem> item = LIR[i];
-		for (int j = 0; j < item.size(); j++) {
-			//cout << item[j].getContent() << endl;
-			irtxt << item[j].getContent() << endl;
+	if (TIJIAO) {
+		ofstream irtxt(outputFile);
+		for (int i = 0; i < LIR.size(); i++) {
+			vector<CodeItem> item = LIR[i];
+			for (int j = 0; j < item.size(); j++) {
+				//cout << item[j].getContent() << endl;
+				irtxt << item[j].getContent() << endl;
+			}
+			//cout << "\n";
+			irtxt << "\n";
 		}
-		//cout << "\n";
-		irtxt << "\n";
+		irtxt.close();
 	}
-	irtxt.close();
 }
 
 vector<vector<string>> stackVars;
@@ -508,18 +510,18 @@ void irOptimize() {
 
 	//寄存器分配优化
 	MIR2LIRpass();
-	//printLIR("LIR.txt");
+	printLIR("LIR.txt");
 	countVars();
 
 	//寄存器直接指派
 	registerAllocation();
 
-	//printLIR("armIR.txt");
+	printLIR("armIR.txt");
 
 	//窥孔优化
 	peepholeOptimization();
 
-	//printLIR("armIR_2.txt");
+	printLIR("armIR_2.txt");
 
 }
 

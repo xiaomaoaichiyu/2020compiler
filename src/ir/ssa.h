@@ -31,11 +31,11 @@ public:
 	std::vector<CodeItem> Ir;	// 该基本块对应的中间代码
 	std::set<int> pred;				// 前驱
 	std::set<int> succeeds;			// 后继节点
-	std::set<int> domin;				// 必经节点
-	std::set<int> idom;				// 直接必经节点
-	std::set<int> reverse_idom;	// 直接必经节点反
+	std::set<int> domin;			// 必经节点集
+	std::set<int> idom;				// 直接必经节点集
+	std::set<int> reverse_idom;		// 直接必经节点反集
 	std::set<int> tmpIdom;			// 计算直接必经节点算法中需要的数据结构
-	std::set<int> df;					// 必经边界
+	std::set<int> df;				// 必经边界
 	std::set<std::string> use;		// 该基本块中的use变量
 	std::set<std::string> def;		// 该基本块中的def变量
 	std::set<std::string> in;		// 该基本块中的in集合

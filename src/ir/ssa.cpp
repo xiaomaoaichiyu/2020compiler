@@ -907,6 +907,6 @@ void SSA::generate() {
 	// rename_back();
 
 	// 测试输出上面各个函数
-	//Test_SSA();
+	Test_SSA();
 
 }
