@@ -57,6 +57,22 @@ void SSA::Test_Add_Phi_Fun() {
 	}
 }
 
+// 输出基本块的\phi函数
+void Output_PHI(vector<phiFun> v) {
+	for (vector<phiFun>::iterator iter = v.begin(); iter != v.end(); iter++) {
+		debug_ssa << "\\phi" << "\t\t";
+		debug_ssa << (*iter).name << "\t\t";
+		debug_ssa << "{" << "  ";
+		for (vector<int>::iterator iter1 = (*iter).blockNums.begin(); iter1 != (*iter).blockNums.end(); iter1++)
+			debug_ssa << *iter1 << "  ";
+		debug_ssa << "}\t\t";
+		debug_ssa << "{" << "  ";
+		for (vector<string>::iterator iter2 = (*iter).subIndexs.begin(); iter2 != (*iter).subIndexs.end(); iter2++)
+			debug_ssa << *iter2 << "  ";
+		debug_ssa << "}" << endl;
+	}
+}
+
 // 输出基本块中的中间代码
 void Output_IR(vector<CodeItem> v) {
 	for (int i = 0; i < v.size(); i++) {
@@ -87,6 +103,7 @@ void SSA::Test_Divide_Basic_Block() {
 			for (iter = v[i][j].succeeds.begin(); iter != v[i][j].succeeds.end(); iter++) debug_ssa << *iter << "  ";
 			debug_ssa << "}" << endl;
 			// 输出该基本块中的中间代码
+			Output_PHI(v[i][j].phi);
 			Output_IR(v[i][j].Ir);
 		}
 	}
