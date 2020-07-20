@@ -34,7 +34,7 @@ void SSA::ssa_optimize() {
 	//循环优化
 	//back_edge();
 
-	count_use_def_chain();
+	//count_use_def_chain();
 }
 
 //========================================================
@@ -463,7 +463,7 @@ struct Block {
 	map<string, Defines> var2defs;
 	map<string, Uses> var2uses;
 	map<string, Define> in;	//记录变量在基本块开始位置的——定值
-	map<string, Define> ou;	//记录变量在基本块结束位置的——定值
+	map<string, Define> out;	//记录变量在基本块结束位置的——定值
 	map<string, Define> kill;	//记录基本块的kill定值
 	map<string, Define> gen;	//记录基本块的生成定值
 	set<string> genVar;			//记录基本块生成的变量名
@@ -571,11 +571,11 @@ void SSA::count_use_def_chain() {
 			auto block = blocks.at(j);
 
 			//while (true) {
+			//	
 
-
-			//	//if () { //如果in out集不在发生变化
-			//	//	break;
-			//	//}
+			//	if () { //如果in out集不在发生变化
+			//		break;
+			//	}
 			//}
 		}
 		//计算到达-定义的in out	
