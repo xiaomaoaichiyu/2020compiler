@@ -90,10 +90,10 @@ string matrixName;			  //记录数组名
 //词法、语法分析引入变量
 string token;   //分析出来的单词
 enum Memory symbol;  //分析出来的单词类别
-ofstream outfile;
+//ofstream outfile;
 Word wordAnalysis = Word();
-/*
-void //printMessage()
+
+void printMessage()
 {
 	string message;
 	if (symbol > 9 && symbol != 36) {
@@ -103,9 +103,9 @@ void //printMessage()
 	else if (symbol >= 0 && symbol <= 9) {
 		message = premain[symbol] + remain[symbol];
 	}
-	outfile << message << endl;
+	//outfile << message << endl;
 }
-*/
+
 void CompUnit();			   //编译单元
 void ConstDecl(int index, int block);		       //常量说明
 void ConstDef(int index, int block);			   //常量定义
@@ -1099,7 +1099,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			symbolTable item = checkItem(name_tag);
 			int range = Range;
 			vector<int> dimenLength = item.getMatrixLength();
-			if (dimenLength.size() > 0 && symbol == LBRACK) {
+			if (dimenLength.size() > 0) {
 				registerA = "0";	//偏移量为0
 			}
 			int nowDimenson = 0;   //记录当前维度
@@ -1178,12 +1178,18 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				}
 			}
 			else if (item.getDimension() > 0 && nowDimenson < item.getDimension()) {		//此时只可能是传参，传数组的一部分
+				interRegister = "%" + numToString(Temp);
+				Temp++;
+				//registerA是偏移量
+				CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, "array"); //一维变量、常量取值		获取数组首地址
+				citem.setFatherBlock(fatherBlock);
+				codetotal[Funcindex].push_back(citem);
+				CodeItem citem2 = CodeItem(ADD, "%" + numToString(Temp), interRegister, registerA);
+				citem.setFatherBlock(fatherBlock);
+				codetotal[Funcindex].push_back(citem2);
+				interRegister = "%" + numToString(Temp);
+				Temp++;
 				paraIntNode = 1;
-				string b = "%";
-				if (range == 0) {
-					b = "@";	//全局变量
-				}
-				interRegister = b + name_tag;
 			}
 			else {		//此时是正常变量，不是数组变量
 				if (item.getForm() == CONSTANT) {
