@@ -317,7 +317,17 @@ void registerAllocation() {
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 				}
-				else {	//非数组参数
+				else if (ope2 == "array") {	//加载局部数组的地址
+					if (var2reg.find(ope1) != var2reg.end()) {	//有寄存器
+						resReg = var2reg[ope1];
+					}
+					else {
+						resReg = allocTmpReg(regpool, res, funcTmp);
+					}
+					instr.setCodetype(LEA);
+					instr.setInstr("", resReg, ope1Reg);
+				}
+				else {	//非数组地址加载
 					if (isVreg(ope1)) {		//全局变量
 						ope1Reg = getTmpReg(regpool, ope1, funcTmp);
 						regpool.releaseVreg(ope1);

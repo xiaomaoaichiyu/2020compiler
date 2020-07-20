@@ -160,10 +160,13 @@ void MIR2LIRpass() {
 			else if (op == LOAD) {
 				if (ope2 == "array") {	//加载数组的地址 —— 局部数组
 					instr.setCodetype(LEA);
+					res = dealTmpOpe(res);
 					instr.setInstr("", res, ope1);
 					dst.push_back(instr);
 				}
 				else if (ope2 == "para") {	//加载数组的地址 —— 参数数组
+					res = dealTmpOpe(res);
+					instr.setResult(res);
 					dst.push_back(instr);
 				}
 				else {	//加载变量的值（非数组）
@@ -193,7 +196,7 @@ void MIR2LIRpass() {
 						dst.push_back(instr);
 					}
 					else {
-						if (paras.find(ope1) != paras.end()) {
+						if (paras.find(ope1) != paras.end()) { //如果是参数数组，需要加载地址到一个寄存器
 							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 							ope1 = curVreg;
 							dst.push_back(loadTmp);
@@ -214,7 +217,7 @@ void MIR2LIRpass() {
 						dst.push_back(instr);
 					}
 					else {
-						if (paras.find(ope1) != paras.end()) {
+						if (paras.find(ope1) != paras.end()) { //如果是参数数组，需要加载地址到一个寄存器
 							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 							ope1 = curVreg;
 							dst.push_back(loadTmp);
