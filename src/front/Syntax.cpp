@@ -1,4 +1,5 @@
 ﻿#include "syntax.h"
+#include "../util/meow.h"
 
 using namespace std;
 
@@ -224,24 +225,26 @@ int frontExecute(string syname)
 	}
 	*/
 	//检测中间代码正确性
-	//TestIrCode("ir.txt");
+	TestIrCode("ir.txt");
 	//outfile.close();
 	return 0;
 }
 
 
 void TestIrCode(string outputFile) {
-	ofstream irtxt(outputFile);
-	for (int i = 0; i < codetotal.size(); i++) {
-		vector<CodeItem> item = codetotal[i];
-		for (int j = 0; j < item.size(); j++) {
-			//cout << item[j].getContent() << endl;
-			irtxt << item[j].getContent() << endl;
+	if (TIJIAO) {
+		ofstream irtxt(outputFile);
+		for (int i = 0; i < codetotal.size(); i++) {
+			vector<CodeItem> item = codetotal[i];
+			for (int j = 0; j < item.size(); j++) {
+				//cout << item[j].getContent() << endl;
+				irtxt << item[j].getContent() << endl;
+			}
+			//cout << "\n";
+			irtxt << "\n";
 		}
-		//cout << "\n";
-		irtxt << "\n";
+		irtxt.close();
 	}
-	irtxt.close();
 }
 
 void CompUnit()
