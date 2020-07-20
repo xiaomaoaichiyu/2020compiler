@@ -3,6 +3,41 @@
 #include "../front/syntax.h"
 #include "../util/meow.h"
 #include <queue>
+#include <unordered_map>
+
+//==========================================================
+
+// 在睿轩生成的中间代码做优化
+void SSA::pre_optimize() {
+	// 简化条件判断为常值的跳转指令
+	simplify_br();
+	// 简化load和store指令相邻的指令
+	load_and_store();
+	// 简化加减0、乘除模1这样的指令
+	simplify_add_minus_multi_div_mod();
+	// 简化紧邻的跳转
+	simplify_br_label();
+}
+
+//ssa形式上的优化
+void SSA::ssa_optimize() {
+	// 重新计算use-def关系
+	//build_def_use_chain();
+	// 重新进行活跃变量分析
+	//active_var_analyse();
+	// 死代码删除
+	//delete_dead_codes();
+	// 函数内联
+	//judge_inline_function();
+	//inline_function();
+
+	//循环优化
+	//back_edge();
+
+	count_use_def_chain();
+}
+
+//========================================================
 
 // 简化条件判断为常值的跳转指令
 void SSA::simplify_br() {
@@ -171,32 +206,6 @@ void SSA::simplify_br_label() {
 			}
 		}
 	}
-}
-
-// 在睿轩生成的中间代码做优化
-void SSA::pre_optimize() {
-	// 简化条件判断为常值的跳转指令
-	simplify_br();
-	// 简化load和store指令相邻的指令
-	load_and_store();
-	// 简化加减0、乘除模1这样的指令
-	simplify_add_minus_multi_div_mod();	
-	// 简化紧邻的跳转
-	simplify_br_label();
-}
-
-void SSA::ssa_optimize() {
-	// 重新计算use-def关系
-	//build_def_use_chain();
-	// 重新进行活跃变量分析
-	//active_var_analyse();
-	// 死代码删除
-	//delete_dead_codes();
-	// 函数内联
-	//judge_inline_function();
-	//inline_function();
-	//循环优化
-	back_edge();
 }
 
 void SSA::judge_inline_function() {
@@ -410,6 +419,152 @@ void SSA::back_edge() {
 			xunhuan.push_back(one);
 		}
 		circles.push_back(xunhuan);
+	}
+}
+
+//================================================
+//达到定义链和 使用定义链
+//================================================
+
+namespace ly {
+	using Defines = vector<pair<int, int>>;
+	using Uses = vector<pair<int, int>>;
+	using Use = pair<int, int>;
+	using Define = pair<int, int>;
+	using In = vector<pair<int, int>>;
+	using Out = vector<pair<int, int>>;
+	using Pos = pair<int, int>;
+}
+
+using namespace ly;
+
+void addDef(map<string, Defines>& container, string var, Define def) {
+	if (container.find(var) != container.end()) {
+		container[var].push_back(def);
+	}
+	else {
+		container[var] = Defines();
+		container[var].push_back(def);
+	}
+}
+
+void addUse(map<string, Uses>& container, string var, Use use) {
+	if (container.find(var) != container.end()) {
+		container[var].push_back(use);
+	}
+	else {
+		container[var] = Defines();
+		container[var].push_back(use);
+	}
+}		
+
+struct Block {
+	map<Pos, string> pos2Def;			//每一条指令只会给一个变量定值。有位置<block, index> -> Def_var
+	map<string, Defines> var2defs;
+	map<string, Uses> var2uses;
+	map<string, Define> in;	//记录变量在基本块开始位置的——定值
+	map<string, Define> ou;	//记录变量在基本块结束位置的——定值
+	map<string, Define> kill;	//记录基本块的kill定值
+	map<string, Define> gen;	//记录基本块的生成定值
+	set<string> genVar;			//记录基本块生成的变量名
+};
+
+vector<Block> blk;
+
+void printBlk() {
+	for (auto one : blk) {
+		string vars = "";
+		for (auto tmp : one.genVar) {
+			vars += tmp + " ";
+		}
+		cout << vars << endl;
+	}
+	cout << endl;
+}
+
+//计算每个基本块的gen，kill使用另外的方法处理
+void count_gen_of_block(vector<basicBlock>& blocks) {
+	for (int j = 0; j < blocks.size(); j++) {
+		blk.push_back(Block());
+		for (int k = 0; k < blocks.at(j).Ir.size(); k++) {
+			auto instr = blocks.at(j).Ir.at(k);
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			switch (instr.getCodetype())
+			{
+			case ADD: case SUB: case MUL: case DIV: case REM:
+			case AND: case OR:
+			case EQL: case NEQ: case SLT: case SLE: case SGT: case SGE: {
+				addDef(blk[j].var2defs, res, Define(j, k));	
+				addUse(blk[j].var2uses, ope1, Use(j, k));
+				addUse(blk[j].var2uses, ope2, Use(j, k));
+				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
+				break;
+			} case NOT: {
+				addDef(blk[j].var2defs, res, Define(j, k));	
+				addUse(blk[j].var2uses, ope1, Use(j, k));
+				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
+				break;
+			} case LOAD: {	//load的变量使用？
+				if (ope2 != "array" && ope2 != "para") {
+					addUse(blk[j].var2uses, ope1, Use(j, k));
+				}
+				addDef(blk[j].var2defs, res, Define(j, k));
+				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
+				break;
+			} case STORE: {
+				addUse(blk[j].var2uses, res, Use(j, k));
+				addDef(blk[j].var2defs, ope1, Define(j, k));
+				blk[j].gen[ope1] = Define(j, k); blk[j].genVar.insert(ope1);
+				break;
+			} case LOADARR: {
+				if (!isNumber(ope2)) {
+					addUse(blk[j].var2uses, ope2, Use(j, k));
+				}
+				addDef(blk[j].var2defs, res, Define(j, k));
+				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
+				break;
+			}case STOREARR: {
+				if (!isNumber(ope2)) {
+					addUse(blk[j].var2uses, ope2, Use(j, k));
+				}
+				addUse(blk[j].var2uses, res, Use(j, k));
+				break;
+			}case PUSH: {
+				addUse(blk[j].var2uses, ope1, Use(j, k));
+				break;
+			}case BR: {
+				if (isTmp(ope1)) {
+					addUse(blk[j].var2uses, ope1, Use(j, k));
+				}
+				break;
+			}case CALL: {
+				if (isTmp(res)) {
+					addDef(blk[j].var2defs, res, Define(j, k));
+					blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
+				}
+				break;
+			}case RET: {
+				if (isTmp(ope1)) {
+					addUse(blk[j].var2uses, ope1, Use(j, k));
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+	}
+}
+
+
+void SSA::count_use_def_chain() {
+	for (int i = 1; i < blockCore.size(); i++) {
+		auto blocks = blockCore.at(i);
+		count_gen_of_block(blocks);
+		printBlk();
+		//计算到达-定义的in out	
 	}
 }
 

@@ -123,6 +123,8 @@ private:
 	void strength_reduction();	//强度削弱
 	void protocol_variable_deletion(); //规约变量删除
 	void mark_invariant();				//标记不变式
+	void count_use_def_chain();			//计算使用-定义链
+
 
 	// 功能函数，可能在各个地方都会用到
 	std::string deleteSuffix(std::string name);	// 删除后缀，如输入参数为%a^1，返回%a; 若不含^则直接返回；

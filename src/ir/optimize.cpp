@@ -113,18 +113,10 @@ void MIR2LIRpass() {
 			string ope2 = instr.getOperand2();
 
 			if (op == NOT) {
-				if (isNumber(ope1)) {
-					int tmp = A2I(ope1);
-					if (tmp == 0) {
-						dst.push_back(CodeItem(MOV, "", res, "1"));
-					}
-					else {
-						dst.push_back(CodeItem(MOV, "", res, "0"));
-					}
-				}
-				else {
-					dst.push_back(instr);
-				}
+				res = dealTmpOpe(res);
+				ope1 = dealTmpOpe(ope1);
+				instr.setInstr(res, ope1, ope2);
+				dst.push_back(instr);
 			}else if (op == ADD || op == SUB || op == DIV || op == REM ||
 					  op == AND || op == OR ||
 					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
@@ -520,8 +512,8 @@ void peepholeOptimization() {
 void irOptimize() {
 	
 	//运行优化
-	//SSA ssa;
-	//ssa.generate();
+	/*SSA ssa;
+	ssa.generate();*/
 
 
 	//寄存器分配优化
