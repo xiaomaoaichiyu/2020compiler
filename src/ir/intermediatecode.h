@@ -40,6 +40,8 @@ public:
 	CodeItem& operator=(const CodeItem& instr);
 	void setID(int id);
 	int getId();
+	void setInvariant();
+	int getInvariant();
 	irCodeType getCodetype();
 	void setCodetype(irCodeType type);
 	string getOperand1();
@@ -54,7 +56,8 @@ public:
 	vector<int> getFatherBlock();
 	string getContent();
 private:
-	int id;
+	int id;					//索引
+	int invariant;			//标明指令结果是一个不变式
 	irCodeType codetype;     //中间代码种类
 	string result;				//结果
 	string operand1;			//左操作数

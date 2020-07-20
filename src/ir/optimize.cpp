@@ -351,20 +351,23 @@ void MIR2LIRpass() {
 			}
 			else if (op == PUSH) {
 				if (res == "int*") {
-					if (paras.find(ope1) != paras.end()) {	//数组是一个参数
-						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
-						ope1 = curVreg;
-						instr.setOperand1(ope1);
-						dst.push_back(loadTmp);
-						dst.push_back(instr);
-					}
-					else {
-						CodeItem lea(LEA, "", getVreg(), ope1);
-						ope1 = curVreg;
-						instr.setOperand1(ope1);
-						dst.push_back(lea);
-						dst.push_back(instr);
-					}
+					//if (paras.find(ope1) != paras.end()) {	//数组是一个参数
+					//	CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+					//	ope1 = curVreg;
+					//	instr.setOperand1(ope1);
+					//	dst.push_back(loadTmp);
+					//	dst.push_back(instr);
+					//}
+					//else {
+					//	CodeItem lea(LEA, "", getVreg(), ope1);
+					//	ope1 = curVreg;
+					//	instr.setOperand1(ope1);
+					//	dst.push_back(lea);
+					//	dst.push_back(instr);
+					//}
+					ope1 = dealTmpOpe(ope1);
+					instr.setOperand1(ope1);
+					dst.push_back(instr);
 				}
 				else if (res == "string") {
 					CodeItem tmp(MOV, "", getVreg(), ope1);
@@ -510,18 +513,18 @@ void irOptimize() {
 
 	//寄存器分配优化
 	MIR2LIRpass();
-	//printLIR("LIR.txt");
+	printLIR("LIR.txt");
 	countVars();
 
 	//寄存器直接指派
 	registerAllocation();
 
-	//printLIR("armIR.txt");
+	printLIR("armIR.txt");
 
 	//窥孔优化
 	peepholeOptimization();
 
-	//printLIR("armIR_2.txt");
+	printLIR("armIR_2.txt");
 
 }
 
