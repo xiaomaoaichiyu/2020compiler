@@ -186,7 +186,6 @@ string allocTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& fun
 		func.push_back(pushInstr);
 		reg = regpool.getAndAllocReg(res);
 	}
-	vreg2varReg[res] = reg;
 	return reg;
 }
 

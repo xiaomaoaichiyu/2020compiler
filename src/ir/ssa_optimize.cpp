@@ -472,14 +472,18 @@ struct Block {
 vector<Block> blk;
 
 void printBlk() {
-	for (auto one : blk) {
-		string vars = "";
-		for (auto tmp : one.genVar) {
-			vars += tmp + " ";
+	if (TIJIAO) {
+		int i = 0;
+		for (auto one : blk) {
+			string vars = FORMAT("B{} gen: ", i);
+			for (auto tmp : one.genVar) {
+				vars += tmp + "  ";
+			}
+			i++;
+			cout << vars << endl;
 		}
-		cout << vars << endl;
+		cout << endl;
 	}
-	cout << endl;
 }
 
 //计算每个基本块的gen，kill使用另外的方法处理
@@ -558,12 +562,22 @@ void count_gen_of_block(vector<basicBlock>& blocks) {
 	}
 }
 
-
 void SSA::count_use_def_chain() {
 	for (int i = 1; i < blockCore.size(); i++) {
 		auto blocks = blockCore.at(i);
 		count_gen_of_block(blocks);
 		printBlk();
+		for (int j = 0; j < blocks.size(); j++) {
+			auto block = blocks.at(j);
+
+			while (true) {
+
+
+				if () { //如果in out集不在发生变化
+					break;
+				}
+			}
+		}
 		//计算到达-定义的in out	
 	}
 }
