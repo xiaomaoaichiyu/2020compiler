@@ -41,7 +41,7 @@
 | **赋值数组**           | storeArr            | value ➡                            | address(暂时用name) | offset                    |
 | **取内存**             | load                | tmpReg ⬅                           | name                |                           |
 | **取VR**               | $\color{red}load$   | tmpReg ⬅                           | VR[0-9]             | offset                    |
-| **取数组参数的地址**   | load                | tmpReg ⬅                           | 数组（参数）        | "para"                    |
+| **取数组参数的地址**   | load                | tmpReg ⬅                           | 数组（参数）        | "para" \| "array"         |
 | **取内存**             | loadArr             | tmpReg ⬅                           | address(暂时用name) | offset                    |
 | 加载地址               | $\color{red} lea$   |                                    | tmpReg              | name(全局变量或全局数组)  |
 | 移动                   | $\color{red}mov$    |                                    | dst                 | src                       |

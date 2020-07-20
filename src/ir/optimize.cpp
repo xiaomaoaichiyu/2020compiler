@@ -158,18 +158,28 @@ void MIR2LIRpass() {
 				dst.push_back(instr);
 			}
 			else if (op == LOAD) {
-				if (isGlobal(ope1)) {	//全局变量
-					CodeItem address(LEA, "", getVreg(), ope1);
-					ope1 = curVreg;
-					res = dealTmpOpe(res);
-					instr.setInstr(res, ope1, ope2);
-					dst.push_back(address);
+				if (ope2 == "array") {	//加载数组的地址 —— 局部数组
+					instr.setCodetype(LEA);
+					instr.setInstr("", res, ope1);
 					dst.push_back(instr);
 				}
-				else {
-					res = dealTmpOpe(res);
-					instr.setInstr(res, ope1, ope2);
+				else if (ope2 == "para") {	//加载数组的地址 —— 参数数组
 					dst.push_back(instr);
+				}
+				else {	//加载变量的值（非数组）
+					if (isGlobal(ope1)) {	//全局变量
+						CodeItem address(LEA, "", getVreg(), ope1);
+						ope1 = curVreg;
+						res = dealTmpOpe(res);
+						instr.setInstr(res, ope1, ope2);
+						dst.push_back(address);
+						dst.push_back(instr);
+					}
+					else {
+						res = dealTmpOpe(res);
+						instr.setInstr(res, ope1, ope2);
+						dst.push_back(instr);
+					}
 				}
 			}
 			else if (op == LOADARR) {
