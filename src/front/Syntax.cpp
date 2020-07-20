@@ -1098,6 +1098,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		else {  //标识符 {'['表达式']'}
 			symbolTable item = checkItem(name_tag);
 			int range = Range;
+			int paraOrVar = item.getForm();    //数组做参数需要区分变量还是参数
 			vector<int> dimenLength = item.getMatrixLength();
 			if (dimenLength.size() > 0) {
 				registerA = "0";	//偏移量为0
@@ -1181,7 +1182,14 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 				interRegister = "%" + numToString(Temp);
 				Temp++;
 				//registerA是偏移量
-				CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, "array"); //一维变量、常量取值		获取数组首地址
+				string opr2;
+				if (paraOrVar == PARAMETER) {
+					opr2 = "para";
+				}
+				else {
+					opr2 = "array";
+				}
+				CodeItem citem = CodeItem(LOAD, interRegister, b + name_tag, opr2); //一维变量、常量取值		获取数组首地址
 				citem.setFatherBlock(fatherBlock);
 				codetotal[Funcindex].push_back(citem);
 				CodeItem citem2 = CodeItem(ADD, "%" + numToString(Temp), interRegister, registerA);
