@@ -207,6 +207,15 @@ int CodeItem::getId()
 	return this->id;
 }
 
+void CodeItem::setInvariant() {
+	this->invariant = 1;
+}
+
+int CodeItem::getInvariant()
+{
+	return this->invariant;
+}
+
 irCodeType CodeItem::getCodetype()
 {
 	return this->codetype;

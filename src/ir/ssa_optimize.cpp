@@ -401,7 +401,7 @@ void SSA::back_edge() {
 				work.pop();
 				auto preds = blocks.at(tmp).pred;
 				for (auto pred : preds) {
-					if (pred != begin) {
+					if (pred != begin && one.find(pred) == one.end()) {
 						work.push(pred);
 						one.insert(pred);
 					}
@@ -413,8 +413,24 @@ void SSA::back_edge() {
 	}
 }
 
-void SSA::code_outside()
-{
+void SSA::mark_invariant() {
+	/*for (int i = 1; i < blockCore.size(); i++) {
+		auto FuncCircle = circles.at(i-1);
+		for (auto circle : FuncCircle) {
+			int mark = 1;
+			while (mark) {
+				for () {
+
+				}
+			}
+		}
+	}*/
+}
+
+void SSA::code_outside() {
+	//计算不变式
+
+	//外提代码
 }
 
 void SSA::strength_reduction()
