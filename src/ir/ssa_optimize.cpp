@@ -570,13 +570,13 @@ void SSA::count_use_def_chain() {
 		for (int j = 0; j < blocks.size(); j++) {
 			auto block = blocks.at(j);
 
-			while (true) {
+			//while (true) {
 
 
-				if () { //如果in out集不在发生变化
-					break;
-				}
-			}
+			//	//if () { //如果in out集不在发生变化
+			//	//	break;
+			//	//}
+			//}
 		}
 		//计算到达-定义的in out	
 	}
