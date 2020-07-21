@@ -57,7 +57,7 @@ void dealNumber(CodeItem& instr) {
 			ope2 = ope1;
 			ope1 = tmp;
 			instr.setInstr(res, ope1, ope2);
-			instr.setCodetype(SLE);
+			instr.setCodetype(SLT);
 		}
 	}
 	else if (op == SLT) {
@@ -66,7 +66,7 @@ void dealNumber(CodeItem& instr) {
 			ope2 = ope1;
 			ope1 = tmp;
 			instr.setInstr(res, ope1, ope2);
-			instr.setCodetype(SGE);
+			instr.setCodetype(SGT);
 		}
 	}
 	else if (op == SGE) {
@@ -75,7 +75,7 @@ void dealNumber(CodeItem& instr) {
 			ope2 = ope1;
 			ope1 = tmp;
 			instr.setInstr(res, ope1, ope2);
-			instr.setCodetype(SLT);
+			instr.setCodetype(SLE);
 		}
 	}
 	else if (op == SLE) {
@@ -84,7 +84,7 @@ void dealNumber(CodeItem& instr) {
 			ope2 = ope1;
 			ope1 = tmp;
 			instr.setInstr(res, ope1, ope2);
-			instr.setCodetype(SGT);
+			instr.setCodetype(SGE);
 		}
 	}
 	else {
