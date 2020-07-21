@@ -1545,9 +1545,6 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 	int flag = 0;	//flag为1说明多个||的条件中某个条件真值为1，中间代码不必要出现，可直接删除
 	LAndExp();
 	registerL = interRegister;
-	if (registerL == "1") {
-		flag = 1;
-	}
 	while (symbol == OR_WORD) {
 		Memory symbol_tag = symbol;
 		//printMessage();    //输出逻辑运算符
@@ -1556,9 +1553,6 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 		token = wordAnalysis.getToken();//预读
 		LAndExp();
 		registerR = interRegister;
-		if (registerL == "1" || registerR == "1") {
-			flag = 1;
-		}
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
 			int value;
 			int valueL = stringToNum(registerL);
@@ -1572,28 +1566,13 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 			interRegister = numToString(value);
 		}
 		else {
-			if (registerL == "0") {
-				interRegister = registerR;
-				registerL = registerR;
-			}
-			else if (registerR == "0") {
-				interRegister = registerL;
-			}
-			else {
-				interRegister = "%" + numToString(Temp);
-				Temp++;
-				CodeItem citem = CodeItem(OR, interRegister, registerL, registerR);
-				citem.setFatherBlock(fatherBlock);
-				codetotal[Funcindex].push_back(citem);
-			}
+			interRegister = "%" + numToString(Temp);
+			Temp++;
+			CodeItem citem = CodeItem(OR, interRegister, registerL, registerR);
+			citem.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem);
 		}
 		registerL = interRegister;
-	}
-	if (flag == 1) {
-		while (codetotal[Funcindex].size() > nowSize) {
-			codetotal[Funcindex].pop_back();
-		}
-		interRegister = numToString(1);
 	}
 	//outfile << "<条件>" << endl;
 }
@@ -1604,9 +1583,6 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 	int flag = 0;	//flag为1说明多个&&的条件中某个条件真值为0，中间代码不必要出现，可直接删除
 	EqExp();
 	registerL = interRegister;
-	if (registerL == "0") {
-		flag = 1;
-	}
 	while (symbol == AND_WORD) {
 		Memory symbol_tag = symbol;
 		//printMessage();    //输出逻辑运算符
@@ -1615,9 +1591,6 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		token = wordAnalysis.getToken();//预读
 		EqExp();
 		registerR = interRegister;
-		if (registerL == "0" || registerR == "0") {
-			flag = 1;
-		}
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
 			int value;
 			int valueL = stringToNum(registerL);
@@ -1631,28 +1604,13 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 			interRegister = numToString(value);
 		}
 		else {
-			if (registerL == "1") {
-				interRegister = registerR;
-				registerL = registerR;
-			}
-			else if (registerR == "1") {
-				interRegister = registerL;
-			}
-			else {
-				interRegister = "%" + numToString(Temp);
-				Temp++;
-				CodeItem citem = CodeItem(AND, interRegister, registerL, registerR);
-				citem.setFatherBlock(fatherBlock);
-				codetotal[Funcindex].push_back(citem);
-			}
+			interRegister = "%" + numToString(Temp);
+			Temp++;
+			CodeItem citem = CodeItem(AND, interRegister, registerL, registerR);
+			citem.setFatherBlock(fatherBlock);
+			codetotal[Funcindex].push_back(citem);
 		}
 		registerL = interRegister;
-	}
-	if (flag == 1) {
-		while (codetotal[Funcindex].size() > nowSize) {
-			codetotal[Funcindex].pop_back();
-		}
-		interRegister = numToString(0);
 	}
 }
 
