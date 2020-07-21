@@ -174,7 +174,7 @@ void _define(CodeItem* ir)
 		global_reg_list += "," + reg;
 		regN++;
 	}
-	if (sp - sp_without_para < -127) {
+	if (sp - sp_without_para < -127 || sp-sp_without_para > 127) {
 		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
 		OUTPUT("ADD SP,SP,R12");
 	}
@@ -196,7 +196,7 @@ void _alloc(CodeItem* ir)
 	if (ini_value != "") {
 		OUTPUT("LDR R12,=" + ini_value);
 		int im = get_location(name).second - sp;
-		if (im < -127 || im > 128) {
+		if (im < -127 || im > 127) {
 			OUTPUT("LDR LR,=" + to_string(im));
 			OUTPUT("STR R12,[SP,LR]");
 		}
@@ -215,7 +215,7 @@ void _load(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(var);
-		if (p.second - sp > 128) {
+		if (p.second - sp > 127) {
 			OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			OUTPUT("LDR " + target + ",[SP,LR]");
 		}
@@ -248,7 +248,7 @@ void _loadarr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (stoi(offset) > 128) {
+			if (stoi(offset) > 127 || stoi(offset) < -127) {
 				OUTPUT("LDR LR,=" + offset);
 				OUTPUT("LDR " + target + ",[" + var + ",LR]");
 			}
@@ -259,7 +259,7 @@ void _loadarr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (im > 128 || im < -127) {
+			if (im > 127 || im < -127) {
 				OUTPUT("LDR LR,=" + to_string(im));
 				OUTPUT("LDR " + target + ",[SP,LR]");
 			}
@@ -279,7 +279,7 @@ void _store(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(loca);
-		if (p.second - sp > 128) {
+		if (p.second - sp > 127 || p.second - sp < -127) {
 			OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			OUTPUT("STR " + value + ",[SP,LR]");
 		}
@@ -317,7 +317,7 @@ void _storearr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (stoi(offset) > 128) {
+			if (stoi(offset) > 127 || stoi(offset) < -127) {
 				OUTPUT("LDR LR,=" + offset);
 				OUTPUT("STR " + value + ",[" + var + ",LR]");
 			}
@@ -328,7 +328,7 @@ void _storearr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (im > 128 || im < -127) {
+			if (im > 127 || im < -127) {
 				OUTPUT("LDR LR,=" + to_string(im));
 				OUTPUT("STR " + value + ",[SP,LR]");
 			}
@@ -345,7 +345,7 @@ void _add(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -362,7 +362,7 @@ void _sub(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -531,7 +531,7 @@ void _eql(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -550,7 +550,7 @@ void _neq(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -569,7 +569,7 @@ void _sgt(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -588,7 +588,7 @@ void _sge(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -607,7 +607,7 @@ void _slt(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -626,7 +626,7 @@ void _sle(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 128 || stoi(op2) < -127) {
+		if (stoi(op2) > 127 || stoi(op2) < -127) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -721,7 +721,7 @@ void _ret(CodeItem* ir)
 		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
 		fake_sp += func2gReg[symbol_pointer].size() * 4;
 	}
-	if (-fake_sp > 128) {
+	if (-fake_sp > 127 || fake_sp > 127) {
 		OUTPUT("LDR R12,=" + to_string(-fake_sp));
 		OUTPUT("ADD SP,SP,R12");
 	}
@@ -746,7 +746,7 @@ void _mov(CodeItem* ir) {
 	}
 	else {
 		int im = stoi(src);
-		if (im < -127 || im > 128) {
+		if (im < -127 || im > 127) {
 			OUTPUT("LDR " + dst + ",=" + src);
 		}
 		else {
@@ -763,7 +763,7 @@ void _lea(CodeItem* ir) {
 		OUTPUT("LDR " + reg + ",=" + p.first);
 	}
 	else {
-		if (p.second - sp < -127 || p.second - sp > 128) {
+		if (p.second - sp < -127 || p.second - sp > 127) {
 			OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			OUTPUT("ADD " + reg + ",SP,LR");
 		}
@@ -823,9 +823,9 @@ void arm_generate(string sname)
 	for (int i = 0; i < LIR.size(); i++) {
 		for (int j = 0; j < LIR[i].size(); j++) {
 			CodeItem* ir_now = &LIR[i][j];
-			if (!check_format(ir_now)) {
+			/*if (!check_format(ir_now)) {
 				continue;
-			}
+			}*/
 			switch (ir_now->getCodetype())
 			{
 			case ADD:
