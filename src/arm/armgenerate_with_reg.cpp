@@ -23,6 +23,16 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+bool check_format(CodeItem * ir) {
+	string ops[3] = { ir->getResult(),ir->getOperand1(),ir->getOperand2() };
+	for (auto s : ops) {
+		if (s[0] == '%' && isdigit(s[1])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void global_flush()
 {
 	if (global_var_size == 1) {
@@ -185,7 +195,14 @@ void _alloc(CodeItem* ir)
 	int size = stoi(ir->getOperand2());
 	if (ini_value != "") {
 		OUTPUT("LDR R12,=" + ini_value);
-		OUTPUT("STR R12,[SP,#" + to_string(get_location(name).second - sp) + "]");
+		int im = get_location(name).second - sp;
+		if (im < -127 || im > 128) {
+			OUTPUT("LDR LR,=" + to_string(im));
+			OUTPUT("STR R12,[SP,LR]");
+		}
+		else {
+			OUTPUT("STR R12,[SP,#" + to_string(im) + "]");
+		}
 	}
 }
 
@@ -328,7 +345,13 @@ void _add(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("ADD " + target + "," + op1 + "," + op2);
 }
@@ -339,7 +362,13 @@ void _sub(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("SUB " + target + "," + op1 + "," + op2);
 }
@@ -350,7 +379,8 @@ void _mul(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		OUTPUT("LDR LR,=" + op2);
+		op2 = "LR";
 	}
 	OUTPUT("MUL " + target + "," + op1 + "," + op2);
 }
@@ -501,7 +531,13 @@ void _eql(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVEQ " + target + ",#1");
@@ -514,7 +550,13 @@ void _neq(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVNE " + target + ",#1");
@@ -527,7 +569,13 @@ void _sgt(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVGT " + target + ",#1");
@@ -540,7 +588,13 @@ void _sge(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVGE " + target + ",#1");
@@ -553,7 +607,13 @@ void _slt(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVLT " + target + ",#1");
@@ -566,7 +626,13 @@ void _sle(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		op2 = "#" + op2;
+		if (stoi(op2) > 128 || stoi(op2) < -127) {
+			OUTPUT("LDR LR,=" + op2);
+			op2 = "LR";
+		}
+		else {
+			op2 = "#" + op2;
+		}
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVLE " + target + ",#1");
@@ -697,7 +763,13 @@ void _lea(CodeItem* ir) {
 		OUTPUT("LDR " + reg + ",=" + p.first);
 	}
 	else {
-		OUTPUT("ADD " + reg + ",SP,#" + to_string(p.second - sp));
+		if (p.second - sp < -127 || p.second - sp > 128) {
+			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			OUTPUT("ADD " + reg + ",SP,LR");
+		}
+		else {
+			OUTPUT("ADD " + reg + ",SP,#" + to_string(p.second - sp));
+		}
 	}
 }
 
@@ -751,6 +823,9 @@ void arm_generate(string sname)
 	for (int i = 0; i < LIR.size(); i++) {
 		for (int j = 0; j < LIR[i].size(); j++) {
 			CodeItem* ir_now = &LIR[i][j];
+			if (!check_format(ir_now)) {
+				continue;
+			}
 			switch (ir_now->getCodetype())
 			{
 			case ADD:
