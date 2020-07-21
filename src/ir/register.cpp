@@ -266,12 +266,7 @@ void registerAllocation() {
 			if (op == DEFINE) {
 				funcName = res;
 			}else if (op == NOT) {
-				if (isFind(ope1, vreg2varReg)) {
-					ope1Reg = vreg2varReg[ope1];
-				}
-				else {
-					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
-				}
+				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
 				regpool.releaseVreg(ope1);
 				resReg = allocTmpReg(regpool, res, funcTmp);
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
