@@ -36,8 +36,9 @@ public:
 	std::set<int> reverse_idom;		// 直接必经节点反集
 	std::set<int> tmpIdom;			// 计算直接必经节点算法中需要的数据结构
 	std::set<int> df;				// 必经边界
-	std::set<std::string> use;		// 该基本块中的use变量
-	std::set<std::string> def;		// 该基本块中的def变量
+	std::set<std::string> use;		// 该基本块中的use变量，按照狼书的定义，定义前使用的变量
+	std::set<std::string> def;		// 该基本块中的def变量，按照狼书的定义，使用前定义的变量
+	std::set<std::string> def2;	// 只要被定义即加入，不管出现的顺序
 	std::set<std::string> in;		// 该基本块中的in集合
 	std::set<std::string> out;		// 该基本块中的out集合
 	std::vector<phiFun> phi;		// 基本块初始需要添加的\phi函数
@@ -85,13 +86,14 @@ private:
 	void build_dom_frontier();										// 计算流图必经边界
 	void use_insert(int funNum, int blkNum, std::string varName);
 	void def_insert(int funNum, int blkNum, std::string varName);
+	void def2_insert(int funNum, int blkNum, std::string varName);
 	void build_def_use_chain();									// 计算ud链
 	void active_var_analyse();										// 活跃变量分析，生成in、out集合
 	std::set<int> DF_Set(int funNum, std::set<int> s);
 	void build_var_chain();											// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入
 	void renameVar();													// SSA变量重命名
 	void add_phi_function();											// 在需要添加基本块的开始添加\phi函数
-	int phi_loc_block(int funNum, int blkNum, std::string name, std::vector<bool> visited);			// 查找该节点开始对应的name变量的基本块位置
+	int phi_loc_block(int funNum, int blkNum, std::string name, std::vector<bool> visited, int insertBlk);			// 查找该节点开始对应的name变量的基本块位置
 	void deal_phi_function();										// 处理\phi函数
 	void rename_back();												// 将SSA变量带下标的中间代码恢复为正常中间代码，即做完优化后去掉下标
 	// 测试专用函数
