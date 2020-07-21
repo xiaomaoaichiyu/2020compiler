@@ -7,7 +7,7 @@
 #include <sstream>
 #include <cstdio>
 
-#define TIJIAO 1
+#define TIJIAO 0
 
 #define isString(x) (x.size() > 1 && (x.at(0) == '\"'))
 
