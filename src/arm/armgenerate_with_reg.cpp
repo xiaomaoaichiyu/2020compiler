@@ -23,6 +23,16 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+bool check_format(CodeItem * ir) {
+	string ops[3] = { ir->getResult(),ir->getOperand1(),ir->getOperand2() };
+	for (auto s : ops) {
+		if (s[0] == '%' && isdigit(s[1])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void global_flush()
 {
 	if (global_var_size == 1) {
@@ -813,6 +823,9 @@ void arm_generate(string sname)
 	for (int i = 0; i < LIR.size(); i++) {
 		for (int j = 0; j < LIR[i].size(); j++) {
 			CodeItem* ir_now = &LIR[i][j];
+			if (!check_format(ir_now)) {
+				continue;
+			}
 			switch (ir_now->getCodetype())
 			{
 			case ADD:
