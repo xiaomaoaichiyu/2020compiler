@@ -397,7 +397,15 @@ void SSA::use_insert(int funNum, int blkNum, string varName) {
 // 在基本块的def链中插入变量名称
 void SSA::def_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
+	if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
 	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
+}
+
+// 在基本块的def2链中插入变量名称
+void SSA::def2_insert(int funNum, int blkNum, string varName) {
+	if (varName == "") return;
+	// if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
+	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def2.insert(varName);	// 不加入全局变量
 }
 
 // 计算ud链，即分析每个基本块的use和def变量
@@ -428,13 +436,16 @@ void SSA::build_def_use_chain() {
 				case PARA:
 				case MOV:
 					use_insert(i, j, ci.getOperand2());
-					def_insert(i, j, ci.getOperand1());
+					use_insert(i, j, ci.getOperand1());
+					def_insert(i, j, ci.getResult());
+					def2_insert(i, j, ci.getResult());
 					break;
 				case STORE: case STOREARR:
 				case POP:
 					use_insert(i, j, ci.getResult());
 					use_insert(i, j, ci.getOperand2());
 					def_insert(i, j, ci.getOperand1());
+					def2_insert(i, j, ci.getOperand1());
 					break;
 				// 无需处理的部分，当然也与上面合并也无妨
 				case ALLOC: case GLOBAL:
@@ -526,7 +537,7 @@ void SSA::build_var_chain() {
 			int size3 = blockCore[i].size();
 			// 初始化寻找
 			for (k = 1; k < size3; k++)
-				if (blockCore[i][k].def.find(varChain[i][j].name) != blockCore[i][k].def.end())
+				if (blockCore[i][k].def2.find(varChain[i][j].name) != blockCore[i][k].def2.end())
 					varChain[i][j].blockNums.insert(k);
 			varChain[i][j].blockNums.insert(0);			// entry块
 			bool change = true;
@@ -556,14 +567,14 @@ void SSA::build_var_chain() {
 }
 
 // 查找该节点开始对应的name变量的基本块位置
-int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited) {
-	if (visited[blkNum]) return 0;
+int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited, int insertBlk) {
+	if (visited[blkNum] || blkNum == insertBlk) return 0;
 	else visited[blkNum] = true;
 	// 如果该基本块中用到或定义了name变量
 	set<string> s1 = blockCore[funNum][blkNum].def;
 	set<string> s2 = blockCore[funNum][blkNum].use;
 	if (s1.find(name) != s1.end() || s2.find(name) != s2.end()) return blkNum;
-	// 如果该基本块要插入的\phi函数中包含改变量，也算该基本块使用了该变量
+	// 如果该基本块要插入的\phi函数中包含该变量，也算该基本块使用了该变量
 	set<int> s3;  varStruct vs(name, s3);
 	for (int i = 0; i < varChain[funNum].size(); i++) if (varChain[funNum][i].name.compare(vs.name) == 0) {
 		vs = varChain[funNum][i]; break;
@@ -572,7 +583,7 @@ int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited
 	// 在该基本块的前驱节点中再继续找
 	set<int> pred = blockCore[funNum][blkNum].pred;
 	for (set<int>::iterator iter = pred.begin(); iter != pred.end(); iter++) {
-		int t = phi_loc_block(funNum, *iter, name, visited);
+		int t = phi_loc_block(funNum, *iter, name, visited, insertBlk);
 		if (t != 0) { return t; }
 	}
 	return 0;
@@ -599,12 +610,13 @@ void SSA::add_phi_function() {
 					// 记录该基本块是否被访问过
 					vector<bool> visited;
 					for (k = 0; k < size2; k++) visited.push_back(false);
-					int t = phi_loc_block(i, *iter1, vs.name, visited);
+					int t = phi_loc_block(i, *iter1, vs.name, visited, *iter);
 					if (t != 0 && find(pf.blockNums.begin(), pf.blockNums.end(), t) == pf.blockNums.end()) 
 						pf.blockNums.push_back(t);
 				}
 				// 在基本块中插入
-				blockCore[i][*iter].phi.push_back(pf);
+				if (pf.blockNums.size() > 1)	// 若\phi函数参数只有一个值则不用插入
+					blockCore[i][*iter].phi.push_back(pf);
 			}
 		}
 	}
