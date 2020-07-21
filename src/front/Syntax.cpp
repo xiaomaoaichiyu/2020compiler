@@ -747,19 +747,20 @@ void InitVal(int index)
 	else {
 		isNesting = 0;
 		offset++;
-		Exp();
+		string b = "@";
+		symbolTable item = checkItem(nodeName);
+		if (Range != 0) {
+			b = "%";
+		}
 		if (matrixLength.size() == 0) {
-			string b = "@";
-			symbolTable item = checkItem(nodeName);
-			if (Range != 0) {
-				b = "%";
-			}
 			if (b == "%") {
+				Exp();
 				CodeItem citem = CodeItem(STORE, interRegister, b + nodeName, "");	//赋值单值
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
 			}
-			else {  //全局变量且带初始化定义需改成 global     @b         value         1 的形式     
+			else {  //全局变量且带初始化定义需改成 global     @b         value         1 的形式   
+				interRegister = numToString(ConstExp());
 				int nowsize = codetotal[index].size(); //全局变量的Exp()一定是constExp()
 				CodeItem citem1 = codetotal[index][nowsize - 1];
 				citem1.changeContent(citem1.getResult(), interRegister, citem1.getOperand2());
@@ -774,6 +775,12 @@ void InitVal(int index)
 				symbolTable item = checkItem(nodeName);
 				if (Range != 0) {
 					b = "%";
+				}
+				if (b == "%") {
+					Exp();
+				}
+				else {
+					interRegister = numToString(ConstExp());
 				}
 				CodeItem citem = CodeItem(STOREARR, interRegister, b + nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
