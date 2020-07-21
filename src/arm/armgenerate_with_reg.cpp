@@ -697,7 +697,13 @@ void _lea(CodeItem* ir) {
 		OUTPUT("LDR " + reg + ",=" + p.first);
 	}
 	else {
-		OUTPUT("ADD " + reg + ",SP,#" + to_string(p.second - sp));
+		if (p.second - sp < -127 || p.second - sp > 127) {
+			OUTPUT("LDR R12,=" + to_string(p.second - sp));
+			OUTPUT("ADD " + reg + ",SP,R12" );
+		}
+		else {
+			OUTPUT("ADD " + reg + ",SP,#" + to_string(p.second - sp));
+		}
 	}
 }
 
