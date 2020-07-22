@@ -529,13 +529,16 @@ void registerAllocation() {
 						}
 					}
 				}
+				for (auto para : callRegs.at(callLayer)) {		//释放参数寄存器 R0-R3
+					regpool.releaseVreg(para.second);
+				}
 				callLayer--;			//函数层级降低
 				callRegs.pop_back();	//函数调用寄存器删除
 				paraReg2push.pop_back();
-				int paraNum = A2I(ope2);
-				for (int i = 0; i < paraNum; i++) {
-					regpool.releaseReg(FORMAT("R{}", i));		//释放参数寄存器 R0-R3
-				}
+				//int paraNum = A2I(ope2);
+				//for (int i = 0; i < paraNum; i++) {
+				//	regpool.releaseReg(FORMAT("R{}", i));		//释放参数寄存器 R0-R3
+				//}
 			}
 			else if (op == PUSH) {	//参数压栈 4是分界点
 				if (A2I(ope2) <= 4) {	//前4个此参数
