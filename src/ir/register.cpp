@@ -176,13 +176,21 @@ void setVrIndex(string vr) {
 
 //中间变量的存储----------------------------------------
 
+int callLayer = -1;
+vector<map<string, string>> callRegs;		//存储 r[0-3] <-> VR[0-9]
+vector<map<string, bool>>   paraReg2push;	//参数寄存器被压栈保存的（其实是str保存）
+
+
 //临时寄存器申请
 string allocTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func)
 {
 	string reg = regpool.getAndAllocReg(res);
 	if (reg == res) {	//没有临时寄存器了
-		pair<string, string> tmp = regpool.spillReg();
+		pair<string, string> tmp = regpool.spillReg();	//溢出了寄存器
 		setVrIndex(tmp.first);
+		if (callLayer >= 0 && callRegs.at(callLayer).find(tmp.second) != callRegs.at(callLayer).end()) {
+			paraReg2push.at(callLayer)[tmp.second] = true;
+		}
 		CodeItem pushInstr(STORE, tmp.second, tmp.first, "");
 		func.push_back(pushInstr);
 		reg = regpool.getAndAllocReg(res);
@@ -196,7 +204,7 @@ string getTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& func)
 		return vreg2varReg[res];
 	}
 	string reg = regpool.getReg(res);
-	if (reg == "spilled") {
+	if (reg == "spilled") {		//处理被溢出的寄存器
 		string tmpReg = allocTmpReg(regpool, res, func);
 		CodeItem tmp(LOAD, tmpReg, res, "");
 		func.push_back(tmp);
@@ -231,9 +239,9 @@ void registerAllocation() {
 
 		//多层函数调用参数寄存器保存工作
 		int vrNumber = func2vrIndex.at(k);
-		int callLayer = -1;
-		vector<map<string, string>> callRegs;		//存储 r[0-3] <-> VR[0-9]
-		vector<map<string, bool>>   paraReg2push;	//参数寄存器被压栈保存的（其实是str保存）
+		callLayer = -1;
+		callRegs.clear();		//存储 r[0-3] <-> VR[0-9]
+		paraReg2push.clear();	//参数寄存器被压栈保存的（其实是str保存）
 		//无脑指派局部变量
 		int i = 0;
 		for (; i < vars.size(); i++) {
@@ -520,9 +528,10 @@ void registerAllocation() {
 			else if (op == CALL) {
 				//如果函数嵌套导致r0-r3被spill，在函数调用前重取r0-r3
 				if (callLayer >= 0) {
+					//如果是中间变量把参数寄存器溢出了，怎么标记
 					for (auto para : paraReg2push.at(callLayer)) {
 						//??????
-						if (para.second == true) {
+						if (para.second == true) {		//如果参数寄存器被溢出了，需要load回来
 							string vRegTmp = callRegs.at(callLayer)[para.first];
 							CodeItem loadTmp(LOAD, para.first, vRegTmp, "para");
 							funcTmp.push_back(loadTmp);
