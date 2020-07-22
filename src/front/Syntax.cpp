@@ -540,8 +540,13 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 			else {
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
-				mod = mod * matrixLength[pp];
+			if (matrixLength.size() == 1) {		//一维数组偏移量单独算
+				mod = matrixLength[0];
+			}
+			else {
+				for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+					mod = mod * matrixLength[pp];
+				}
 			}
 			Ndimension = 1;
 			while (offset % mod != 0) {
@@ -762,8 +767,13 @@ void InitVal(int index)
 			else {
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
-				mod = mod * matrixLength[pp];
+			if (matrixLength.size() == 1) {		//一维数组偏移量单独算
+				mod = matrixLength[0];
+			}
+			else {
+				for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+					mod = mod * matrixLength[pp];
+				}
 			}
 			Ndimension = 1;
 			while (offset % mod != 0) {
