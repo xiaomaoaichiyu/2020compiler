@@ -42,7 +42,8 @@ int main(int argc, char* argv[])
 	checkArguments(argc, argv);
 	//运行前端
 	frontExecute(syname);
-
+	SSA ssa;
+	ssa.pre_optimize();
 	//优化
 	irOptimize();
 

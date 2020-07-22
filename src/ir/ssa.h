@@ -110,7 +110,7 @@ private:
 	void Test_Build_Var_Chain();
 	void Test_Add_Phi_Fun();
 	// 优化函数
-	void pre_optimize();	// 在睿轩生成的中间代码上做优化
+	// void pre_optimize();	// 在睿轩生成的中间代码上做优化
 	void simplify_br();		// 简化条件判断为常值的跳转指令
 	void load_and_store();// 简化load和store指令相邻的指令
 	void simplify_add_minus_multi_div_mod();	// 简化加减0、乘除模1这样的指令
@@ -141,6 +141,8 @@ public:
 	}*/
 	SSA() {}
 	void generate();		// 开始函数
+	// 优化函数
+	void pre_optimize();	// 在睿轩生成的中间代码上做优化
 };
 
 #endif //_SSA_H_
