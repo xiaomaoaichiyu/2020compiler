@@ -35,11 +35,9 @@ bool check_format(CodeItem * ir) {
 
 void global_flush()
 {
-	/*
 	if (global_var_size == 1) {
 		return;
 	}
-	*/
 	OUTPUT(".data");
 	OUTPUT(global_var_name + ":");
 	int zero_cnt = 0;
@@ -111,7 +109,7 @@ void _global(CodeItem* ir)
 	string value = ir->getOperand1();
 	int size = stoi(ir->getOperand2());
 	global_var_size = size;
-	if (size >= 1) {
+	if (size > 1) {
 		global_var_name = name;
 		for (int i = 0; i < size; i++) {
 			ini_value.push_back("");
