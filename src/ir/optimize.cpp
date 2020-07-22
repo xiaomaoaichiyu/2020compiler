@@ -117,7 +117,7 @@ void MIR2LIRpass() {
 				ope1 = dealTmpOpe(ope1);
 				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
-			}else if (op == ADD || op == SUB || op == DIV || op == REM ||
+			}else if (op == ADD || op == SUB ||
 					  op == AND || op == OR ||
 					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
 				if (isNumber(ope1)) {
@@ -134,7 +134,7 @@ void MIR2LIRpass() {
 				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
-			else if (op == MUL) {
+			else if (op == MUL || op == DIV || op == REM) {
 				if (isNumber(ope1)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
@@ -527,7 +527,7 @@ void irOptimize() {
 	printLIR("armIR.txt");
 
 	//窥孔优化
-	peepholeOptimization();
+	//peepholeOptimization();
 
 	printLIR("armIR_2.txt");
 
