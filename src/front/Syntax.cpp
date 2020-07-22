@@ -567,10 +567,55 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 		else {    //空情况
 			flag = 1;
 		}
-		if (flag == 1) offset += mod;						//{}，直接加当前维度大小
-		else {												//补齐当前维度
-			while (offset % mod != 0) {
-				offset++;
+		if (flag == 1) {
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "%") {
+				int zzzzz = offset + mod;
+				while (offset < zzzzz) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
+			}
+			else {
+				offset += mod;
+			}
+		}
+		else {
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "@") {
+				while (offset % mod != 0) {
+					offset++;
+				}
+			}
+			else {
+				while (offset % mod != 0) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
 			}
 		}
 		//printMessage();   //输出 } 信息
@@ -744,10 +789,55 @@ void InitVal(int index)
 		else {    //空情况
 			flag = 1;
 		}
-		if (flag == 1) offset += mod;
+		if (flag == 1) {
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "%") {
+				int zzzzz = offset + mod;
+				while (offset < zzzzz) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
+			}
+			else {
+				offset += mod;
+			}
+		}
 		else {
-			while (offset % mod != 0) {
-				offset++;
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "@") {
+				while (offset % mod != 0) {
+					offset++;
+				}
+			}
+			else {
+				while (offset % mod != 0) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
 			}
 		}
 		//printMessage();   //输出}
