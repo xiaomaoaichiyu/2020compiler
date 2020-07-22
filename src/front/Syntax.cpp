@@ -294,7 +294,7 @@ void CompUnit()
 					map<string, int> item2;
 					names.push_back(item2);
 					valueFuncDef();
-					//change(Funcindex);		//修改中间代码、符号表
+					change(Funcindex);		//修改中间代码、符号表
 				}
 				else {
 					symbol = sym_tag;
@@ -312,7 +312,7 @@ void CompUnit()
 				map<string, int> item2;
 				names.push_back(item2);
 				novalueFuncDef();
-				//change(Funcindex);			//修改中间代码、符号表
+				change(Funcindex);			//修改中间代码、符号表
 			}
 		}
 	}
@@ -871,7 +871,8 @@ void InitVal(int index)
 				codetotal[index].push_back(citem);
 			}
 			else {  //全局变量且带初始化定义需改成 global     @b         value         1 的形式   
-				interRegister = numToString(ConstExp());
+				Exp();
+				//interRegister = numToString(ConstExp());
 				int nowsize = codetotal[index].size(); //全局变量的Exp()一定是constExp()
 				CodeItem citem1 = codetotal[index][nowsize - 1];
 				citem1.changeContent(citem1.getResult(), interRegister, citem1.getOperand2());
@@ -891,7 +892,8 @@ void InitVal(int index)
 					Exp();
 				}
 				else {
-					interRegister = numToString(ConstExp());
+					Exp();
+					//interRegister = numToString(ConstExp());
 				}
 				CodeItem citem = CodeItem(STOREARR, interRegister, b + nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
