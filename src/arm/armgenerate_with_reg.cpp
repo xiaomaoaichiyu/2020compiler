@@ -40,21 +40,33 @@ void global_flush()
 	}
 	OUTPUT(".data");
 	OUTPUT(global_var_name + ":");
-	string out = "";
+	int zero_cnt = 0;
+	for (string v : ini_value) {
+		if (v == "") {
+			zero_cnt++;
+		}
+		else {
+			if (zero_cnt != 0) {
+				OUTPUT(".zero " + to_string(zero_cnt * 4));
+			}
+			OUTPUT(".word " + v);
+			zero_cnt = 0;
+		}
+	}
+	if (zero_cnt != 0) {
+		OUTPUT(".zero " + to_string(zero_cnt * 4));
+	}
+	/*string out = "";
 	for (string v : ini_value) {
 		out += "," + v;
 	}
 	if (out != "") {
 		OUTPUT("	.word " + out.substr(1));
 	}
-	/*
-	for (int i = ini_value.size(); i < global_var_size; i++) {
-		out += ",0";
-	}*/
 	int zero_space = (global_var_size - ini_value.size())*4;
 	if (zero_space > 0) {
 		OUTPUT("	.zero " + to_string(zero_space));
-	}
+	}*/
 	OUTPUT(".text");
 	ini_value.clear();
 }
@@ -94,20 +106,23 @@ void _global(CodeItem* ir)
 {
 	global_flush();
 	string name = getname(ir->getResult());
-	string ini_value = ir->getOperand1();
+	string value = ir->getOperand1();
 	int size = stoi(ir->getOperand2());
 	global_var_size = size;
 	if (size > 1) {
 		global_var_name = name;
+		for (int i = 0; i < size; i++) {
+			ini_value.push_back("");
+		}
 		//OUTPUT(name + ": .zero " + to_string(size * 4));
 	}
 	else {
 		OUTPUT(".data");
-		if (ini_value == "") {
+		if (value == "") {
 			OUTPUT(name + ": .zero 4");
 		}
 		else {
-			OUTPUT(name + ": .word " + ini_value);
+			OUTPUT(name + ": .word " + value);
 		}
 		OUTPUT(".text");
 	}
@@ -293,7 +308,8 @@ void _storearr(CodeItem* ir)
 {
 	if (is_global) {
 		string value = ir->getResult();
-		ini_value.push_back(value);
+		int off = stoi(ir->getOperand2())/4;
+		ini_value[off] = value;
 		return;
 	}
 	string value = ir->getResult();
