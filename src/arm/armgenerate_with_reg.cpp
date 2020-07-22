@@ -35,7 +35,7 @@ bool check_format(CodeItem * ir) {
 
 void global_flush()
 {
-	if (global_var_size == 1) {
+	if (ini_value.size() == 0) {
 		return;
 	}
 	OUTPUT(".data");
@@ -117,14 +117,15 @@ void _global(CodeItem* ir)
 		//OUTPUT(name + ": .zero " + to_string(size * 4));
 	}
 	else {
-		OUTPUT(".data");
 		if (value == "") {
-			OUTPUT(name + ": .zero 4");
+			global_var_name = name;
+			ini_value.push_back("");
 		}
 		else {
+			OUTPUT(".data");
 			OUTPUT(name + ": .word " + value);
+			OUTPUT(".text");
 		}
-		OUTPUT(".text");
 	}
 }
 
@@ -132,6 +133,7 @@ void _define(CodeItem* ir)
 {
 	string name = getname(ir->getResult());
 	OUTPUT("");
+	OUTPUT(".ltorg");
 	OUTPUT(name + ":");
 	var2addr.clear();
 	int paraNum;
