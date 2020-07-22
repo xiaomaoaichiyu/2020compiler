@@ -540,8 +540,13 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 			else {
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
-				mod = mod * matrixLength[pp];
+			if (matrixLength.size() == 1) {		//一维数组偏移量单独算
+				mod = matrixLength[0];
+			}
+			else {
+				for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+					mod = mod * matrixLength[pp];
+				}
 			}
 			Ndimension = 1;
 			while (offset % mod != 0) {
@@ -567,10 +572,55 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 		else {    //空情况
 			flag = 1;
 		}
-		if (flag == 1) offset += mod;						//{}，直接加当前维度大小
-		else {												//补齐当前维度
-			while (offset % mod != 0) {
-				offset++;
+		if (flag == 1) {
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "%") {
+				int zzzzz = offset + mod;
+				while (offset < zzzzz) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
+			}
+			else {
+				offset += mod;
+			}
+		}
+		else {
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "@") {
+				while (offset % mod != 0) {
+					offset++;
+				}
+			}
+			else {
+				while (offset % mod != 0) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
 			}
 		}
 		//printMessage();   //输出 } 信息
@@ -717,8 +767,13 @@ void InitVal(int index)
 			else {
 				isNesting = 1;
 			}
-			for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
-				mod = mod * matrixLength[pp];
+			if (matrixLength.size() == 1) {		//一维数组偏移量单独算
+				mod = matrixLength[0];
+			}
+			else {
+				for (int pp = 1; pp < matrixLength.size(); pp++) {   //计算当前维度偏移量mod
+					mod = mod * matrixLength[pp];
+				}
 			}
 			Ndimension = 1;
 			while (offset % mod != 0) {
@@ -744,10 +799,55 @@ void InitVal(int index)
 		else {    //空情况
 			flag = 1;
 		}
-		if (flag == 1) offset += mod;
+		if (flag == 1) {
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "%") {
+				int zzzzz = offset + mod;
+				while (offset < zzzzz) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
+			}
+			else {
+				offset += mod;
+			}
+		}
 		else {
-			while (offset % mod != 0) {
-				offset++;
+			string b = "@";
+			symbolTable item = checkItem(nodeName);
+			if (Range != 0) {
+				b = "%";
+			}
+			if (b == "@") {
+				while (offset % mod != 0) {
+					offset++;
+				}
+			}
+			else {
+				while (offset % mod != 0) {
+					offset++;
+					string offset_string = numToString((offset - 1) * 4);
+					string b = "@";
+					symbolTable item = checkItem(nodeName);
+					if (Range != 0) {
+						b = "%";
+					}
+					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+					citem.setFatherBlock(fatherBlock);
+					codetotal[index].push_back(citem);
+				}
 			}
 		}
 		//printMessage();   //输出}
@@ -771,7 +871,8 @@ void InitVal(int index)
 				codetotal[index].push_back(citem);
 			}
 			else {  //全局变量且带初始化定义需改成 global     @b         value         1 的形式   
-				interRegister = numToString(ConstExp());
+				Exp();
+				//interRegister = numToString(ConstExp());
 				int nowsize = codetotal[index].size(); //全局变量的Exp()一定是constExp()
 				CodeItem citem1 = codetotal[index][nowsize - 1];
 				citem1.changeContent(citem1.getResult(), interRegister, citem1.getOperand2());
@@ -791,7 +892,8 @@ void InitVal(int index)
 					Exp();
 				}
 				else {
-					interRegister = numToString(ConstExp());
+					Exp();
+					//interRegister = numToString(ConstExp());
 				}
 				CodeItem citem = CodeItem(STOREARR, interRegister, b + nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
