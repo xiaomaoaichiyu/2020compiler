@@ -20,6 +20,7 @@ string RegPool::getReg(string vreg) {
 void RegPool::markParaReg(string reg, string Vreg) {
 	vreg2reg[Vreg] = reg;
 	reg2avail[reg] = false;
+	vreguse.push_back(Vreg);
 }
 
 bool RegPool::checkParaRegUsed(string reg) {
@@ -231,8 +232,8 @@ void registerAllocation() {
 		//多层函数调用参数寄存器保存工作
 		int vrNumber = func2vrIndex.at(k);
 		int callLayer = -1;
-		vector<map<string, string>> callRegs;	//存储 r[0-3] <-> VR[0-9]
-
+		vector<map<string, string>> callRegs;		//存储 r[0-3] <-> VR[0-9]
+		vector<map<string, bool>>   paraReg2push;	//参数寄存器被压栈保存的（其实是str保存）
 		//无脑指派局部变量
 		int i = 0;
 		for (; i < vars.size(); i++) {
@@ -481,7 +482,7 @@ void registerAllocation() {
 					funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
 					first[res] = false;
 				}
-				else if (ope1 == "stack" && var2reg[res] != "memory") {
+				else if (ope1 == "stack" && var2reg[res] != "memory") {	//????
 					funcTmp.push_back(CodeItem(LOAD, var2reg[res], res, "para"));
 					first[res] = false;
 				}
@@ -496,11 +497,18 @@ void registerAllocation() {
 				//记录函数的参数寄存器的情况	
 				callLayer++;
 				callRegs.push_back(map<string, string>());
+				paraReg2push.push_back(map<string, bool>());
 				//表达式计算的中间变量的保存！
 				auto save = regpool.spillAllRegs();
 				funcTmp.push_back(instr);
 				for (auto one : save) {		//函数调用的时候临时寄存器的值需要保存
 					setVrIndex(one.first);
+					//如果溢出的寄存器是push参数寄存器
+					if (callLayer > 0) {
+						if (callRegs.at(callLayer - 1).find(one.second) != callRegs.at(callLayer - 1).end()) {
+							paraReg2push.at(callLayer - 1)[one.second] = true;
+						}
+					}
 					CodeItem pushTmp(STORE, one.second, one.first, "");
 					funcTmp.push_back(pushTmp);
 				}
@@ -511,15 +519,22 @@ void registerAllocation() {
 			}
 			else if (op == CALL) {
 				//如果函数嵌套导致r0-r3被spill，在函数调用前重取r0-r3
-				for (auto para : callRegs.at(callLayer)) {
-					CodeItem loadTmp(LOAD, para.second, para.first, "para");
-					funcTmp.push_back(loadTmp);
+				if (callLayer >= 0) {
+					for (auto para : paraReg2push.at(callLayer)) {
+						//??????
+						if (para.second == true) {
+							string vRegTmp = callRegs.at(callLayer)[para.first];
+							CodeItem loadTmp(LOAD, para.first, vRegTmp, "para");
+							funcTmp.push_back(loadTmp);
+						}
+					}
 				}
 				callLayer--;			//函数层级降低
 				callRegs.pop_back();	//函数调用寄存器删除
+				paraReg2push.pop_back();
 				int paraNum = A2I(ope2);
 				for (int i = 0; i < paraNum; i++) {
-					regpool.releaseReg(FORMAT("R{}", i));		//释放参数寄存器
+					regpool.releaseReg(FORMAT("R{}", i));		//释放参数寄存器 R0-R3
 				}
 			}
 			else if (op == PUSH) {	//参数压栈 4是分界点
@@ -531,21 +546,23 @@ void registerAllocation() {
 					int num = A2I(ope2);
 					string paraReg = FORMAT("R{}", num - 1);
 					//使用前 看参数寄存器是否被占用，如果被占用，说明是嵌套函数！
-					if (regpool.checkParaRegUsed(paraReg)) {
-						auto str = regpool.spillReg(paraReg);
-						CodeItem strTmp(STORE, str.second, str.first, "para");
-						setVrIndex(str.first);
-						funcTmp.push_back(strTmp);
-						//记录下被spill的参数寄存器
-						if (callLayer > 0) {
-							callRegs.at(callLayer - 1).insert(pair<string, string>(str.first, str.second));
-						}
-					}
+					//if (regpool.checkParaRegUsed(paraReg)) {
+					//	auto str = regpool.spillReg(paraReg);
+					//	CodeItem strTmp(STORE, str.second, str.first, "para");
+					//	setVrIndex(str.first);
+					//	funcTmp.push_back(strTmp);
+					//	//记录下被spill的参数寄存器
+					//	if (callLayer > 0) {
+					//		callRegs.at(callLayer - 1).insert(pair<string, string>(str.first, str.second));
+					//	}
+					//}
 					//push参数后标记对应的参数寄存器r0-3为占用状态！
 					//这里r0还可能被占用吗？？？
 					//理论上不存在，因为中间变量不会夸参数出现，要是被使用了，也一定被释放了
 					string curVreg = FORMAT("VR{}", vrNumber++);	//这个虚拟寄存器不会在其他地方出现，除了load
 					regpool.markParaReg(paraReg, curVreg);		//标记参数寄存器被占用
+					callRegs.at(callLayer)[paraReg] = curVreg;	//push一个意味着这个参数寄存器被占用了
+					//后续可能需要压栈保存值！
 				}
 				else {					//栈参数
 					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
