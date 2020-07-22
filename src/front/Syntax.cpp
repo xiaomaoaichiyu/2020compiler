@@ -294,7 +294,7 @@ void CompUnit()
 					map<string, int> item2;
 					names.push_back(item2);
 					valueFuncDef();
-					change(Funcindex);		//修改中间代码、符号表
+					//change(Funcindex);		//修改中间代码、符号表
 				}
 				else {
 					symbol = sym_tag;
@@ -312,7 +312,7 @@ void CompUnit()
 				map<string, int> item2;
 				names.push_back(item2);
 				novalueFuncDef();
-				change(Funcindex);			//修改中间代码、符号表
+				//change(Funcindex);			//修改中间代码、符号表
 			}
 		}
 	}
@@ -1406,11 +1406,9 @@ void Stmt()              //语句
 	}
 	else if (symbol == BREAKTK) {	//break ;
 		//printMessage();    //输出break信息
-		/*
 		CodeItem citem = CodeItem(BR, "", whileLabel[whileLabel.size() - 2], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
-		*/
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1421,11 +1419,9 @@ void Stmt()              //语句
 	}
 	else if (symbol == CONTINUETK) {	//continue ;
 		//printMessage();    //输出continue信息
-		/*
 		CodeItem citem = CodeItem(BR, "", whileLabel[whileLabel.size() - 1], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
-		*/
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
