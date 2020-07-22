@@ -132,6 +132,7 @@ void _define(CodeItem* ir)
 {
 	string name = getname(ir->getResult());
 	OUTPUT("");
+	OUTPUT(".ltorg");
 	OUTPUT(name + ":");
 	var2addr.clear();
 	int paraNum;
