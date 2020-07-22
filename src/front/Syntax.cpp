@@ -1406,9 +1406,11 @@ void Stmt()              //语句
 	}
 	else if (symbol == BREAKTK) {	//break ;
 		//printMessage();    //输出break信息
+		/*
 		CodeItem citem = CodeItem(BR, "", whileLabel[whileLabel.size() - 2], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
+		*/
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1419,9 +1421,11 @@ void Stmt()              //语句
 	}
 	else if (symbol == CONTINUETK) {	//continue ;
 		//printMessage();    //输出continue信息
+		/*
 		CodeItem citem = CodeItem(BR, "", whileLabel[whileLabel.size() - 1], ""); //br %while.cond 
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
+		*/
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
