@@ -106,7 +106,7 @@ void MIR2LIRpass() {
 
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
-			dealNumber(instr);
+			//dealNumber(instr);
 			irCodeType op = instr.getCodetype();
 			string res = instr.getResult();
 			string ope1 = instr.getOperand1();
@@ -527,7 +527,7 @@ void irOptimize() {
 	printLIR("armIR.txt");
 
 	//窥孔优化
-	//peepholeOptimization();
+	peepholeOptimization();
 
 	printLIR("armIR_2.txt");
 
