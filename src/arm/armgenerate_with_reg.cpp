@@ -13,6 +13,7 @@ vector<string> output_buffer;
 int symbol_pointer;
 map<string, int> var2addr;//记录函数内的绝对地址,结果减去sp得到相对偏移
 int sp; //跟踪sp
+int sp_without_para;
 int pushNum = 0;//记录传参顺序
 string global_var_name;
 int global_var_size = 1;
@@ -81,7 +82,6 @@ string getname(string ir_name)
 	if (ir_name[0] == '@') {
 		return ir_name.substr(1);
 	}
-	return ir_name;	// 新增by lzh
 }
 
 pair<string, int> get_location(string name)
@@ -139,7 +139,7 @@ void _define(CodeItem* ir)
 	var2addr.clear();
 	int paraNum;
 	int paraIndex = 0;
-	int sp_without_para;
+	sp_without_para = 0;
 	sp = 0;
 	for (symbolTable st : total[symbol_pointer]) {
 		formType form = st.getForm();
@@ -740,12 +740,12 @@ void _ret(CodeItem* ir)
 		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
 		fake_sp += func2gReg[symbol_pointer].size() * 4;
 	}
-	if (-fake_sp > 127 || fake_sp > 127) {
-		OUTPUT("LDR R12,=" + to_string(-fake_sp));
+	if (sp_without_para-fake_sp > 127) {
+		OUTPUT("LDR R12,=" + to_string(sp_without_para-fake_sp));
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(-fake_sp));
+		OUTPUT("ADD SP,SP,#" + to_string(sp_without_para-fake_sp));
 	}
 	OUTPUT("MOV PC,LR");
 }
@@ -832,6 +832,13 @@ void _note(CodeItem* ir) {
 		if (paraN > 4) {
 			int off = (paraN - 4) * 4;
 			sp += off;
+			if (off > 127 || off < -127) {
+				OUTPUT("LDR LR,=" + to_string(off));
+				OUTPUT("ADD SP,SP,LR");
+			}
+			else {
+				OUTPUT("ADD SP,SP,#" + to_string(off));
+			}
 		}
 	}
 }
