@@ -83,6 +83,7 @@ symbolTable checkItem(string checkname)             //查表：在传参时判�
 			return total[0][i];
 		}
 	}
+	exit(0);	// 新增by lzh
 }
 //生成目标语言引入变量
 int paraIntNode = 0;		  //记录数组是否作为参数
@@ -2040,6 +2041,7 @@ symbolTable checkTable(string checkname, int function_number, vector<int> father
 			return total[0][i];
 		}
 	}
+	exit(0);	// 新增by lzh
 }
 void change(int index)	//修改中间代码、符号表
 {

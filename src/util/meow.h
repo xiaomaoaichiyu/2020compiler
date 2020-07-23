@@ -66,7 +66,7 @@ namespace meow {
 				return true;
 			}
 			else if (x.size() > 1 && x.at(0) == '+' && isdigit(x.at(1))) {
-
+				return true;	// 新增by lzh
 			}
 			else {
 				return false;
