@@ -16,8 +16,8 @@ int sp; //¸ú×Ùsp
 int sp_without_para;
 int pushNum = 0;//¼ÇÂ¼´«²ÎË³Ðò
 string global_var_name;
-int global_var_size = 1;
-vector<string> ini_value;
+int global_var_size = 0;
+vector<pair<string,int>> ini_value;
 bool is_global = true;
 string reglist = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR,R0";
 string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
@@ -36,12 +36,29 @@ bool check_format(CodeItem * ir) {
 
 void global_flush()
 {
-	if (ini_value.size() == 0) {
+	if (global_var_size == 0) {
 		return;
 	}
 	OUTPUT(".data");
 	OUTPUT(global_var_name + ":");
-	int zero_cnt = 0;
+	int pre = 0;
+	int off;
+	for (auto p : ini_value) {
+		off = p.second;
+		if (off == pre) {
+			OUTPUT(".word " + p.first);
+		}
+		else {
+			OUTPUT(".zero " + to_string(off - pre));
+			OUTPUT(".word " + p.first);
+		}
+		pre = off + 4;
+	}
+	if (pre != global_var_size * 4) {
+		OUTPUT(".zero " + to_string(global_var_size * 4 - pre));
+	}
+
+	/*int zero_cnt = 0;
 	for (string v : ini_value) {
 		if (v == "") {
 			zero_cnt++;
@@ -56,20 +73,10 @@ void global_flush()
 	}
 	if (zero_cnt != 0) {
 		OUTPUT(".zero " + to_string(zero_cnt * 4));
-	}
-	/*string out = "";
-	for (string v : ini_value) {
-		out += "," + v;
-	}
-	if (out != "") {
-		OUTPUT("	.word " + out.substr(1));
-	}
-	int zero_space = (global_var_size - ini_value.size())*4;
-	if (zero_space > 0) {
-		OUTPUT("	.zero " + to_string(zero_space));
 	}*/
 	OUTPUT(".text");
 	ini_value.clear();
+	global_var_size = 0;
 }
 
 string get_cmp_label(string logistic) {
@@ -112,20 +119,21 @@ void _global(CodeItem* ir)
 	global_var_size = size;
 	if (size > 1) {
 		global_var_name = name;
-		for (int i = 0; i < size; i++) {
+		/*for (int i = 0; i < size; i++) {
 			ini_value.push_back("");
-		}
+		}*/
 		//OUTPUT(name + ": .zero " + to_string(size * 4));
 	}
 	else {
 		if (value == "") {
 			global_var_name = name;
-			ini_value.push_back("");
+			//ini_value.push_back("");
 		}
 		else {
 			OUTPUT(".data");
 			OUTPUT(name + ": .word " + value);
 			OUTPUT(".text");
+			global_var_size = 0;
 		}
 	}
 }
@@ -311,8 +319,8 @@ void _storearr(CodeItem* ir)
 {
 	if (is_global) {
 		string value = ir->getResult();
-		int off = stoi(ir->getOperand2())/4;
-		ini_value[off] = value;
+		int off = stoi(ir->getOperand2());
+		ini_value.push_back({ value,off });
 		return;
 	}
 	string value = ir->getResult();
