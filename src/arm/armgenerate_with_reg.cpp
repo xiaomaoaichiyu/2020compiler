@@ -827,8 +827,9 @@ void _note(CodeItem* ir) {
 	string name = ir->getResult();
 	string type = ir->getOperand1();
 	string status = ir->getOperand2();
-	if (type == "func" && status == "end") {
-		int paraN = func2para[name.substr(1)];
+	if (type == "func" && status.substr(0,3) == "end") {
+		//int paraN = func2para[name.substr(1)];
+		int paraN = stoi(status.substr(3));
 		if (paraN > 4) {
 			int off = (paraN - 4) * 4;
 			sp += off;
