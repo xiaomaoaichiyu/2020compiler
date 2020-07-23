@@ -403,8 +403,8 @@ void registerAllocation() {
 			else if (op == BR) {
 				if (isVreg(ope1)) {
 					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+					regpool.releaseVreg(ope1);
 				}
-				regpool.releaseVreg(ope1);
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else if (op == ALLOC) {
