@@ -81,6 +81,7 @@ string getname(string ir_name)
 	if (ir_name[0] == '@') {
 		return ir_name.substr(1);
 	}
+	return ir_name;	// ĞÂÔöby lzh
 }
 
 pair<string, int> get_location(string name)

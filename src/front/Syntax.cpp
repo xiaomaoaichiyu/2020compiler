@@ -83,6 +83,7 @@ symbolTable checkItem(string checkname)             //查表：在传参时判�
 			return total[0][i];
 		}
 	}
+	exit(0);	// 新增by lzh
 }
 //生成目标语言引入变量
 int paraIntNode = 0;		  //记录数组是否作为参数
@@ -1457,6 +1458,31 @@ void Stmt()              //语句
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();  //预读
+		while (symbol != SEMICN && symbol != ASSIGN) {
+			wordAnalysis.getsym();
+			symbol = wordAnalysis.getSymbol();
+		}
+		//恢复出厂设置
+		wordAnalysis.setfRecord(record_tag);
+		wordAnalysis.setSymbol(sym_tag);
+		wordAnalysis.setToken(token_tag);
+		if (symbol == ASSIGN) {
+			symbol = sym_tag;
+			assignStmt();
+			printMessage();    //输出;信息
+			wordAnalysis.getsym();
+			symbol = wordAnalysis.getSymbol();
+			token = wordAnalysis.getToken();//预读
+		}
+		else {
+			symbol = sym_tag;
+			Exp();					//CALL函数在EXP中存在
+			printMessage();  //输出分号
+			wordAnalysis.getsym();
+			symbol = wordAnalysis.getSymbol();
+			token = wordAnalysis.getToken();  //预读
+		}
+		/*
 		if (symbol == LPARENT) {	//该语句为调用无返回值函数；
 			wordAnalysis.setfRecord(record_tag);
 			wordAnalysis.setSymbol(sym_tag);
@@ -1495,9 +1521,15 @@ void Stmt()              //语句
 				symbol = wordAnalysis.getSymbol();
 				token = wordAnalysis.getToken();//预读
 			}
-		}
+		}*/
 	}
 	else {						//Exp ; 这里直接跳过，没影响
+		Exp();
+		printMessage();  //输出分号
+		wordAnalysis.getsym();
+		symbol = wordAnalysis.getSymbol();
+		token = wordAnalysis.getToken();  //预读
+		/*
 		while (symbol != SEMICN) {
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
@@ -1506,6 +1538,7 @@ void Stmt()              //语句
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
+		*/
 	}
 	//退出前均预读
 	//outfile << "<语句>" << endl;
@@ -2008,6 +2041,7 @@ symbolTable checkTable(string checkname, int function_number, vector<int> father
 			return total[0][i];
 		}
 	}
+	exit(0);	// 新增by lzh
 }
 void change(int index)	//修改中间代码、符号表
 {
