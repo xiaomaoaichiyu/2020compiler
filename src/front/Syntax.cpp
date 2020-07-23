@@ -177,11 +177,18 @@ int frontExecute(string syname)
 		vector<CodeItem> item = codetotal[i];
 		int size = item.size();
 		if (size > 0) {
-			if (item[0].getCodetype() == DEFINE && item[0].getOperand1() == "void") {
+			if (item[0].getCodetype() == DEFINE && (item[0].getOperand1() == "void"|| item[0].getOperand1() == "int")) {
 				if (item[size - 1].getCodetype() != RET) {
-					CodeItem citem = CodeItem(RET, "", "", "void");
-					citem.setFatherBlock(fatherBlock);
-					codetotal[i].push_back(citem);
+					if (item[0].getOperand1() == "void") {
+						CodeItem citem = CodeItem(RET, "", "", "void");
+						citem.setFatherBlock(fatherBlock);
+						codetotal[i].push_back(citem);
+					}
+					else {
+						CodeItem citem = CodeItem(RET, "", "0", "int");
+						citem.setFatherBlock(fatherBlock);
+						codetotal[i].push_back(citem);
+					}
 				}
 			}
 		}
