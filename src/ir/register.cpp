@@ -311,7 +311,7 @@ void registerAllocation() {
 			}
 			else if (op == LOAD) {
 				if (ope2 == "para") {	//加载数组参数的地址
-					if (var2reg.find(ope1) != var2reg.end()) {	//有寄存器
+					if (!(var2reg[ope1] == "memory")) {	//有寄存器
 						instr.setCodetype(MOV);
 						resReg = allocTmpReg(regpool, res, funcTmp);
 						instr.setInstr("", resReg, var2reg[ope1]);
