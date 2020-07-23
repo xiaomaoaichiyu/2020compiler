@@ -1215,7 +1215,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			codetotal[Funcindex].push_back(citem3);//函数引用
 			interRegister = "%" + numToString(Temp);
 			Temp++;*/
-			CodeItem citem4 = CodeItem(NOTE, "@"+Functionname, "func", "end");          //call @foo %3 3
+			CodeItem citem4 = CodeItem(NOTE, "@"+Functionname, "func", "end"+numToString(paraNum));          //call @foo %3 3
 			citem4.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem4);//函数结束注释
 		}
