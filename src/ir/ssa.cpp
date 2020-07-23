@@ -885,13 +885,13 @@ void SSA::generate() {
 	build_var_chain();
 
 	// 在需要添加基本块的开始添加\phi函数
-	add_phi_function();
+	// add_phi_function();
 
 	// 变量重命名
 	renameVar();
 
 	// 处理\phi函数
-	deal_phi_function();
+	// deal_phi_function();
 
 	// 优化
 	// ssa_optimize();
