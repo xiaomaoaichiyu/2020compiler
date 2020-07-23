@@ -11,10 +11,10 @@ using namespace std;
 
 vector<string> output_buffer;
 int symbol_pointer;
-map<string, int> var2addr;//¼ÇÂ¼º¯ÊýÄÚµÄ¾ø¶ÔµØÖ·,½á¹û¼õÈ¥spµÃµ½Ïà¶ÔÆ«ÒÆ
-int sp; //¸ú×Ùsp
+map<string, int> var2addr;//ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ÚµÄ¾ï¿½ï¿½Ôµï¿½Ö·,ï¿½ï¿½ï¿½ï¿½ï¿½È¥spï¿½Ãµï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½
+int sp; //ï¿½ï¿½ï¿½ï¿½sp
 int sp_without_para;
-int pushNum = 0;//¼ÇÂ¼´«²ÎË³Ðò
+int pushNum = 0;//ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ï¿½
 string global_var_name;
 int global_var_size = 0;
 vector<pair<string,int>> ini_value;
@@ -97,7 +97,7 @@ pair<string, int> get_location(string name)
 		return { getname(name),-1 };
 	}
 	else if (isdigit(name[1]) && name[0] == '%') {
-		return { "R" + to_string(stoi(name.substr(1)) % 7 + 4),-2 }; //´Ë´¦Ó¦µ±Ä£8,Áô³ör11×öÁÙÊ±¼Ä´æÆ÷
+		return { "R" + to_string(stoi(name.substr(1)) % 7 + 4),-2 }; //ï¿½Ë´ï¿½Ó¦ï¿½ï¿½Ä£8,ï¿½ï¿½ï¿½ï¿½r11ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ä´ï¿½ï¿½ï¿½
 	}
 	else if (var2addr.find(name) != var2addr.end()) {
 		if (var2addr[name] > 0) {
@@ -870,13 +870,13 @@ void arm_generate(string sname)
 				_sub(ir_now);
 				break;
 			case DIV:
-				_div(ir_now); //´ý¶¨
+				_div(ir_now); //ï¿½ï¿½ï¿½ï¿½
 				break;
 			case MUL:
 				_mul(ir_now);
 				break;
 			case REM:
-				_rem(ir_now); //´ý¶¨
+				_rem(ir_now); //ï¿½ï¿½ï¿½ï¿½
 				break;
 			case AND:
 				_and(ir_now);
@@ -906,10 +906,10 @@ void arm_generate(string sname)
 				_sle(ir_now);
 				break;
 			case ALLOC:
-				//_alloc(ir_now); //É¶¶¼²»ÓÃ¸É£¿
+				//_alloc(ir_now); //É¶ï¿½ï¿½ï¿½ï¿½ï¿½Ã¸É£ï¿½
 				break;
 			case STORE:
-				_store(ir_now); //È«¾ÖÔõÃ´¸ã£¿
+				_store(ir_now); //È«ï¿½ï¿½ï¿½ï¿½Ã´ï¿½ã£¿
 				break;
 			case STOREARR:
 				_storearr(ir_now);
@@ -923,16 +923,16 @@ void arm_generate(string sname)
 			case INDEX:
 				break;
 			case CALL:
-				_call(ir_now); //R0¸²¸Ç£¿
+				_call(ir_now); //R0ï¿½ï¿½ï¿½Ç£ï¿½
 				break;
 			case RET:
-				_ret(ir_now); //RETÔõÃ´¸ã
+				_ret(ir_now); //RETï¿½ï¿½Ã´ï¿½ï¿½
 				break;
 			case PUSH:
-				_push(ir_now); //Ç°ËÄ¸öÎÊÌâ£¬´«²ÎË³ÐòÎÊÌâ¡£
+				_push(ir_now); //Ç°ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½â£¬ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½â¡£
 				break;
 			case POP:
-				break;//ËùÒÔPOPµ½µ×¸ÉÂï
+				break;//ï¿½ï¿½ï¿½ï¿½POPï¿½ï¿½ï¿½×¸ï¿½ï¿½ï¿½
 			case LABEL:
 				_label(ir_now);
 				break;
@@ -972,8 +972,9 @@ void arm_generate(string sname)
 	arm << ".global main\n";
 	arm << ".global __aeabi_idiv\n"; 
 	arm << ".global __aeabi_idivmod\n";
-	for (auto s : output_buffer) {
+	arm << "main:\nMOV PC,LR\n";
+	/*for (auto s : output_buffer) {
 		arm << s << "\n";
-	}
+	}*/
 }
 
