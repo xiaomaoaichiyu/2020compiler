@@ -177,18 +177,11 @@ int frontExecute(string syname)
 		vector<CodeItem> item = codetotal[i];
 		int size = item.size();
 		if (size > 0) {
-			if (item[0].getCodetype() == DEFINE && (item[0].getOperand1() == "void"|| item[0].getOperand1() == "int")) {
+			if (item[0].getCodetype() == DEFINE && item[0].getOperand1() == "void") {
 				if (item[size - 1].getCodetype() != RET) {
-					if (item[0].getOperand1() == "void") {
-						CodeItem citem = CodeItem(RET, "", "", "void");
-						citem.setFatherBlock(fatherBlock);
-						codetotal[i].push_back(citem);
-					}
-					else {
-						CodeItem citem = CodeItem(RET, "", "0", "int");
-						citem.setFatherBlock(fatherBlock);
-						codetotal[i].push_back(citem);
-					}
+					CodeItem citem = CodeItem(RET, "", "", "void");
+					citem.setFatherBlock(fatherBlock);
+					codetotal[i].push_back(citem);
 				}
 			}
 		}
@@ -751,6 +744,12 @@ void VarDef(int index, int block)             //变量定义
 		nodeName = name;
 
 		InitVal(index);
+	}else {		//自动给未初始化的局部变量赋0
+		if (b == "%" && dimenson == 0) {
+			CodeItem citem = CodeItem(STORE, "0", b + name, "");	//赋值单值
+			citem.setFatherBlock(fatherBlock);
+			codetotal[index].push_back(citem);
+		}
 	}
 	//退出循环前已经预读单词
 	//outfile << "<变量定义>" << endl;
