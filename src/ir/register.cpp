@@ -23,15 +23,6 @@ void RegPool::markParaReg(string reg, string Vreg) {
 	vreguse.push_back(Vreg);
 }
 
-bool RegPool::checkParaRegUsed(string reg) {
-	if (reg2avail[reg] == true) {
-		return false;
-	}
-	else {
-		return true;
-	}
-}
-
 string RegPool::getAndAllocReg(string vreg) {
 	string tmpReg = haveAvailReg();
 	if (tmpReg == "No reg!") {
@@ -41,17 +32,6 @@ string RegPool::getAndAllocReg(string vreg) {
 	vreguse.push_back(vreg);	// vreguse
 	reg2avail[tmpReg] = false;	// 标记为被占用
 	return tmpReg;
-}
-
-void RegPool::releaseReg(string reg) {
-	reg2avail[reg] = true;
-	for (auto it = vreg2reg.begin(); it != vreg2reg.end();) {
-		if (it->second == reg) {
-			it = vreg2reg.erase(it);
-			continue;
-		}
-		it++;
-	}
 }
 
 void RegPool::releaseVreg(string vreg) {
@@ -72,35 +52,11 @@ void RegPool::releaseVreg(string vreg) {
 	}
 }
 
-//void releaseStack(string vreg) {
-//
-//}
-
-//溢出指定的寄存器，用于参数寄存器的溢出
-pair<string, string> RegPool::spillReg(string reg) {
-	string vReg = "";
-	for (auto one : vreg2reg) {
-		if (one.second == reg) {
-			vReg = one.first;			//spill的虚拟寄存器vReg
-			break;
-		}
-	}	
-	string spillReg = reg;
-	reg2avail[spillReg] = true;			//对应的物理寄存器标记为可用
-	vreg2spill[vReg] = true;			//有用？？待考虑！！
-	stackOffset += 4;
-	releaseVreg(vReg);					//释放vReg的物理寄存器
-	return pair<string, string>(vReg, spillReg);
-}
-
-
 pair<string, string> RegPool::spillReg() {
 	string vReg = vreguse.front();		//spill的虚拟寄存器vReg
 	string spillReg = vreg2reg[vReg];
 	reg2avail[spillReg] = true;			//对应的物理寄存器标记为可用
-	vreg2Offset[vReg] = stackOffset;	//vReg在栈的偏移
-	vreg2spill[vReg] = true;
-	stackOffset += 4;
+	vreg2spill[vReg] = true;			//标记对应的VR为溢出状态
 	releaseVreg(vReg);					//释放vReg的物理寄存器
 	return pair<string, string>(vReg, spillReg);
 }
@@ -112,11 +68,6 @@ vector<pair<string, string>> RegPool::spillAllRegs() {
 		res.push_back(spillReg());
 	}
 	return res;
-}
-
-int RegPool::getStackOffset(string vreg)
-{
-	return vreg2Offset[vreg];
 }
 
 //private

@@ -22,8 +22,6 @@ class RegPool {
 
 	map<string, bool> vreg2spill;			//记录是否被溢出
 	vector<string> vreguse;					//记录虚拟寄存器分配的时间，用于抢占物理寄存器的退出策略
-	int stackOffset = 0;
-	map<string, int> vreg2Offset;			//记录被spiil的临时变量在栈中的偏移
 public:
 	RegPool(vector<string> regs) : pool(regs) {
 		for (int i = 0; i < regs.size(); i++) {
@@ -32,14 +30,10 @@ public:
 	}
 	string getReg(string vreg);
 	void markParaReg(string reg, string Vreg);
-	bool checkParaRegUsed(string reg);
 	string getAndAllocReg(string vreg);
-	void releaseReg(string reg);
 	void releaseVreg(string vreg);
 	pair<string, string> spillReg();				//返回 <寄存器, 虚拟寄存器> 
-	pair<string, string> spillReg(string reg);		//溢出指定的寄存器
 	vector<pair<string, string>> spillAllRegs();
-	int getStackOffset(string vreg);
 private:
 	string haveAvailReg();
 	string allocReg();
