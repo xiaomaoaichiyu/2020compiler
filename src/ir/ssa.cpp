@@ -796,6 +796,14 @@ void SSA::rename_back() {
 			}
 		}
 	}
+	// 将中间代码存回codetotal
+	for (int i = 1; i < size1; i++) {		// 遍历函数
+		codetotal[i].clear();
+		int size2 = blockCore[i].size();
+		for (int j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry和exit块
+			codetotal[i].insert(codetotal[i].end(), blockCore[i][j].Ir.begin(), blockCore[i][j].Ir.end());
+		}
+	}
 }
 
 // 处理\phi函数
@@ -886,10 +894,10 @@ void SSA::generate() {
 	deal_phi_function();
 
 	// 优化
-	ssa_optimize();
+	// ssa_optimize();
 
 	// 恢复变量命名
-	// rename_back();
+	rename_back();
 
 	// 测试输出上面各个函数
 	Test_SSA();
