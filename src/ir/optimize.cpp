@@ -515,21 +515,24 @@ void irOptimize() {
 	//SSA ssa;
 	//ssa.generate();
 
+	try {
+		//寄存器分配优化
+		MIR2LIRpass();
+		printLIR("LIR.txt");
+		countVars();
 
-	//寄存器分配优化
-	MIR2LIRpass();
-	printLIR("LIR.txt");
-	countVars();
+		//寄存器直接指派
+		registerAllocation();
 
-	//寄存器直接指派
-	registerAllocation();
+		printLIR("armIR.txt");
 
-	printLIR("armIR.txt");
+		//窥孔优化
+		peepholeOptimization();
 
-	//窥孔优化
-	peepholeOptimization();
-
-	printLIR("armIR_2.txt");
-
+		printLIR("armIR_2.txt");
+	}
+	catch (exception e){
+		exit(0);
+	}
 }
 
