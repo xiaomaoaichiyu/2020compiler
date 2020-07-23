@@ -49,5 +49,6 @@ int main(int argc, char* argv[])
 	//运行后端，生成arm代码
 	arm_generate(sname);
 
+
 	return 0;
 }

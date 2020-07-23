@@ -124,7 +124,6 @@ void setVrIndex(string vr) {
 		vr2index[vr] = vrNum++;
 	}
 }
-
 //中间变量的存储----------------------------------------
 
 int callLayer = -1;
@@ -252,9 +251,6 @@ void registerAllocation() {
 					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 					regpool.releaseVreg(ope2);
 				}
-				else if (isString(ope2)) {
-					
-				}
 				if (isVreg(ope1)) {
 					ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
 				}
@@ -262,7 +258,7 @@ void registerAllocation() {
 			}
 			else if (op == LOAD) {
 				if (ope2 == "para") {	//加载数组参数的地址
-					if (!(var2reg[ope1] == "memory")) {	//有寄存器
+					if (var2reg[ope1] != "memory") {	//有寄存器
 						instr.setCodetype(MOV);
 						resReg = allocTmpReg(regpool, res, funcTmp);
 						instr.setInstr("", resReg, var2reg[ope1]);
@@ -273,7 +269,7 @@ void registerAllocation() {
 					}
 				}
 				else if (ope2 == "array") {	//加载局部数组的地址
-					if (var2reg.find(ope1) != var2reg.end()) {	//有寄存器
+					if (var2reg[ope1] != "memory") {	//有寄存器
 						resReg = var2reg[ope1];
 					}
 					else {
@@ -320,15 +316,8 @@ void registerAllocation() {
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 					else {					//栈数组
-						/*if (var2reg[ope1] == "memory") {*/
 						resReg = allocTmpReg(regpool, res, funcTmp);
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
-						/*}
-						else {
-							resReg = var2reg[ope1];
-							vreg2varReg[res] = resReg;
-							instr.setInstr(resReg, ope1Reg, ope2Reg);
-						}*/
 					}
 				}
 				else {					//偏移是寄存器
@@ -341,19 +330,10 @@ void registerAllocation() {
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 					else {					//栈数组
-						/*if (var2reg[ope1] == "memory") {*/
 						ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 						regpool.releaseVreg(ope2);
 						resReg = allocTmpReg(regpool, res, funcTmp);
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
-						/*}
-						else {
-							ope2Reg = getTmpReg(regpool, ope2, funcTmp);
-							regpool.releaseReg(ope2);
-							resReg = var2reg[ope1];
-							vreg2varReg[res] = resReg;
-							instr.setInstr(resReg, ope1Reg, ope2Reg);
-						}*/
 					}
 				}
 			}
