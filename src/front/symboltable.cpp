@@ -40,8 +40,10 @@ void symbolTable::setMatrixLength(vector<int> a)
 		for (int j = 0; j < a.size(); j++) {
 			i = i * a[j];
 		}
-		vector<int> b(i,0);  //初始化b大小为i而且每个元素值均为0
-		this->intValue = b;
+		if (this->getForm() == CONSTANT) {
+			vector<int> b(i, 0);  //初始化b大小为i而且每个元素值均为0
+			this->intValue = b;
+		}
 	}
 }
 vector<int> symbolTable::getMatrixLength()
