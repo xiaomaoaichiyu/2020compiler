@@ -138,6 +138,7 @@ string allocTmpReg(RegPool& regpool, std::string res, std::vector<CodeItem>& fun
 	if (reg == res) {	//没有临时寄存器了
 		pair<string, string> tmp = regpool.spillReg();	//溢出了寄存器
 		setVrIndex(tmp.first);
+		//溢出的寄存器是参数寄存器就标记为true;
 		if (callLayer >= 0 && callRegs.at(callLayer).find(tmp.second) != callRegs.at(callLayer).end()) {
 			paraReg2push.at(callLayer)[tmp.second] = true;
 		}
@@ -192,6 +193,11 @@ void registerAllocation() {
 		callLayer = -1;
 		callRegs.clear();		//存储 r[0-3] <-> VR[0-9]
 		paraReg2push.clear();	//参数寄存器被压栈保存的（其实是str保存）
+		
+		//这个地方可以优化，
+		//1. 局部数组实际上并不需要寄存器
+		//2. 活跃变量分析动态释放不再使用的变量占用的寄存器
+								
 		//无脑指派局部变量
 		int i = 0;
 		for (; i < vars.size(); i++) {
