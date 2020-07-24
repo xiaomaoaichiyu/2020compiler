@@ -635,7 +635,7 @@ void SSA::renameVar() {
 			if ((total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) && varPool.find(total[i][j].getName()) == varPool.end()) 
 				varPool[total[i][j].getName()] = 0;
 		// 记录每个基本块中最后出现的变量名
-		map<string, map<int, string>> lastVarName;
+		map<string, map<int, string>> lastVarName;	// <varName, <blkNum, varName_SSA>>
 		for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) { map<int, string> m;  lastVarName[iter->first] = m; }
 		// 以基本块为单位遍历中间代码
 		int size3 = blockCore[i].size();
@@ -684,6 +684,7 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getResult()].push_back(tmp);
 					}
 					// 更新op2的变量名
 					ci = blockCore[i][j].Ir[k];
@@ -703,6 +704,7 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getOperand2()].push_back(tmp);
 					}
 				}
 				else {
@@ -732,6 +734,7 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getOperand1()].push_back(tmp);
 					}
 					// 更新op2的变量名
 					ci = blockCore[i][j].Ir[k];
@@ -751,6 +754,7 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getOperand2()].push_back(tmp);
 					}
 				}
 			}
@@ -891,7 +895,7 @@ void SSA::generate() {
 	renameVar();
 
 	// 处理\phi函数
-	// deal_phi_function();
+	deal_phi_function();
 
 	// 优化
 	// ssa_optimize();
