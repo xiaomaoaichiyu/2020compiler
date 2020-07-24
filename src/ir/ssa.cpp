@@ -6,15 +6,6 @@
 
 using namespace std;
 
-// 用于输出的显示效果
-string standardOutput(string str)
-{
-	while (str.size() < 15) {
-		str = str + " ";
-	}
-	return str;
-}
-
 // 判断是否是临时变量
 // 可用于通过判断br语句的result操作数选出相应的标签名称
 // br tmpReg label1 label2
@@ -232,8 +223,7 @@ void SSA::build_dom_tree() {
 		// Domin(r) := {r}
 		blockCore[i][0].domin.insert(0);
 		// for each n except r: Domin(n) := N
-		for (j = 1; j < size2; j++) 
-			// if (!blockCore[i][j].pred.empty()) // 在该基本块可达的情况下再初始化
+		for (j = 1; j < size2; j++)
 				blockCore[i][j].domin.insert(N.begin(), N.end());
 		bool change = true;
 		while (change) {
@@ -576,9 +566,10 @@ int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited
 	if (s1.find(name) != s1.end() || s2.find(name) != s2.end()) return blkNum;
 	// 如果该基本块要插入的\phi函数中包含该变量，也算该基本块使用了该变量
 	set<int> s3;  varStruct vs(name, s3);
-	for (int i = 0; i < varChain[funNum].size(); i++) if (varChain[funNum][i].name.compare(vs.name) == 0) {
-		vs = varChain[funNum][i]; break;
-	}
+	for (int i = 0; i < varChain[funNum].size(); i++) 
+		if (varChain[funNum][i].name.compare(vs.name) == 0) {
+			vs = varChain[funNum][i]; break;
+		}
 	if (vs.blockNums.find(blkNum) != vs.blockNums.end()) return blkNum;
 	// 在该基本块的前驱节点中再继续找
 	set<int> pred = blockCore[funNum][blkNum].pred;
@@ -769,7 +760,8 @@ void SSA::renameVar() {
 			for (k = 0; k < size6; k++) {
 				phiFun pf = blockCore[i][j].phi[k];
 				for (vector<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
-					blockCore[i][j].phi[k].subIndexs.push_back(lastVarName[pf.primaryName][*iter]);
+					if (lastVarName[pf.primaryName].find(*iter) != lastVarName[pf.primaryName].end())
+						blockCore[i][j].phi[k].subIndexs.push_back(lastVarName[pf.primaryName][*iter]);
 			}
 		}
 	}
@@ -817,9 +809,13 @@ void SSA::deal_phi_function() {
 	for (i = 1; i < size1; i++) {	// 遍历函数，跳过全局定义
 		int size2 = blockCore[i].size();
 		for (j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry块和exit块
-			int size3 = blockCore[i][j].phi.size();
-			for (k = 0; k < size3; k++) {
+			for (k = 0; k < blockCore[i][j].phi.size(); k++) {
 				phiFun pf = blockCore[i][j].phi[k];
+				if (pf.subIndexs.size() <= 1) {	// 如果对应的选择只有一个则不用添加phi函数
+					blockCore[i][j].phi.erase(blockCore[i][j].phi.begin() + k);
+					k--;
+					continue;
+				}
 				for (m = 0; m < pf.blockNums.size(); m++) {
 					// e.g. x3 = \phi(x1, x2)
 					// 在x1和x2的基本块末尾分别添加x3 = x1; x3 = x2; 赋值语句
