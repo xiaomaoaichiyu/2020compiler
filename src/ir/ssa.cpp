@@ -899,10 +899,10 @@ void SSA::generate() {
 	// 优化
 	// ssa_optimize();
 
-	// 恢复变量命名
-	rename_back();
-
 	// 测试输出上面各个函数
 	Test_SSA();
+
+	// 恢复变量命名
+	rename_back();
 
 }
