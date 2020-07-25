@@ -9,10 +9,8 @@
 
 // 在睿轩生成的中间代码做优化
 void SSA::pre_optimize() {
-	// 简化条件判断为常值的跳转指令
-	// simplify_br();
 	// 简化load和store指令相邻的指令
-	load_and_store();
+	// load_and_store();
 	// 简化加减0、乘除模1这样的指令
 	// simplify_add_minus_multi_div_mod();
 	// 简化紧邻的跳转
