@@ -897,7 +897,7 @@ void SSA::generate() {
 	deal_phi_function();
 
 	// 优化
-	// ssa_optimize();
+	ssa_optimize();
 
 	// 测试输出上面各个函数
 	Test_SSA();
