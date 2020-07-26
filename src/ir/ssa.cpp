@@ -851,7 +851,7 @@ void SSA::generate() {
 	simplify_br();
 
 	// 在睿轩生成的中间代码上做优化
-	// pre_optimize();
+	pre_optimize();
 
 	// 计算每个基本块的起始语句
 	find_primary_statement();
@@ -904,5 +904,8 @@ void SSA::generate() {
 
 	// 恢复变量命名
 	rename_back();
+
+	// 恢复为之前中间代码形式后再做一次无用代码删除
+	pre_optimize();
 
 }
