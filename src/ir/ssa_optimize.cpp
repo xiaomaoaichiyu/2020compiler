@@ -25,6 +25,10 @@ void SSA::ssa_optimize() {
 	active_var_analyse();
 	// 死代码删除
 	delete_dead_codes();
+	// 重新计算use-def关系
+	build_def_use_chain();
+	// 重新进行活跃变量分析
+	active_var_analyse();
 	// 函数内联
 	//judge_inline_function();
 	//inline_function();
@@ -336,25 +340,25 @@ void SSA::delete_dead_codes() {
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
 						}
 						else {
-							if (ifTempVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1())) tmpout.insert(ci.getOperand1());
-							if (ifTempVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2())) tmpout.insert(ci.getOperand2());
+							if (!ifDigit(ci.getOperand1())) tmpout.insert(ci.getOperand1());
+							if (!ifDigit(ci.getOperand2())) tmpout.insert(ci.getOperand2());
 						}
 						break;
 					case STORE:
-						if (tmpout.find(ci.getOperand1()) == tmpout.end()) {
+						if (tmpout.find(ci.getOperand1()) == tmpout.end() && !ifGlobalVariable(ci.getOperand1())) {
 							update = true;
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
 						}
 						else {
-							if (ifTempVariable(ci.getResult()) || ifLocalVariable(ci.getResult())) tmpout.insert(ci.getResult());
+							if (!ifDigit(ci.getResult())) tmpout.insert(ci.getResult());
 						}
 						break;
 					case STOREARR: case LOADARR:	// 数组不敢删除
 					case CALL: case RET: case PUSH: case PARA:	// 与函数相关，不能删除
 					case BR:	// 跳转指令不能删除
-						if (ifTempVariable(ci.getResult()) || ifLocalVariable(ci.getResult())) tmpout.insert(ci.getResult());
-						if (ifTempVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1())) tmpout.insert(ci.getOperand1());
-						if (ifTempVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2())) tmpout.insert(ci.getOperand2());
+						if (!ifDigit(ci.getResult())) tmpout.insert(ci.getResult());
+						if (!ifDigit(ci.getOperand1())) tmpout.insert(ci.getOperand1());
+						if (!ifDigit(ci.getOperand2())) tmpout.insert(ci.getOperand2());
 						break;
 					case LABEL: case DEFINE: case ALLOC: case GLOBAL: case NOTE:
 						// 不做处理
