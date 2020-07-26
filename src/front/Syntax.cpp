@@ -744,12 +744,6 @@ void VarDef(int index, int block)             //变量定义
 		nodeName = name;
 
 		InitVal(index);
-	}else {		//自动给未初始化的局部变量赋0
-		if (b == "%" && dimenson == 0) {
-			CodeItem citem = CodeItem(STORE, "0", b + name, "");	//赋值单值
-			citem.setFatherBlock(fatherBlock);
-			codetotal[index].push_back(citem);
-		}
 	}
 	//退出循环前已经预读单词
 	//outfile << "<变量定义>" << endl;
