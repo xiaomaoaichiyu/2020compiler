@@ -280,23 +280,29 @@ void SSA::build_idom_tree() {
 			// foreach s
 			set<int> tmp;
 			for (set<int>::iterator iter1 = blockCore[i][j].tmpIdom.begin(); iter1 != blockCore[i][j].tmpIdom.end(); iter1++) {
-				set<int> tmp1, tmp2;
+				if (tmp.find(*iter1) != tmp.end()) continue;
+				set<int> tmp1, tmp2, tmp3;
 				tmp1.insert(*iter1);
 				set_difference(blockCore[i][j].tmpIdom.begin(), blockCore[i][j].tmpIdom.end(), tmp1.begin(), tmp1.end(), inserter(tmp2, tmp2.begin()));
+				set_difference(tmp2.begin(), tmp2.end(), tmp.begin(), tmp.end(), inserter(tmp3, tmp3.begin()));
 				// foreach t
-				for (set<int>::iterator iter2 = tmp2.begin(); iter2 != tmp2.end(); iter2++) {
+				for (set<int>::iterator iter2 = tmp3.begin(); iter2 != tmp3.end(); iter2++) {
 					if (blockCore[i][*iter1].tmpIdom.find(*iter2) != blockCore[i][*iter1].tmpIdom.end()) {
 						tmp.insert(*iter2);
 					}
 				}
 			}
-			set<int> tmp3;
-			set_difference(blockCore[i][j].tmpIdom.begin(), blockCore[i][j].tmpIdom.end(), tmp.begin(), tmp.end(), inserter(tmp3, tmp3.begin()));;
-			blockCore[i][j].tmpIdom = tmp3;
+			set<int> tmp4;
+			set_difference(blockCore[i][j].tmpIdom.begin(), blockCore[i][j].tmpIdom.end(), tmp.begin(), tmp.end(), inserter(tmp4, tmp4.begin()));;
+			blockCore[i][j].tmpIdom = tmp4;
 		}
 		// foreach n
 		for (j = 1; j < size2; j++)
-			if (!blockCore[i][j].tmpIdom.empty())
+			if (blockCore[i][j].tmpIdom.empty())
+				continue;
+			else if (blockCore[i][j].tmpIdom.size() > 1)
+				cout << i << " " << j << " " << "idom > 1" << endl;
+			else
 				blockCore[i][j].idom.insert(*(blockCore[i][j].tmpIdom.begin()));
 	}
 }
@@ -360,9 +366,9 @@ void SSA::build_dom_frontier() {
 	int i, j, k;
 	int size1 = blockCore.size();
 	for (i = 1; i < size1; i++) {
-		int size2 = preOrder[i].size();
+		int size2 = postOrder[i].size();
 		for (j = 0; j < size2; j++) {
-			int p_i = preOrder[i][j];
+			int p_i = postOrder[i][j];
 			set<int> df;
 			for (set<int>::iterator iter = blockCore[i][p_i].succeeds.begin(); iter != blockCore[i][p_i].succeeds.end(); iter++) {
 				if (blockCore[i][p_i].reverse_idom.find(*iter) == blockCore[i][p_i].reverse_idom.end()) df.insert(*iter); // 注意IDOM的含义
@@ -844,6 +850,78 @@ void SSA::deal_phi_function() {
 	}
 }
 
+// 消除无法到达基本块
+void SSA::simplify_basic_block() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		bool update = true;
+		while (update) {
+			update = false;
+			vector<basicBlock> v = blockCore[i];
+			int size2 = v.size();for (j = 1; j < size2; j++) if (v[j].pred.empty()) { update = true; break; }
+			if (update) {
+				v.erase(v.begin() + j);
+				int size3 = v.size();
+				for (k = 0; k < size3; k++) {
+					// 修改序号
+					if (v[k].number >= j) v[k].number -= 1;
+					// 修改pred
+					set<int> pred;
+					for (set<int>::iterator iter = v[k].pred.begin(); iter != v[k].pred.end(); iter++)
+						if (*iter < j) pred.insert(*iter);
+						else if (*iter > j) pred.insert((*iter) - 1);
+						else continue;
+					v[k].pred = pred;
+					// 修改succeeds
+					set<int> succeeds;
+					for (set<int>::iterator iter = v[k].succeeds.begin(); iter != v[k].succeeds.end(); iter++)
+						if (*iter < j) succeeds.insert(*iter);
+						else if (*iter > j) succeeds.insert((*iter) - 1);
+						else continue;
+					v[k].succeeds = succeeds;
+				}
+			}
+			blockCore[i] = v;
+		}
+	}
+}
+
+// 将phi函数加入到中间代码
+void SSA::add_phi_to_Ir() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 遍历函数
+		int size2 = blockCore[i].size();
+		for (j = 1; j < size2; j++) {	// 遍历基本块
+			int size3 = blockCore[i][j].phi.size();
+			for (int k = 0; k < size3; k++) {	// 遍历phi函数
+				phiFun phi = blockCore[i][j].phi[k];
+				CodeItem ci(PHI, phi.name, "", "");
+				blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin(), ci);
+			}
+		}
+	}
+}
+
+// 删除中间代码中的phi
+void SSA::delete_Ir_phi() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 遍历函数
+		int size2 = blockCore[i].size();
+		for (j = 1; j < size2; j++) {	// 遍历基本块
+			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {	// 遍历中间代码
+				if (blockCore[i][j].Ir[k].getCodetype() == PHI) {
+					blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin());
+					k--;
+				}
+				else break;
+			}
+		}
+	}
+}
+
 // 入口函数
 void SSA::generate() {
 
@@ -859,6 +937,8 @@ void SSA::generate() {
 	divide_basic_block();
 	// 建立基本块间的前序和后序关系
 	build_pred_and_succeeds();
+	// 消除无法到达基本块
+	simplify_basic_block();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();

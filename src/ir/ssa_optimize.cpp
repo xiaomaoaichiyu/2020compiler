@@ -35,9 +35,15 @@ void SSA::ssa_optimize() {
 	//judge_inline_function();
 	//inline_function();
 
+	// 将phi函数加入到中间代码
+	add_phi_to_Ir();
+
 	//循环优化
 	back_edge();
 
+
+	// 删除中间代码中的phi
+	delete_Ir_phi();
 
 	//count_use_def_chain();
 }
