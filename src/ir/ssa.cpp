@@ -280,23 +280,29 @@ void SSA::build_idom_tree() {
 			// foreach s
 			set<int> tmp;
 			for (set<int>::iterator iter1 = blockCore[i][j].tmpIdom.begin(); iter1 != blockCore[i][j].tmpIdom.end(); iter1++) {
-				set<int> tmp1, tmp2;
+				if (tmp.find(*iter1) != tmp.end()) continue;
+				set<int> tmp1, tmp2, tmp3;
 				tmp1.insert(*iter1);
 				set_difference(blockCore[i][j].tmpIdom.begin(), blockCore[i][j].tmpIdom.end(), tmp1.begin(), tmp1.end(), inserter(tmp2, tmp2.begin()));
+				set_difference(tmp2.begin(), tmp2.end(), tmp.begin(), tmp.end(), inserter(tmp3, tmp3.begin()));
 				// foreach t
-				for (set<int>::iterator iter2 = tmp2.begin(); iter2 != tmp2.end(); iter2++) {
+				for (set<int>::iterator iter2 = tmp3.begin(); iter2 != tmp3.end(); iter2++) {
 					if (blockCore[i][*iter1].tmpIdom.find(*iter2) != blockCore[i][*iter1].tmpIdom.end()) {
 						tmp.insert(*iter2);
 					}
 				}
 			}
-			set<int> tmp3;
-			set_difference(blockCore[i][j].tmpIdom.begin(), blockCore[i][j].tmpIdom.end(), tmp.begin(), tmp.end(), inserter(tmp3, tmp3.begin()));;
-			blockCore[i][j].tmpIdom = tmp3;
+			set<int> tmp4;
+			set_difference(blockCore[i][j].tmpIdom.begin(), blockCore[i][j].tmpIdom.end(), tmp.begin(), tmp.end(), inserter(tmp4, tmp4.begin()));;
+			blockCore[i][j].tmpIdom = tmp4;
 		}
 		// foreach n
 		for (j = 1; j < size2; j++)
-			if (!blockCore[i][j].tmpIdom.empty())
+			if (blockCore[i][j].tmpIdom.empty())
+				continue;
+			else if (blockCore[i][j].tmpIdom.size() > 1)
+				cout << i << " " << j << " " << "idom > 1" << endl;
+			else
 				blockCore[i][j].idom.insert(*(blockCore[i][j].tmpIdom.begin()));
 	}
 }
@@ -360,9 +366,9 @@ void SSA::build_dom_frontier() {
 	int i, j, k;
 	int size1 = blockCore.size();
 	for (i = 1; i < size1; i++) {
-		int size2 = preOrder[i].size();
+		int size2 = postOrder[i].size();
 		for (j = 0; j < size2; j++) {
-			int p_i = preOrder[i][j];
+			int p_i = postOrder[i][j];
 			set<int> df;
 			for (set<int>::iterator iter = blockCore[i][p_i].succeeds.begin(); iter != blockCore[i][p_i].succeeds.end(); iter++) {
 				if (blockCore[i][p_i].reverse_idom.find(*iter) == blockCore[i][p_i].reverse_idom.end()) df.insert(*iter); // 注意IDOM的含义
