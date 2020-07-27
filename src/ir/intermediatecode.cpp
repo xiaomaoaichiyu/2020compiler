@@ -176,6 +176,7 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->result = res;
 	this->operand1 = ope1;
 	this->operand2 = ope2;
+	this->id = -1;
 }
 
 CodeItem::CodeItem(const CodeItem& instr) {

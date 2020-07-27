@@ -12,21 +12,25 @@
 // 在睿轩生成的中间代码做优化
 void SSA::pre_optimize() {
 	// 简化load和store指令相邻的指令
-	// load_and_store();
+	load_and_store();
 	// 简化加减0、乘除模1这样的指令
-	// simplify_add_minus_multi_div_mod();
+	simplify_add_minus_multi_div_mod();
 	// 简化紧邻的跳转
-	// simplify_br_label();
+	simplify_br_label();
 }
 
 //ssa形式上的优化
 void SSA::ssa_optimize() {
 	// 重新计算use-def关系
-	//build_def_use_chain();
+	build_def_use_chain();
 	// 重新进行活跃变量分析
-	//active_var_analyse();
+	active_var_analyse();
 	// 死代码删除
-	//delete_dead_codes();
+	delete_dead_codes();
+	// 重新计算use-def关系
+	build_def_use_chain();
+	// 重新进行活跃变量分析
+	active_var_analyse();
 	// 函数内联
 	//judge_inline_function();
 	//inline_function();
@@ -339,25 +343,25 @@ void SSA::delete_dead_codes() {
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
 						}
 						else {
-							if (ifTempVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1())) tmpout.insert(ci.getOperand1());
-							if (ifTempVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2())) tmpout.insert(ci.getOperand2());
+							if (!ifDigit(ci.getOperand1())) tmpout.insert(ci.getOperand1());
+							if (!ifDigit(ci.getOperand2())) tmpout.insert(ci.getOperand2());
 						}
 						break;
 					case STORE:
-						if (tmpout.find(ci.getOperand1()) == tmpout.end()) {
+						if (tmpout.find(ci.getOperand1()) == tmpout.end() && !ifGlobalVariable(ci.getOperand1())) {
 							update = true;
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
 						}
 						else {
-							if (ifTempVariable(ci.getResult()) || ifLocalVariable(ci.getResult())) tmpout.insert(ci.getResult());
+							if (!ifDigit(ci.getResult())) tmpout.insert(ci.getResult());
 						}
 						break;
 					case STOREARR: case LOADARR:	// 数组不敢删除
 					case CALL: case RET: case PUSH: case PARA:	// 与函数相关，不能删除
 					case BR:	// 跳转指令不能删除
-						if (ifTempVariable(ci.getResult()) || ifLocalVariable(ci.getResult())) tmpout.insert(ci.getResult());
-						if (ifTempVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1())) tmpout.insert(ci.getOperand1());
-						if (ifTempVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2())) tmpout.insert(ci.getOperand2());
+						if (!ifDigit(ci.getResult())) tmpout.insert(ci.getResult());
+						if (!ifDigit(ci.getOperand1())) tmpout.insert(ci.getOperand1());
+						if (!ifDigit(ci.getOperand2())) tmpout.insert(ci.getOperand2());
 						break;
 					case LABEL: case DEFINE: case ALLOC: case GLOBAL: case NOTE:
 						// 不做处理
@@ -406,7 +410,7 @@ void SSA::back_edge() {
 	for (int i = 1; i < blockCore.size(); i++) {
 		//每一个函数的基本块
 		auto blocks = blockCore.at(i);
-		ly::UDchain chains(blocks);
+		UDchain chains(blocks);
 		vector<pair<int, int>> backEdges;		//存储找到的回边
 		for (auto blk : blocks) {
 			int num = blk.number;

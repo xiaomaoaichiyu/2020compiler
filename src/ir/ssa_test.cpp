@@ -77,7 +77,7 @@ void Output_PHI(vector<phiFun> v) {
 void Output_IR(vector<CodeItem> v) {
 	for (int i = 0; i < v.size(); i++) {
 		CodeItem item = v[i];
-		debug_ssa << i + 1 << "    " << item.getContent() << endl;
+		debug_ssa << i << "    " << item.getContent() << endl;
 	}
 }
 
@@ -92,7 +92,7 @@ void SSA::Test_Divide_Basic_Block() {
 		int size2 = v[i].size();
 		// 依次输出该函数下所有的基本块信息
 		for (int j = 0; j < size2; j++) {
-			debug_ssa << "该基本块的编号:  " << v[i][j].number << "\t\t";	// 基本块编号
+			debug_ssa << "\n" << "B" << v[i][j].number << "\t\t";	// 基本块编号
 			set<int>::iterator iter;
 			// 即可以跳转到该基本块的基本块序号
 			debug_ssa << "前序节点和后序节点: {  ";
