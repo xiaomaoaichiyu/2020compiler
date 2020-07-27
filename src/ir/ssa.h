@@ -75,6 +75,7 @@ private:
 
 	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块
+	void simplify_basic_block();									// 消除无法到达基本块
 	void build_pred_and_succeeds();							// 建立基本块间的前序和后序关系
 	void build_dom_tree();											// 建立必经节点关系
 	void build_idom_tree();											// 建立直接必经关系

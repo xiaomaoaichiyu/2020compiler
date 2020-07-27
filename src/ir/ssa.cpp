@@ -850,6 +850,41 @@ void SSA::deal_phi_function() {
 	}
 }
 
+// 消除无法到达基本块
+void SSA::simplify_basic_block() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		bool update = true;
+		while (update) {
+			update = false;
+			vector<basicBlock> v = blockCore[i];
+			int size2 = v.size();for (j = 1; j < size2; j++) if (v[j].pred.empty()) { update = true; break; }
+			if (update) {
+				v.erase(v.begin() + j);
+				int size3 = v.size();
+				for (k = 0; k < size3; k++) {
+					// 修改pred
+					set<int> pred;
+					for (set<int>::iterator iter = v[k].pred.begin(); iter != v[k].pred.end(); iter++)
+						if (*iter < j) pred.insert(*iter);
+						else if (*iter > j) pred.insert((*iter) - 1);
+						else continue;
+					v[k].pred = pred;
+					// 修改succeeds
+					set<int> succeeds;
+					for (set<int>::iterator iter = v[k].succeeds.begin(); iter != v[k].succeeds.end(); iter++)
+						if (*iter < j) succeeds.insert(*iter);
+						else if (*iter > j) succeeds.insert((*iter) - 1);
+						else continue;
+					v[k].succeeds = succeeds;
+				}
+			}
+			blockCore[i] = v;
+		}
+	}
+}
+
 // 入口函数
 void SSA::generate() {
 
@@ -865,6 +900,8 @@ void SSA::generate() {
 	divide_basic_block();
 	// 建立基本块间的前序和后序关系
 	build_pred_and_succeeds();
+	// 消除无法到达基本块
+	simplify_basic_block();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
