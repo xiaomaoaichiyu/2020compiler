@@ -143,7 +143,7 @@ string newName(string name, int blockindex)
 	trans << blockindex;
 	return name + "-" + trans.str();
 }
-
+/*
 string newFuncName(string name)		//给函数名加后缀，防止与变量重名
 {
 	if (name == "putf"|| name == "starttime" || name == "stoptime" || name == "putarray"
@@ -154,6 +154,7 @@ string newFuncName(string name)		//给函数名加后缀，防止与变量重名
 		return name + ".1";
 	}
 }
+*/
 symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock);					//查表：改进中间代码和符号表时使用
 void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
@@ -239,6 +240,7 @@ int frontExecute(string syname)
 	//检测中间代码正确性
 	TestIrCode("ir.txt");
 	//outfile.close();
+	cout<<"yes"<<endl;
 	return 0;
 }
 
@@ -744,7 +746,15 @@ void VarDef(int index, int block)             //变量定义
 		nodeName = name;
 
 		InitVal(index);
-	}
+	}/*
+	else {		//自动给未初始化的局部变量赋0，正常情况下不用加
+		if (b == "%" && dimenson == 0) {
+			CodeItem citem = CodeItem(STORE, "0", b + name, "");	//赋值单值
+			citem.setFatherBlock(fatherBlock);
+			codetotal[index].push_back(citem);
+		}
+	}*/
+
 	//退出循环前已经预读单词
 	//outfile << "<变量定义>" << endl;
 }
@@ -910,7 +920,8 @@ void valueFuncDef()    //有返回值函数定义
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	string name = newFuncName(token);   //获取函数名
+	string name = token;			//获取函数名
+	//name = newFuncName(name);   //获取函数名并改名
 	//printMessage();   //获得标识符并输出
 	symbolTable item(FUNCTION, INT, name);
 	total[Funcindex].push_back(item);
@@ -948,7 +959,8 @@ void novalueFuncDef()  //无返回值函数定义
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//获得标识符
-	string name = newFuncName(token);  //保存函数名
+	string name = token;  //保存函数名
+	//name = newFuncName(name);		函数名改名
 	symbolTable item(FUNCTION, VOID, name);
 	total[Funcindex].push_back(item);
 	CodeItem citem(DEFINE, "@" + name, "void", "");           //define @foo int
@@ -1179,7 +1191,8 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		string Functionname;
 		if (symbol == LPARENT) {  //标识符 (函数实参表)
 			paraNum = 0;
-			Functionname = newFuncName(name_tag);
+			Functionname = name_tag;
+			//Functionname = newFuncName(Functionname);	获取函数名并改名
 			//printMessage();    //输出(信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
@@ -1476,11 +1489,27 @@ void Stmt()              //语句
 		}
 		else {
 			symbol = sym_tag;
+			int beforeSize = codetotal[Funcindex].size();		//获取当前中间代码下标
 			Exp();					//CALL函数在EXP中存在
 			printMessage();  //输出分号
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();  //预读
+			//开启检查，如果没有出现CALL类型的中间代码，这些中间代码均可删除
+			int nouse = 1;
+			int afterSize = codetotal[Funcindex].size();		//获取当前中间代码下标
+			for (int aa = beforeSize; aa < afterSize; aa++) {
+				if (codetotal[Funcindex][aa].getCodetype() == CALL) {
+					nouse = 0;
+					break;
+				}
+			}
+			if (nouse == 1) {
+				while (afterSize > beforeSize) {
+					codetotal[Funcindex].pop_back();
+					afterSize--;
+				}
+			}
 		}
 		/*
 		if (symbol == LPARENT) {	//该语句为调用无返回值函数；
@@ -1524,11 +1553,27 @@ void Stmt()              //语句
 		}*/
 	}
 	else {						//Exp ; 这里直接跳过，没影响
+		int beforeSize = codetotal[Funcindex].size();		//获取当前中间代码下标	
 		Exp();
 		printMessage();  //输出分号
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();  //预读
+		//开启检查，如果没有出现CALL类型的中间代码，这些中间代码均可删除
+		int nouse = 1;
+		int afterSize = codetotal[Funcindex].size();		//获取当前中间代码下标
+		for (int aa = beforeSize; aa < afterSize; aa++) {
+			if (codetotal[Funcindex][aa].getCodetype() == CALL) {
+				nouse = 0;
+				break;
+			}
+		}
+		if (nouse == 1) {
+			while (afterSize > beforeSize) {
+				codetotal[Funcindex].pop_back();
+				afterSize--;
+			}
+		}
 		/*
 		while (symbol != SEMICN) {
 			wordAnalysis.getsym();
@@ -1729,6 +1774,67 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 	}
 	//outfile << "<条件>" << endl;
 }
+/*		加入了短路逻辑
+void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
+{
+	string registerL, registerR, op;
+	int nowSize = codetotal[Funcindex].size();
+	int flag = 0;	//flag为1说明多个||的条件中某个条件真值为1，中间代码不必要出现，可直接删除
+	LAndExp();
+	registerL = interRegister;
+	if (registerL == "1") {
+		flag = 1;
+	}
+	while (symbol == OR_WORD) {
+		Memory symbol_tag = symbol;
+		printMessage();    //输出逻辑运算符
+		wordAnalysis.getsym();
+		symbol = wordAnalysis.getSymbol();
+		token = wordAnalysis.getToken();//预读
+		LAndExp();
+		registerR = interRegister;
+		if (registerL == "1" || registerR == "1") {
+			flag = 1;
+		}
+		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
+			int value;
+			int valueL = stringToNum(registerL);
+			int valueR = stringToNum(registerR);
+			if (valueL == 0 && valueR == 0) {
+				value = 0;
+			}
+			else {
+				value = 1;
+			}
+			interRegister = numToString(value);
+		}
+		else {
+			if (registerL == "0") {
+				interRegister = registerR;
+				registerL = registerR;
+			}
+			else if (registerR == "0") {
+				interRegister = registerL;
+			}
+			else {
+				interRegister = "%" + numToString(Temp);
+				Temp++;
+				CodeItem citem = CodeItem(OR, interRegister, registerL, registerR);
+				citem.setFatherBlock(fatherBlock);
+				codetotal[Funcindex].push_back(citem);
+			}
+		}
+		registerL = interRegister;
+	}
+	if (flag == 1) {
+		while (codetotal[Funcindex].size() > nowSize) {
+			codetotal[Funcindex].pop_back();
+		}
+		interRegister = numToString(1);
+	}
+	outfile << "<条件>" << endl;
+}
+*/
 void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 {
 	string registerL, registerR, op;
@@ -1766,7 +1872,66 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		registerL = interRegister;
 	}
 }
-
+/*		加入了短路逻辑
+void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
+{
+	string registerL, registerR, op;
+	int nowSize = codetotal[Funcindex].size();
+	int flag = 0;	//flag为1说明多个&&的条件中某个条件真值为0，中间代码不必要出现，可直接删除
+	EqExp();
+	registerL = interRegister;
+	if (registerL == "0") {
+		flag = 1;
+	}
+	while (symbol == AND_WORD) {
+		Memory symbol_tag = symbol;
+		printMessage();    //输出逻辑运算符
+		wordAnalysis.getsym();
+		symbol = wordAnalysis.getSymbol();
+		token = wordAnalysis.getToken();//预读
+		EqExp();
+		registerR = interRegister;
+		if (registerL == "0" || registerR == "0") {
+			flag = 1;
+		}
+		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
+			int value;
+			int valueL = stringToNum(registerL);
+			int valueR = stringToNum(registerR);
+			if (valueL == 0 || valueR == 0) {
+				value = 0;
+			}
+			else {
+				value = 1;
+			}
+			interRegister = numToString(value);
+		}
+		else {
+			if (registerL == "1") {
+				interRegister = registerR;
+				registerL = registerR;
+			}
+			else if (registerR == "1") {
+				interRegister = registerL;
+			}
+			else {
+				interRegister = "%" + numToString(Temp);
+				Temp++;
+				CodeItem citem = CodeItem(AND, interRegister, registerL, registerR);
+				citem.setFatherBlock(fatherBlock);
+				codetotal[Funcindex].push_back(citem);
+			}
+		}
+		registerL = interRegister;
+	}
+	if (flag == 1) {
+		while (codetotal[Funcindex].size() > nowSize) {
+			codetotal[Funcindex].pop_back();
+		}
+		interRegister = numToString(0);
+	}
+}
+*/
 void EqExp()		  //相等性表达式
 {
 	string registerL, registerR, op;
