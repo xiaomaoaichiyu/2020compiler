@@ -897,7 +897,7 @@ void SSA::generate() {
 	deal_phi_function();
 
 	// 优化
-	ssa_optimize();
+	//ssa_optimize();
 
 	// 测试输出上面各个函数
 	Test_SSA();
@@ -907,5 +907,8 @@ void SSA::generate() {
 
 	// 恢复为之前中间代码形式后再做一次无用代码删除
 	pre_optimize();
+
+	// 输出中间代码
+	TestIrCode("ir2.txt");
 
 }
