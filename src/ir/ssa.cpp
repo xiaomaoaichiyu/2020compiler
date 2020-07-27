@@ -864,6 +864,8 @@ void SSA::simplify_basic_block() {
 				v.erase(v.begin() + j);
 				int size3 = v.size();
 				for (k = 0; k < size3; k++) {
+					// 修改序号
+					if (v[k].number >= j) v[k].number -= 1;
 					// 修改pred
 					set<int> pred;
 					for (set<int>::iterator iter = v[k].pred.begin(); iter != v[k].pred.end(); iter++)
@@ -881,6 +883,41 @@ void SSA::simplify_basic_block() {
 				}
 			}
 			blockCore[i] = v;
+		}
+	}
+}
+
+// 将phi函数加入到中间代码
+void SSA::add_phi_to_Ir() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 遍历函数
+		int size2 = blockCore[i].size();
+		for (j = 1; j < size2; j++) {	// 遍历基本块
+			int size3 = blockCore[i][j].phi.size();
+			for (int k = 0; k < size3; k++) {	// 遍历phi函数
+				phiFun phi = blockCore[i][j].phi[k];
+				CodeItem ci(PHI, phi.name, "", "");
+				blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin(), ci);
+			}
+		}
+	}
+}
+
+// 删除中间代码中的phi
+void SSA::delete_Ir_phi() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 遍历函数
+		int size2 = blockCore[i].size();
+		for (j = 1; j < size2; j++) {	// 遍历基本块
+			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {	// 遍历中间代码
+				if (blockCore[i][j].Ir[k].getCodetype() == PHI) {
+					blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin());
+					k--;
+				}
+				else break;
+			}
 		}
 	}
 }

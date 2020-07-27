@@ -96,6 +96,8 @@ private:
 	void add_phi_function();											// 在需要添加基本块的开始添加\phi函数
 	int phi_loc_block(int funNum, int blkNum, std::string name, std::vector<bool> visited, int insertBlk);			// 查找该节点开始对应的name变量的基本块位置
 	void deal_phi_function();										// 处理\phi函数
+	void add_phi_to_Ir();												// 将phi函数加入到中间代码
+	void delete_Ir_phi();												// 删除中间代码中的phi
 	void rename_back();												// 将SSA变量带下标的中间代码恢复为正常中间代码，即做完优化后去掉下标
 	// 测试专用函数
 	void Test_SSA();			// 测试函数的总入口
