@@ -24,23 +24,23 @@ void SSA::ssa_optimize() {
 	// 重新进行活跃变量分析
 	active_var_analyse();
 	// 死代码删除
-	delete_dead_codes();
+	//delete_dead_codes();
 	// 重新计算use-def关系
-	build_def_use_chain();
+	//build_def_use_chain();
 	// 重新进行活跃变量分析
-	active_var_analyse();
+	//active_var_analyse();
 	// 函数内联
 	//judge_inline_function();
 	//inline_function();
 
 	// 将phi函数加入到中间代码
-	add_phi_to_Ir();
+	// add_phi_to_Ir();
 
 	//循环优化
 	//back_edge();
 
 	// 删除中间代码中的phi
-	delete_Ir_phi();
+	// delete_Ir_phi();
 
 	//count_use_def_chain();
 }
@@ -346,8 +346,10 @@ void SSA::delete_dead_codes() {
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
 						}
 						else {
-							if (!ifDigit(ci.getOperand1())) tmpout.insert(ci.getOperand1());
-							if (!ifDigit(ci.getOperand2())) tmpout.insert(ci.getOperand2());
+							if (ifGlobalVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1()) || ifTempVariable(ci.getOperand1())) 
+								tmpout.insert(ci.getOperand1());
+							if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
+								tmpout.insert(ci.getOperand2());
 						}
 						break;
 					case STORE:
@@ -356,15 +358,19 @@ void SSA::delete_dead_codes() {
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
 						}
 						else {
-							if (!ifDigit(ci.getResult())) tmpout.insert(ci.getResult());
+							if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
+								tmpout.insert(ci.getResult());
 						}
 						break;
 					case STOREARR: case LOADARR:	// 数组不敢删除
 					case CALL: case RET: case PUSH: case PARA:	// 与函数相关，不能删除
 					case BR:	// 跳转指令不能删除
-						if (!ifDigit(ci.getResult())) tmpout.insert(ci.getResult());
-						if (!ifDigit(ci.getOperand1())) tmpout.insert(ci.getOperand1());
-						if (!ifDigit(ci.getOperand2())) tmpout.insert(ci.getOperand2());
+						if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
+							tmpout.insert(ci.getResult());
+						if (ifGlobalVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1()) || ifTempVariable(ci.getOperand1())) 
+							tmpout.insert(ci.getOperand1());
+						if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
+							tmpout.insert(ci.getOperand2());
 						break;
 					case LABEL: case DEFINE: case ALLOC: case GLOBAL: case NOTE:
 						// 不做处理

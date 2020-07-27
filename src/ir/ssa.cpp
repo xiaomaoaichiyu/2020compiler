@@ -568,8 +568,8 @@ int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited
 	else visited[blkNum] = true;
 	// 如果该基本块中用到或定义了name变量
 	set<string> s1 = blockCore[funNum][blkNum].def;
-	set<string> s2 = blockCore[funNum][blkNum].use;
-	if (s1.find(name) != s1.end() || s2.find(name) != s2.end()) return blkNum;
+	// set<string> s2 = blockCore[funNum][blkNum].use;
+	if (s1.find(name) != s1.end()) return blkNum;
 	// 如果该基本块要插入的\phi函数中包含该变量，也算该基本块使用了该变量
 	set<int> s3;  varStruct vs(name, s3);
 	for (int i = 0; i < varChain[funNum].size(); i++) 
@@ -643,8 +643,9 @@ void SSA::renameVar() {
 				vector<string> v;
 				varSequence[iter->first] = v;
 			}
-			// 首先更新基本块开始的\phi函数
 			int size4 = blockCore[i][j].phi.size();
+			int size5 = blockCore[i][j].Ir.size();
+			// 1. 首先更新基本块开始的\phi函数定义
 			for (k = 0; k < size4; k++) {
 				phiFun pf = blockCore[i][j].phi[k];
 				string tmp = pf.name + "^" + to_string(varPool[pf.name]);
@@ -652,7 +653,8 @@ void SSA::renameVar() {
 				varPool[pf.name] = varPool[pf.name] + 1;
 				varSequence[pf.name].push_back(tmp);
 			}
-			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
+			// 2. 更新指令中的定义
+			for (k = 0; k < size5; k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
 				if (ci.getCodetype() == STORE || ci.getCodetype() == STOREARR) {
 					// op1是新定义的变量，result和op2是使用的变量
@@ -663,7 +665,48 @@ void SSA::renameVar() {
 						varPool[ci.getOperand1()] = varPool[ci.getOperand1()] + 1;
 						varSequence[ci.getOperand1()].push_back(tmp);
 					}
-					// 更新op1的变量名
+				}
+				else {
+					// result是新定义的变量，op1和op2是使用的变量
+					if (varPool.find(ci.getResult()) != varPool.end()) {
+						string tmp = ci.getResult() + "^" + to_string(varPool[ci.getResult()]);
+						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
+						blockCore[i][j].Ir[k] = nci;
+						varPool[ci.getResult()] = varPool[ci.getResult()] + 1;
+						varSequence[ci.getResult()].push_back(tmp);
+					}
+				}
+			}
+			// 3. 将该基本块中的变量名添加到lastVarName
+			for (map<string, vector<string>>::iterator iter = varSequence.begin(); iter != varSequence.end(); iter++)
+				if (!iter->second.empty()) { lastVarName[iter->first][j] = iter->second.back(); }
+			bool update = true;
+			while (update) {
+				update = false;
+				// 4. 更新phi的使用
+				for (k = 0; k < blockCore[i][j].phi.size(); k++) {
+					phiFun pf = blockCore[i][j].phi[k];
+					for (vector<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
+						if (lastVarName[pf.primaryName].find(*iter) != lastVarName[pf.primaryName].end())
+							blockCore[i][j].phi[k].subIndexs.push_back(lastVarName[pf.primaryName][*iter]);
+				}
+				// 5. 删除无用的phi函数
+				for (k = 0; k < blockCore[i][j].phi.size(); k++) {
+					phiFun pf = blockCore[i][j].phi[k];
+					if (pf.subIndexs.size() <= 1) {	// 如果对应的选择只有一个则不用添加phi函数
+						blockCore[i][j].phi.erase(blockCore[i][j].phi.begin() + k);
+						lastVarName[pf.primaryName].erase(j);
+						k--;
+						update = true;
+						continue;
+					}
+				}
+			}
+			// 6. 更新指令中的使用
+			for (k = 0; k < size5; k++) {
+				CodeItem ci = blockCore[i][j].Ir[k];
+				if (ci.getCodetype() == STORE || ci.getCodetype() == STOREARR) {
+					// 更新result的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getResult()) != varPool.end()) {
 						string tmp = ci.getResult();
@@ -705,14 +748,6 @@ void SSA::renameVar() {
 					}
 				}
 				else {
-					// result是新定义的变量，op1和op2是使用的变量
-					if (varPool.find(ci.getResult()) != varPool.end()) {
-						string tmp = ci.getResult() + "^" + to_string(varPool[ci.getResult()]);
-						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
-						blockCore[i][j].Ir[k] = nci;
-						varPool[ci.getResult()] = varPool[ci.getResult()] + 1;
-						varSequence[ci.getResult()].push_back(tmp);
-					}
 					// 更新op1的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getOperand1()) != varPool.end()) {
@@ -723,7 +758,9 @@ void SSA::renameVar() {
 							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
 							int flag = 0;
 							for (int p = 0; p < queue.size(); p++) {
-								if (lastVarName[ci.getOperand1()].find(queue[p]) != lastVarName[ci.getOperand1()].end()) { tmp = lastVarName[ci.getOperand1()][queue[p]]; flag++;  break; }
+								if (lastVarName[ci.getOperand1()].find(queue[p]) != lastVarName[ci.getOperand1()].end()) {
+									tmp = lastVarName[ci.getOperand1()][queue[p]]; flag++;
+								}
 								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
 									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
 							}
@@ -754,20 +791,6 @@ void SSA::renameVar() {
 						varSequence[ci.getOperand2()].push_back(tmp);
 					}
 				}
-			}
-			// 将该基本块中的变量名添加到lastVarName
-			for (map<string, vector<string>>::iterator iter = varSequence.begin(); iter != varSequence.end(); iter++)
-				if (!iter->second.empty()) lastVarName[iter->first][j] = iter->second.back();
-		}
-		// 以基本块为单位更新基本块起始的\phi函数结构
-		int size5 = blockCore[i].size();
-		for (j = 1; j < size5 - 1; j++) { // 跳过entry块和exit块
-			int size6 = blockCore[i][j].phi.size();
-			for (k = 0; k < size6; k++) {
-				phiFun pf = blockCore[i][j].phi[k];
-				for (vector<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
-					if (lastVarName[pf.primaryName].find(*iter) != lastVarName[pf.primaryName].end())
-						blockCore[i][j].phi[k].subIndexs.push_back(lastVarName[pf.primaryName][*iter]);
 			}
 		}
 	}
@@ -817,11 +840,6 @@ void SSA::deal_phi_function() {
 		for (j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry块和exit块
 			for (k = 0; k < blockCore[i][j].phi.size(); k++) {
 				phiFun pf = blockCore[i][j].phi[k];
-				if (pf.subIndexs.size() <= 1) {	// 如果对应的选择只有一个则不用添加phi函数
-					blockCore[i][j].phi.erase(blockCore[i][j].phi.begin() + k);
-					k--;
-					continue;
-				}
 				for (m = 0; m < pf.blockNums.size(); m++) {
 					// e.g. x3 = \phi(x1, x2)
 					// 在x1和x2的基本块末尾分别添加x3 = x1; x3 = x2; 赋值语句
@@ -972,7 +990,7 @@ void SSA::generate() {
 
 	// 变量重命名
 	renameVar();
-
+	
 	// 处理\phi函数
 	deal_phi_function();
 
