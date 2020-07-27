@@ -2,6 +2,8 @@
 #include "../front/symboltable.h"
 #include "../front/syntax.h"
 #include "../util/meow.h"
+#include "../ir/dataAnalyse.h"
+
 #include <queue>
 #include <unordered_map>
 
@@ -30,7 +32,8 @@ void SSA::ssa_optimize() {
 	//inline_function();
 
 	//循环优化
-	//back_edge();
+	back_edge();
+
 
 	//count_use_def_chain();
 }
@@ -368,15 +371,43 @@ void SSA::delete_dead_codes() {
 	}
 }
 
+//============================================================
+// 循环优化：不变式外提、强度削弱、归纳变量删除
+//============================================================
+
+class Circle {
+public:
+	set<int> cir_blks;	//循环的基本块结点
+	set<int> cir_outs;	//循环的退出结点
+	Circle(set<int>& blks) : cir_blks(blks) {}
+};
+
 //每个函数的循环，已连续的基本块构成；
-vector<vector<set<int>>> circles;
+vector<Circle> circles;
+
+void printCircle() {
+	if (TIJIAO) {
+		for (auto circle : circles) {
+			cout << "circle's blocks: { ";
+			for (auto blk : circle.cir_blks) {
+				cout << "B" << blk << " ";
+			}
+			cout << "}	Quit block in circle: { ";
+			for (auto blk : circle.cir_outs) {
+				cout << "B" << blk << " ";
+			}
+			cout << "}" << endl;
+		}
+		cout << endl;
+	}
+}
 
 void SSA::back_edge() {
 	for (int i = 1; i < blockCore.size(); i++) {
 		//每一个函数的基本块
 		auto blocks = blockCore.at(i);
-		//存储找到的回边
-		vector<pair<int, int>> backEdges;
+		ly::UDchain chains(blocks);
+		vector<pair<int, int>> backEdges;		//存储找到的回边
 		for (auto blk : blocks) {
 			int num = blk.number;
 			auto succs = blk.succeeds;
@@ -386,20 +417,21 @@ void SSA::back_edge() {
 				if (doms.find(suc) != doms.end()) {
 					backEdges.push_back(pair<int, int>(num, suc));
 					if (suc > num) {
-						WARN_MSG("出了问题！");
+						WARN_MSG("wrong in back_edge find!");
 					}
 				}
 			}
 		}
 
-		vector<set<int>> xunhuan;
-		//查找循环的基本块
+		set<int> circle;
+		set<int> cir_out;
+		//查找循环的基本块，每个回边对应着一个循环，后续应该合并某些循环，不合并效率可能比较低？
 		for (auto backEdge : backEdges) {
-			set<int> one;
+			circle.clear();
 			int end = backEdge.first;
 			int begin = backEdge.second;
-			one.insert(end);
-			one.insert(begin);
+			circle.insert(end);
+			circle.insert(begin);
 
 			queue<int> work;
 			work.push(end);
@@ -408,202 +440,119 @@ void SSA::back_edge() {
 				work.pop();
 				auto preds = blocks.at(tmp).pred;
 				for (auto pred : preds) {
-					if (pred != begin && one.find(pred) == one.end()) {
+					if (pred != begin && circle.find(pred) == circle.end()) {
 						work.push(pred);
-						one.insert(pred);
+						circle.insert(pred);
 					}
 				}
 			}
-			xunhuan.push_back(one);
+			cir_out.clear();
+			for (auto one : circle) {
+				auto succs = blocks.at(one).succeeds;
+				for (auto suc : succs) {
+					if (circle.find(suc) == circle.end()) {
+						cir_out.insert(one);
+					}
+				}
+			}
+			Circle tmp(circle);
+			tmp.cir_outs = cir_out;
+			circles.push_back(tmp);
 		}
-		circles.push_back(xunhuan);
 	}
+	printCircle();
 }
 
 //================================================
 //达到定义链和 使用定义链
 //================================================
 
-namespace ly {
-	using Defines = vector<pair<int, int>>;
-	using Uses = vector<pair<int, int>>;
-	using Use = pair<int, int>;
-	using Define = pair<int, int>;
-	using In = vector<pair<int, int>>;
-	using Out = vector<pair<int, int>>;
-	using Pos = pair<int, int>;
-}
-
-using namespace ly;
-
-void addDef(map<string, Defines>& container, string var, Define def) {
-	if (container.find(var) != container.end()) {
-		container[var].push_back(def);
-	}
-	else {
-		container[var] = Defines();
-		container[var].push_back(def);
-	}
-}
-
-void addUse(map<string, Uses>& container, string var, Use use) {
-	if (container.find(var) != container.end()) {
-		container[var].push_back(use);
-	}
-	else {
-		container[var] = Defines();
-		container[var].push_back(use);
-	}
-}		
-
-struct Block {
-	map<Pos, string> pos2Def;			//每一条指令只会给一个变量定值。有位置<block, index> -> Def_var
-	map<string, Defines> var2defs;
-	map<string, Uses> var2uses;
-	map<string, Define> in;	//记录变量在基本块开始位置的——定值
-	map<string, Define> out;	//记录变量在基本块结束位置的——定值
-	map<string, Define> kill;	//记录基本块的kill定值
-	map<string, Define> gen;	//记录基本块的生成定值
-	set<string> genVar;			//记录基本块生成的变量名
-};
-
-vector<Block> blk;
-
-void printBlk() {
-	if (TIJIAO) {
-		int i = 0;
-		for (auto one : blk) {
-			string vars = FORMAT("B{} gen: ", i);
-			for (auto tmp : one.genVar) {
-				vars += tmp + "  ";
-			}
-			i++;
-			cout << vars << endl;
-		}
-		cout << endl;
-	}
-}
-
-//计算每个基本块的gen，kill使用另外的方法处理
-void count_gen_of_block(vector<basicBlock>& blocks) {
-	for (int j = 0; j < blocks.size(); j++) {
-		blk.push_back(Block());
-		for (int k = 0; k < blocks.at(j).Ir.size(); k++) {
-			auto instr = blocks.at(j).Ir.at(k);
-			auto res = instr.getResult();
-			auto ope1 = instr.getOperand1();
-			auto ope2 = instr.getOperand2();
-			switch (instr.getCodetype())
-			{
-			case ADD: case SUB: case MUL: case DIV: case REM:
-			case AND: case OR:
-			case EQL: case NEQ: case SLT: case SLE: case SGT: case SGE: {
-				addDef(blk[j].var2defs, res, Define(j, k));	
-				addUse(blk[j].var2uses, ope1, Use(j, k));
-				addUse(blk[j].var2uses, ope2, Use(j, k));
-				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
-				break;
-			} case NOT: {
-				addDef(blk[j].var2defs, res, Define(j, k));	
-				addUse(blk[j].var2uses, ope1, Use(j, k));
-				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
-				break;
-			} case LOAD: {	//load的变量使用？
-				if (ope2 != "array" && ope2 != "para") {
-					addUse(blk[j].var2uses, ope1, Use(j, k));
-				}
-				addDef(blk[j].var2defs, res, Define(j, k));
-				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
-				break;
-			} case STORE: {
-				addUse(blk[j].var2uses, res, Use(j, k));
-				addDef(blk[j].var2defs, ope1, Define(j, k));
-				blk[j].gen[ope1] = Define(j, k); blk[j].genVar.insert(ope1);
-				break;
-			} case LOADARR: {
-				if (!isNumber(ope2)) {
-					addUse(blk[j].var2uses, ope2, Use(j, k));
-				}
-				addDef(blk[j].var2defs, res, Define(j, k));
-				blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
-				break;
-			}case STOREARR: {
-				if (!isNumber(ope2)) {
-					addUse(blk[j].var2uses, ope2, Use(j, k));
-				}
-				addUse(blk[j].var2uses, res, Use(j, k));
-				break;
-			}case PUSH: {
-				addUse(blk[j].var2uses, ope1, Use(j, k));
-				break;
-			}case BR: {
-				if (isTmp(ope1)) {
-					addUse(blk[j].var2uses, ope1, Use(j, k));
-				}
-				break;
-			}case CALL: {
-				if (isTmp(res)) {
-					addDef(blk[j].var2defs, res, Define(j, k));
-					blk[j].gen[res] = Define(j, k); blk[j].genVar.insert(res);
-				}
-				break;
-			}case RET: {
-				if (isTmp(ope1)) {
-					addUse(blk[j].var2uses, ope1, Use(j, k));
-				}
-				break;
-			}
-			default:
-				break;
-			}
-		}
-	}
-}
-
-void SSA::count_use_def_chain() {
-	for (int i = 1; i < blockCore.size(); i++) {
-		auto blocks = blockCore.at(i);
-		count_gen_of_block(blocks);
-		printBlk();
-		for (int j = 0; j < blocks.size(); j++) {
-			auto block = blocks.at(j);
-
-			//while (true) {
-			//	
-
-			//	if () { //如果in out集不在发生变化
-			//		break;
-			//	}
-			//}
-		}
-		//计算到达-定义的in out	
-	}
-}
-
 void SSA::mark_invariant() {
-	/*for (int i = 1; i < blockCore.size(); i++) {
-		auto FuncCircle = circles.at(i-1);
-		for (auto circle : FuncCircle) {
-			int mark = 1;
-			while (mark) {
-				for () {
-
+	for (int i = 1; i < blockCore.size(); i++) {
+		auto& blocks = blockCore.at(i);
+		
+		try {
+			//处理函数内部的所有循环
+			for (auto circle : circles) {
+				int mark = 1;
+				while (mark) {
+					for (auto idx : circle.cir_blks) {
+						auto& ir = blocks.at(idx).Ir;
+						for (auto& instr : ir) {		//这里判断每条指令的操作数是否为常数或者定值在循环外面
+							if (instr.getInvariant() == 1) {
+								continue;
+							}
+							auto op = instr.getCodetype();
+							auto res = instr.getResult();
+							auto ope1 = instr.getOperand1();
+							auto ope2 = instr.getOperand2();
+							switch (op)
+							{
+							case LOAD: {
+								int d;
+								if (circle.cir_blks.find(d) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+								break;
+							} case STORE: {	//先不考虑全局变量和局部变量的区别
+								if (isNumber(res)) {
+									instr.setInvariant();
+								}
+								else {
+									//用使用-定义链来判断 res 变量的定值是否在循环外
+									int d;
+									if (circle.cir_blks.find(d) == circle.cir_blks.end()) {
+										instr.setInvariant();
+									}
+								}
+								break;
+							}
+							case ADD: case SUB: case DIV: case MUL: case REM:
+							case AND: case OR: case NOT: case EQL:
+							case NEQ: case SGT: case SGE: case SLT: case SLE: {
+								
+								break;
+							}
+							case ALLOC:
+							case STOREARR:
+							case LOADARR:
+							case CALL:
+							case RET:
+							case PUSH:
+							case POP:
+							case LABEL:
+							case BR:
+							case DEFINE:
+							case PARA:
+							case GLOBAL:
+							case NOTE:
+							case MOV:
+							case LEA:
+							case GETREG:
+							default:
+								break;
+							}
+						}
+					}
 				}
 			}
 		}
-	}*/
+		catch (exception e) {
+			WARN_MSG("wrong in mark invariant! maybe the circle find is wrong!");
+		}
+	}
 }
-
-void SSA::code_outside() {
-	//计算不变式
-
-	//外提代码
-}
-
-void SSA::strength_reduction()
-{
-}
-
-void SSA::protocol_variable_deletion()
-{
-}
+//
+//void SSA::code_outside() {
+//	//计算不变式
+//
+//	//外提代码
+//}
+//
+//void SSA::strength_reduction()
+//{
+//}
+//
+//void SSA::protocol_variable_deletion()
+//{
+//}
