@@ -122,7 +122,9 @@ private:
 	void delete_dead_codes();	// 删除死代码
 	void judge_inline_function();	// 判断内联函数
 	void inline_function();	// 函数内联
+	
 	//ly：循环优化：代码外提、强度削弱、规约变量删除
+	void count_UDchains();	//计算使用-定义链 用来查找不变式代码
 	void back_edge();	//计算回边+查找循环
 	void code_outside();	//代码外提
 	void strength_reduction();	//强度削弱

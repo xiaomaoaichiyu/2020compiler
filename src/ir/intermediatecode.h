@@ -37,8 +37,6 @@ class CodeItem
 {
 public:
 	CodeItem(irCodeType type, string res, string ope1, string ope2);
-	CodeItem(const CodeItem& instr);
-	CodeItem& operator=(const CodeItem& instr);
 	void setID(int id);
 	int getId();
 	void setInvariant();
@@ -58,7 +56,7 @@ public:
 	string getContent();
 private:
 	int id;					//索引
-	int invariant;			//标明指令结果是一个不变式
+	string invariant;			//标明指令结果是一个不变式
 	irCodeType codetype;     //中间代码种类
 	string result;				//结果
 	string operand1;			//左操作数

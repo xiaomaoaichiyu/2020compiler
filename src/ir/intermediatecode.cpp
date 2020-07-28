@@ -14,59 +14,73 @@ string CodeItem::getContent()
 	string content = "";
 	switch (this->codetype) {
 	case ADD: {
-		content = "add        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "add        " + standardLength(result) + " " 
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case SUB: {
-		content = "sub        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "sub        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case DIV: {
-		content = "div        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "div        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case MUL: {
-		content = "mul        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "mul        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case REM: {
-		content = "rem        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "rem        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case AND: {
-		content = "and        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "and        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case OR: {
-		content = "or         " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "or         " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case NOT: {
-		content = "not        " + standardLength(result) + " " + standardLength(operand1);
+		content = "not        " + standardLength(result) + " "
+			+ standardLength(operand1) + standardLength(invariant);
 		break;
 	}
 	case EQL: {
-		content = "eql        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "eql        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case NEQ: {
-		content = "neq        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "neq        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case SGT: {
-		content = "sgt        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "sgt        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case SGE: {
-		content = "sge        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "sge        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case SLT: {
-		content = "slt        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "slt        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case SLE: {
-		content = "sle        " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "sle        " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case ALLOC: {
@@ -77,38 +91,45 @@ string CodeItem::getContent()
 		else {
 			ope1 = operand1;
 		}
-		content = "alloc      " + standardLength(result) + " " + standardLength(ope1) + " " + standardLength(operand2);
+		content = "alloc      " + standardLength(result) + " "
+			+ standardLength(ope1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case STORE: {
-		content = "store      " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "store      " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case STOREARR: {
-		content = "storearr   " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "storearr   " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case LOAD: {
-		content = "load       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "load       " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case LOADARR: {
-		content = "loadarr    " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "loadarr    " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case INDEX: {
 		break;
 	}
 	case CALL: {
-		content = "call       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "call       " + standardLength(result) + " "
+			+ standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case RET: {
-		content = "ret                   " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "ret                   " + standardLength(operand1)
+			+ " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case PUSH: {
-		content = "push       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "push       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		break;
 	}
 	case POP: {
@@ -177,26 +198,7 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->operand1 = ope1;
 	this->operand2 = ope2;
 	this->id = -1;
-}
-
-CodeItem::CodeItem(const CodeItem& instr) {
-	this->id = instr.id;
-	this->codetype = instr.codetype;
-	this->result = instr.result;
-	this->operand1 = instr.operand1;
-	this->operand2 = instr.operand2;
-	this->fatherBlock = instr.fatherBlock;
-}
-
-CodeItem& CodeItem::operator=(const CodeItem& instr)
-{
-	this->id = instr.id;
-	this->codetype = instr.codetype;
-	this->result = instr.result;
-	this->operand1 = instr.operand1;
-	this->operand2 = instr.operand2;
-	this->fatherBlock = instr.fatherBlock;
-	return *this;
+	this->invariant = "";
 }
 
 void CodeItem::setID(int id) {
@@ -209,12 +211,12 @@ int CodeItem::getId()
 }
 
 void CodeItem::setInvariant() {
-	this->invariant = 1;
+	this->invariant = "invariant";
 }
 
 int CodeItem::getInvariant()
 {
-	return this->invariant;
+	return this->invariant == "invariant";
 }
 
 irCodeType CodeItem::getCodetype()

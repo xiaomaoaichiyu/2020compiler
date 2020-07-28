@@ -36,14 +36,15 @@ void SSA::ssa_optimize() {
 	//inline_function();
 
 	// 将phi函数加入到中间代码
-	// add_phi_to_Ir();
+	add_phi_to_Ir();
 
+	count_UDchains();
 	//循环优化
 	back_edge();
-
-
+	mark_invariant();
+	
 	// 删除中间代码中的phi
-	// delete_Ir_phi();
+	delete_Ir_phi();
 
 	//count_use_def_chain();
 }
@@ -418,11 +419,28 @@ void printCircle() {
 	}
 }
 
+vector<UDchain> func2udChains;
+
+void SSA::count_UDchains() {
+	func2udChains.push_back(UDchain());
+	for (int i = 1; i < blockCore.size(); i++) {
+		UDchain tmp(blockCore.at(i));
+		func2udChains.push_back(tmp);
+	}
+	ofstream ud("udchain.txt");
+	for (int i = 1; i < func2udChains.size(); i++) {
+		ud << "function_" << i << endl;
+		func2udChains.at(i).printUDchain(ud);
+		ud << endl;
+	}
+	ud.close();
+}
+
+
 void SSA::back_edge() {
 	for (int i = 1; i < blockCore.size(); i++) {
 		//每一个函数的基本块
 		auto blocks = blockCore.at(i);
-		UDchain chains(blocks);
 		vector<pair<int, int>> backEdges;		//存储找到的回边
 		for (auto blk : blocks) {
 			int num = blk.number;
@@ -486,68 +504,165 @@ void SSA::back_edge() {
 void SSA::mark_invariant() {
 	for (int i = 1; i < blockCore.size(); i++) {
 		auto& blocks = blockCore.at(i);
-		
+		auto& udchain = func2udChains.at(i);
 		try {
 			//处理函数内部的所有循环
 			for (auto circle : circles) {
-				int mark = 1;
-				while (mark) {
-					for (auto idx : circle.cir_blks) {
-						auto& ir = blocks.at(idx).Ir;
-						for (auto& instr : ir) {		//这里判断每条指令的操作数是否为常数或者定值在循环外面
-							if (instr.getInvariant() == 1) {
-								continue;
+				//第一遍标记运算对象为常数和定值点在循环外的
+				for (auto idx : circle.cir_blks) {
+					auto& ir = blocks.at(idx).Ir;
+					for (int j = 0; j < ir.size(); j++) { //这里判断每条指令的操作数是否为常数或者定值在循环外面
+						auto& instr = ir.at(j);
+						auto op = instr.getCodetype();
+						auto res = instr.getResult();
+						auto ope1 = instr.getOperand1();
+						auto ope2 = instr.getOperand2();
+						switch (op) {
+						case LOAD: {
+							if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
+								instr.setInvariant();
 							}
-							auto op = instr.getCodetype();
-							auto res = instr.getResult();
-							auto ope1 = instr.getOperand1();
-							auto ope2 = instr.getOperand2();
-							switch (op)
-							{
-							case LOAD: {
-								int d;
-								if (circle.cir_blks.find(d) == circle.cir_blks.end()) {
+							else {	//取变量的值，看变量的定义位置def是否在循环外
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
-								break;
-							} case STORE: {	//先不考虑全局变量和局部变量的区别
-								if (isNumber(res)) {
+							}
+							break; } 
+						case STORE: {	//先不考虑全局变量和局部变量的区别
+							if (isNumber(res)) {	//赋值是常数，直接设置为不变式
+								instr.setInvariant();
+							}
+							else {	//赋值为变量，查看变量的定义
+								auto def = udchain.getDef(Node(idx, j, res), res);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
-								else {
-									//用使用-定义链来判断 res 变量的定值是否在循环外
-									int d;
-									if (circle.cir_blks.find(d) == circle.cir_blks.end()) {
-										instr.setInvariant();
-									}
+							}
+							break; }
+						case ADD: case SUB: case DIV: case MUL: case REM:
+						case AND: case OR: case NOT: case EQL:
+						case NEQ: case SGT: case SGE: case SLT: case SLE: {
+							if (isNumber(ope1)) {
+								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
 								}
-								break;
 							}
-							case ADD: case SUB: case DIV: case MUL: case REM:
-							case AND: case OR: case NOT: case EQL:
-							case NEQ: case SGT: case SGE: case SLT: case SLE: {
-								
-								break;
+							else if (isNumber(ope2)) {
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
 							}
-							case ALLOC:
-							case STOREARR:
-							case LOADARR:
-							case CALL:
-							case RET:
-							case PUSH:
-							case POP:
-							case LABEL:
-							case BR:
-							case DEFINE:
-							case PARA:
-							case GLOBAL:
-							case NOTE:
-							case MOV:
-							case LEA:
-							case GETREG:
-							default:
-								break;
+							else {	//操作数全是变量
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+								def = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
 							}
+							break; }
+						case STOREARR: case LOADARR: {
+							if (!isNumber(ope2)) {
+								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+						}
+						case RET: case PUSH: case BR: {
+							if (isTmp(ope1)) {
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+							break; }
+						default:
+							break;
+						}
+					}
+				}
+				//处理第一遍未标记的代码
+				for (auto idx : circle.cir_blks) {
+					auto& ir = blocks.at(idx).Ir;
+					for (int j = 0; j < ir.size(); j++) { //这里判断每条指令的操作数是否为常数或者定值在循环外面
+						auto& instr = ir.at(j);
+						auto op = instr.getCodetype();
+						auto res = instr.getResult();
+						auto ope1 = instr.getOperand1();
+						auto ope2 = instr.getOperand2();
+						switch (op) {
+						case LOAD: {
+							if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
+								instr.setInvariant();
+							}
+							else {	//取变量的值，看变量的定义位置def是否在循环外
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+							break; }
+						case STORE: {	//先不考虑全局变量和局部变量的区别
+							if (isNumber(res)) {	//赋值是常数，直接设置为不变式
+								instr.setInvariant();
+							}
+							else {	//赋值为变量，查看变量的定义
+								auto def = udchain.getDef(Node(idx, j, res), res);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+							break; }
+						case ADD: case SUB: case DIV: case MUL: case REM:
+						case AND: case OR: case NOT: case EQL:
+						case NEQ: case SGT: case SGE: case SLT: case SLE: {
+							if (isNumber(ope1)) {
+								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+							else if (isNumber(ope2)) {
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+							else {	//操作数全是变量
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+								def = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+							break; }
+						case STOREARR: case LOADARR: {
+							if (!isNumber(ope2)) {
+								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+						}
+						case RET: case PUSH: case BR: {
+							if (isTmp(ope1)) {
+								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+							break; }
+						default:
+							break;
 						}
 					}
 				}
@@ -555,6 +670,14 @@ void SSA::mark_invariant() {
 		}
 		catch (exception e) {
 			WARN_MSG("wrong in mark invariant! maybe the circle find is wrong!");
+		}
+	}
+	for (int i = 1; i < blockCore.size(); i++) {
+		for (int j = 0; j < blockCore.at(i).size(); j++) {
+			auto ir = blockCore.at(i).at(j).Ir;
+			for (auto instr : ir) {
+				cout << instr.getContent() << endl;
+			}
 		}
 	}
 }
