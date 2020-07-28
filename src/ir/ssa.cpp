@@ -58,7 +58,13 @@ int locBlockForLabel(vector<int> v, int key) {
 // 判断标签类型
 // 无需处理
 bool ifNotToDeal(irCodeType ct) {
-	return ct == ALLOC || ct == GLOBAL || ct == CALL || ct == LABEL || ct == DEFINE;
+	switch (ct)
+	{
+	case ALLOC: case GLOBAL: case LABEL: case DEFINE: case NOTE:
+		return true;
+	default:
+		return false;
+	}
 }
 // result为定义变量
 bool ifResultDef(irCodeType ct) {
@@ -72,9 +78,10 @@ bool ifResultDef(irCodeType ct) {
 	case BR:
 	case PARA:
 	case MOV:
+	case CALL:
 		return true;
 	default:
-		false;
+		return false;
 	}
 }
 // op1为定义变量
@@ -668,7 +675,7 @@ void SSA::renameVar() {
 		// map<string, int> varPool;
 		int size2 = total[i].size();
 		for (j = 0; j < size2; j++)
-			if ((total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) && varPool.find(total[i][j].getName()) == varPool.end())
+			if ((total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) && total[i][j].getDimension() == 0 && varPool.find(total[i][j].getName()) == varPool.end())
 				varPool[total[i][j].getName()] = 0;
 		// 记录每个基本块中最后出现的变量名
 		map<string, map<int, string>> lastVarName;	// <varName, <blkNum, varName_SSA>>
@@ -750,7 +757,14 @@ void SSA::renameVar() {
 		// 以基本块为单位遍历, j 是基本块编号
 		for (j = 1; j < size3; j++) {
 			int size6 = blockCore[i][j].Ir.size();
+			// 记录每个变量在基本块中出现的次序
 			map<string, vector<string>> varSequence;
+			for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) {
+				vector<string> v;
+				varSequence[iter->first] = v;
+			}
+			for (vector<phiFun>::iterator iter = blockCore[i][j].phi.begin(); iter != blockCore[i][j].phi.end(); iter++)
+				varSequence[iter->primaryName].push_back(iter->name);
 			// 5. 更新中间代码中的使用
 			for (k = 0; k < size6; k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
@@ -759,8 +773,7 @@ void SSA::renameVar() {
 				}
 				else if (ifOp1Def(ci.getCodetype())) {
 					// op1是新定义的变量，result和op2是使用的变量
-					if (ifGlobalVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1()) || ifTempVariable(ci.getOperand1()))
-						varSequence[deleteSuffix(ci.getOperand1())].push_back(ci.getOperand1());
+					varSequence[deleteSuffix(ci.getOperand1())].push_back(ci.getOperand1());
 					// 更新result的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getResult()) != varPool.end()) {
@@ -776,10 +789,11 @@ void SSA::renameVar() {
 								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
 									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
 							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getResult() << endl;
+							if (flag == 0) cout << "Wrong! Empty! result = " << "\t" << ci.getResult() << "\t" << ci.getContent() << endl;
 						}
 						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getResult()].push_back(tmp);
 					}
 					// 更新op2的变量名
 					ci = blockCore[i][j].Ir[k];
@@ -795,16 +809,16 @@ void SSA::renameVar() {
 								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
 									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
 							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand2() << endl;
+							if (flag == 0) cout << "Wrong! Empty! op2 = " << "\t" << ci.getOperand2() << "\t" << ci.getContent() << endl;
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getOperand2()].push_back(tmp);
 					}
 				}
 				else if (ifResultDef(ci.getCodetype())) {
 					// result是新定义的变量，op1和op2是使用的变量
-					if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
-						varSequence[deleteSuffix(ci.getResult())].push_back(ci.getResult());
+					varSequence[deleteSuffix(ci.getResult())].push_back(ci.getResult());
 					// 更新op1的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getOperand1()) != varPool.end()) {
@@ -820,10 +834,11 @@ void SSA::renameVar() {
 								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
 									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
 							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand1() << endl;
+							if (flag == 0) cout << "Wrong! Empty! op1 = " << "\t" << ci.getOperand1() << "\t" << ci.getContent() << endl;
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getOperand1()].push_back(tmp);
 					}
 					// 更新op2的变量名
 					ci = blockCore[i][j].Ir[k];
@@ -839,10 +854,11 @@ void SSA::renameVar() {
 								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
 									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
 							}
-							if (flag == 0) cout << "Wrong! Empty!" << "\t" << ci.getOperand2() << endl;
+							if (flag == 0) cout << "Wrong! Empty! op2_2 = " << "\t" << ci.getOperand2() << "\t" << ci.getContent() << endl;
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
 						blockCore[i][j].Ir[k] = nci;
+						varSequence[ci.getOperand2()].push_back(tmp);
 					}
 				}
 			}
