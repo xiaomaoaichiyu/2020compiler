@@ -775,6 +775,8 @@ void SSA::renameVar() {
 				}
 				else {
 					// result是新定义的变量，op1和op2是使用的变量
+					if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
+						varSequence[deleteSuffix(ci.getResult())].push_back(ci.getResult());
 					// 更新op1的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getOperand1()) != varPool.end()) {
