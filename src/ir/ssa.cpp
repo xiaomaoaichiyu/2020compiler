@@ -596,25 +596,43 @@ void SSA::add_phi_function() {
 		int size3 = varChain[i].size();
 		// 遍历这个函数需要\phi函数的变量
 		for (j = 0; j < size3; j++) {
-			varStruct vs = varChain[i][j];
-			// 在每个需要插入\phi函数的基本块插入\phi函数
-			for (set<int>::iterator iter = vs.blockNums.begin(); iter != vs.blockNums.end(); iter++) {
-				// 初始化要插入的\phi函数
-				vector<int> s1; vector<string> s2;  phiFun pf(vs.name, vs.name, s1, s2);
-				// 在每个前序节点中查找该变量的基本块位置
-				for (set<int>::iterator iter1 = blockCore[i][*iter].pred.begin(); iter1 != blockCore[i][*iter].pred.end(); iter1++) {
-					// 记录该基本块是否被访问过
-					vector<bool> visited;
-					for (k = 0; k < size2; k++) visited.push_back(false);
-					int t = phi_loc_block(i, *iter1, vs.name, visited, *iter);
-					if (t != 0 && find(pf.blockNums.begin(), pf.blockNums.end(), t) == pf.blockNums.end()) 
-						pf.blockNums.push_back(t);
+			// 处理每一个添加phi的变量
+			bool update = true;
+			set<int> tmp_diff;
+			while (update) {
+				update = false;
+				varStruct vs = varChain[i][j];
+				set<int> tmp_ans;
+				set_difference(vs.blockNums.begin(), vs.blockNums.end(), tmp_diff.begin(), tmp_diff.end(), inserter(tmp_ans, tmp_ans.begin()));
+				varChain[i][j].blockNums = tmp_ans;
+				vs = varChain[i][j];
+				// 在每个需要插入\phi函数的基本块插入\phi函数
+				for (set<int>::iterator iter = vs.blockNums.begin(); iter != vs.blockNums.end(); iter++) {
+					// 初始化要插入的\phi函数
+					vector<int> s1; vector<string> s2;  phiFun pf(vs.name, vs.name, s1, s2);
+					// 在每个前序节点中查找该变量的基本块位置
+					for (set<int>::iterator iter1 = blockCore[i][*iter].pred.begin(); iter1 != blockCore[i][*iter].pred.end(); iter1++) {
+						// 记录该基本块是否被访问过
+						vector<bool> visited;
+						for (k = 0; k < size2; k++) visited.push_back(false);
+						int t = phi_loc_block(i, *iter1, vs.name, visited, *iter);
+						if (t != 0 && find(pf.blockNums.begin(), pf.blockNums.end(), t) == pf.blockNums.end())
+							pf.blockNums.push_back(t);
+					}
+					if (!blockCore[i][*iter].phi.empty() && blockCore[i][*iter].phi.back().primaryName.compare(pf.primaryName) == 0)
+						blockCore[i][*iter].phi.pop_back();
+					if (pf.blockNums.size() > 1) {
+					// 在基本块中插入
+						blockCore[i][*iter].phi.push_back(pf);
+					}
+					else {
+						// 若\phi函数参数只有一个值则不用插入 
+						update = true;
+						tmp_diff.insert(*iter);
+					}
 				}
-				// 在基本块中插入
-				if (pf.blockNums.size() > 1)	// 若\phi函数参数只有一个值则不用插入
-					blockCore[i][*iter].phi.push_back(pf);
 			}
-		}
+		}	
 	}
 }
 
@@ -695,6 +713,8 @@ void SSA::renameVar() {
 						k--;
 						update = true;
 						cout << "delete" << pf.primaryName << " " << pf.name;
+						cout << " " << i << " " << j;
+						for (vector<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++) cout << " " << *iter;
 						for (vector<string>::iterator iter = pf.subIndexs.begin(); iter != pf.subIndexs.end(); iter++) cout << " " << *iter;
 						cout << endl;
 						continue;
@@ -705,16 +725,20 @@ void SSA::renameVar() {
 		// 以基本块为单位遍历, j 是基本块编号
 		for (j = 1; j < size3; j++) {
 			int size6 = blockCore[i][j].Ir.size();
+			map<string, vector<string>> varSequence;
 			// 5. 更新中间代码中的使用
 			for (k = 0; k < size6; k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
 				if (ci.getCodetype() == STORE || ci.getCodetype() == STOREARR) {
 					// op1是新定义的变量，result和op2是使用的变量
+					if (ifGlobalVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1()) || ifTempVariable(ci.getOperand1()))
+						varSequence[deleteSuffix(ci.getOperand1())].push_back(ci.getOperand1());
 					// 更新result的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getResult()) != varPool.end()) {
 						string tmp = ci.getResult();
-						if (lastVarName[ci.getResult()].find(j) != lastVarName[ci.getResult()].end()) tmp = lastVarName[ci.getResult()][j];
+						if (varSequence.find(ci.getResult()) != varSequence.end() && !varSequence[ci.getResult()].empty())
+							tmp = varSequence[ci.getResult()].back();
 						else {
 							vector<int> queue;
 							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
@@ -755,7 +779,8 @@ void SSA::renameVar() {
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getOperand1()) != varPool.end()) {
 						string tmp = ci.getOperand1();
-						if (lastVarName[ci.getOperand1()].find(j) != lastVarName[ci.getOperand1()].end()) tmp = lastVarName[ci.getOperand1()][j];
+						if (varSequence.find(ci.getOperand1()) != varSequence.end() && !varSequence[ci.getOperand1()].empty())
+							tmp = varSequence[ci.getOperand1()].back();
 						else {
 							vector<int> queue;
 							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
@@ -891,7 +916,7 @@ void SSA::simplify_basic_block() {
 				int size3 = v.size();
 				for (k = 0; k < size3; k++) {
 					// 修改序号
-					if (v[k].number >= j) v[k].number -= 1;
+					if (v[k].number > j) v[k].number = v[k].number - 1;
 					// 修改pred
 					set<int> pred;
 					for (set<int>::iterator iter = v[k].pred.begin(); iter != v[k].pred.end(); iter++)
@@ -995,7 +1020,6 @@ void SSA::generate() {
 
 	// 在需要添加基本块的开始添加\phi函数
 	add_phi_function();
-
 	// 变量重命名
 	renameVar();
 	
