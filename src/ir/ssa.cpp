@@ -55,6 +55,39 @@ int locBlockForLabel(vector<int> v, int key) {
 	return -1;
 }
 
+// 判断标签类型
+// 无需处理
+bool ifNotToDeal(irCodeType ct) {
+	return ct == ALLOC || ct == GLOBAL || ct == CALL || ct == LABEL || ct == DEFINE;
+}
+// result为定义变量
+bool ifResultDef(irCodeType ct) {
+	switch (ct)
+	{
+	case ADD: case SUB: case MUL: case DIV: case REM:
+	case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
+	case LOAD: case LOADARR:
+	case RET:
+	case PUSH:
+	case BR:
+	case PARA:
+	case MOV:
+		return true;
+	default:
+		false;
+	}
+}
+// op1为定义变量
+bool ifOp1Def(irCodeType ct) {
+	switch (ct)
+	{
+	case STORE: case STOREARR: case POP:
+		return true;
+	default:
+		return false;
+	}
+}
+
 // 找到基本块的每个起始语句
 void SSA::find_primary_statement() {
 	int size1 = codetotal.size();
@@ -420,35 +453,24 @@ void SSA::build_def_use_chain() {
 				// if (k - 1 < 0 || k - 1 >= codetotal[i].size()) continue;
 				// CodeItem ci = codetotal[i][k - 1];
 				CodeItem ci = *iter;
-				switch (ci.getCodetype())
-				{
+				if (ifResultDef(ci.getCodetype())) {
 					// result为def，op1和op2为use
-				case ADD: case SUB: case MUL: case DIV: case REM:
-				case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
-				case LOAD: case LOADARR:
-				case RET:
-				case PUSH: 
-				case BR:
-				case PARA:
-				case MOV:
 					use_insert(i, j, ci.getOperand2());
 					use_insert(i, j, ci.getOperand1());
 					def_insert(i, j, ci.getResult());
 					def2_insert(i, j, ci.getResult());
-					break;
-				case STORE: case STOREARR:
-				case POP:
+				}
+				else if (ifOp1Def(ci.getCodetype())) {
 					use_insert(i, j, ci.getResult());
 					use_insert(i, j, ci.getOperand2());
 					def_insert(i, j, ci.getOperand1());
 					def2_insert(i, j, ci.getOperand1());
-					break;
-				// 无需处理的部分，当然也与上面合并也无妨
-				case ALLOC: case GLOBAL:
-				case CALL: case LABEL: case DEFINE:
-					break;
-				default:
-					break;
+				}
+				else if (ifNotToDeal(ci.getCodetype())) {
+					;
+				}
+				else {
+					cout << "codetype" << ci.getCodetype() << endl;
 				}
 			}
 		}
@@ -667,7 +689,10 @@ void SSA::renameVar() {
 			int size5 = blockCore[i][j].Ir.size();
 			for (k = 0; k < size5; k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
-				if (ci.getCodetype() == STORE || ci.getCodetype() == STOREARR) {
+				if (ifNotToDeal(ci.getCodetype())) {
+					;
+				}
+				else if (ifOp1Def(ci.getCodetype())) {
 					// op1是新定义的变量，result和op2是使用的变量
 					if (varPool.find(ci.getOperand1()) != varPool.end()) {
 						string tmp = ci.getOperand1() + "^" + to_string(varPool[ci.getOperand1()]);
@@ -677,7 +702,7 @@ void SSA::renameVar() {
 						lastVarName[ci.getOperand1()][j] = tmp;
 					}
 				}
-				else {
+				else if (ifResultDef(ci.getCodetype())) {
 					// result是新定义的变量，op1和op2是使用的变量
 					if (varPool.find(ci.getResult()) != varPool.end()) {
 						string tmp = ci.getResult() + "^" + to_string(varPool[ci.getResult()]);
@@ -729,7 +754,10 @@ void SSA::renameVar() {
 			// 5. 更新中间代码中的使用
 			for (k = 0; k < size6; k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
-				if (ci.getCodetype() == STORE || ci.getCodetype() == STOREARR) {
+				if (ifNotToDeal(ci.getCodetype())) {
+					;
+				}
+				else if (ifOp1Def(ci.getCodetype())) {
 					// op1是新定义的变量，result和op2是使用的变量
 					if (ifGlobalVariable(ci.getOperand1()) || ifLocalVariable(ci.getOperand1()) || ifTempVariable(ci.getOperand1()))
 						varSequence[deleteSuffix(ci.getOperand1())].push_back(ci.getOperand1());
@@ -773,7 +801,7 @@ void SSA::renameVar() {
 						blockCore[i][j].Ir[k] = nci;
 					}
 				}
-				else {
+				else if (ifResultDef(ci.getCodetype())) {
 					// result是新定义的变量，op1和op2是使用的变量
 					if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
 						varSequence[deleteSuffix(ci.getResult())].push_back(ci.getResult());
