@@ -566,10 +566,9 @@ void SSA::build_var_chain() {
 int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited, int insertBlk) {
 	if (visited[blkNum] || blkNum == insertBlk) return 0;
 	else visited[blkNum] = true;
-	// 如果该基本块中用到或定义了name变量
-	set<string> s1 = blockCore[funNum][blkNum].def;
-	// set<string> s2 = blockCore[funNum][blkNum].use;
-	if (s1.find(name) != s1.end()) return blkNum;
+	// 如果该基本块中定义了name变量
+	if (blockCore[funNum][blkNum].def2.find(name) != blockCore[funNum][blkNum].def2.end()) 
+		return blkNum;
 	// 如果该基本块要插入的\phi函数中包含该变量，也算该基本块使用了该变量
 	set<int> s3;  varStruct vs(name, s3);
 	for (int i = 0; i < varChain[funNum].size(); i++) 
@@ -628,32 +627,26 @@ void SSA::renameVar() {
 		// 建立该函数的变量池，同时指定变量的下标
 		// map<string, int> varPool;
 		int size2 = total[i].size();
-		for (j = 0; j < size2; j++) 
-			if ((total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) && varPool.find(total[i][j].getName()) == varPool.end()) 
+		for (j = 0; j < size2; j++)
+			if ((total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER) && varPool.find(total[i][j].getName()) == varPool.end())
 				varPool[total[i][j].getName()] = 0;
 		// 记录每个基本块中最后出现的变量名
 		map<string, map<int, string>> lastVarName;	// <varName, <blkNum, varName_SSA>>
 		for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) { map<int, string> m;  lastVarName[iter->first] = m; }
-		// 以基本块为单位遍历中间代码
+		// 以基本块为单位遍历, j 是基本块编号
 		int size3 = blockCore[i].size();
-		for (j = 1; j < size3 - 1; j++) { // 跳过entry块和exit块
-			// 记录每个变量在基本块中出现的次序
-			map<string, vector<string>> varSequence;
-			for (map<string, int>::iterator iter = varPool.begin(); iter != varPool.end(); iter++) {
-				vector<string> v;
-				varSequence[iter->first] = v;
-			}
+		for (j = 1; j < size3; j++) {
+			// 1. 首先更新基本块开始的 \phi函数定义
 			int size4 = blockCore[i][j].phi.size();
-			int size5 = blockCore[i][j].Ir.size();
-			// 1. 首先更新基本块开始的\phi函数定义
 			for (k = 0; k < size4; k++) {
 				phiFun pf = blockCore[i][j].phi[k];
 				string tmp = pf.name + "^" + to_string(varPool[pf.name]);
 				blockCore[i][j].phi[k].name = tmp;
 				varPool[pf.name] = varPool[pf.name] + 1;
-				varSequence[pf.name].push_back(tmp);
+				lastVarName[pf.name][j] = tmp;
 			}
-			// 2. 更新指令中的定义
+			// 2. 更新中间代码中新定义的变量
+			int size5 = blockCore[i][j].Ir.size();
 			for (k = 0; k < size5; k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
 				if (ci.getCodetype() == STORE || ci.getCodetype() == STOREARR) {
@@ -663,7 +656,7 @@ void SSA::renameVar() {
 						CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
 						varPool[ci.getOperand1()] = varPool[ci.getOperand1()] + 1;
-						varSequence[ci.getOperand1()].push_back(tmp);
+						lastVarName[ci.getOperand1()][j] = tmp;
 					}
 				}
 				else {
@@ -673,44 +666,55 @@ void SSA::renameVar() {
 						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
 						varPool[ci.getResult()] = varPool[ci.getResult()] + 1;
-						varSequence[ci.getResult()].push_back(tmp);
+						lastVarName[ci.getResult()][j] = tmp;
 					}
 				}
 			}
-			// 3. 将该基本块中的变量名添加到lastVarName
-			for (map<string, vector<string>>::iterator iter = varSequence.begin(); iter != varSequence.end(); iter++)
-				if (!iter->second.empty()) { lastVarName[iter->first][j] = iter->second.back(); }
-			bool update = true;
-			while (update) {
-				update = false;
-				// 4. 更新phi的使用
+		}
+		// 以基本块为单位遍历, j 是基本块编号
+		bool update = true;
+		while (update) {
+			update = false;
+			for (j = 1; j < size3; j++) {
+				// 3. 更新phi的使用
 				for (k = 0; k < blockCore[i][j].phi.size(); k++) {
 					phiFun pf = blockCore[i][j].phi[k];
+					blockCore[i][j].phi[k].subIndexs.clear();
 					for (vector<int>::iterator iter = pf.blockNums.begin(); iter != pf.blockNums.end(); iter++)
 						if (lastVarName[pf.primaryName].find(*iter) != lastVarName[pf.primaryName].end())
 							blockCore[i][j].phi[k].subIndexs.push_back(lastVarName[pf.primaryName][*iter]);
 				}
-				// 5. 删除无用的phi函数
+				// 4. 删除无用的phi函数
 				for (k = 0; k < blockCore[i][j].phi.size(); k++) {
 					phiFun pf = blockCore[i][j].phi[k];
 					if (pf.subIndexs.size() <= 1) {	// 如果对应的选择只有一个则不用添加phi函数
 						blockCore[i][j].phi.erase(blockCore[i][j].phi.begin() + k);
-						lastVarName[pf.primaryName].erase(j);
+						if (lastVarName[pf.primaryName].find(j) != lastVarName[pf.primaryName].end() &&
+							lastVarName[pf.primaryName][j].compare(pf.name) == 0)
+							lastVarName[pf.primaryName].erase(j);
 						k--;
 						update = true;
+						cout << "delete" << pf.primaryName << " " << pf.name;
+						for (vector<string>::iterator iter = pf.subIndexs.begin(); iter != pf.subIndexs.end(); iter++) cout << " " << *iter;
+						cout << endl;
 						continue;
 					}
 				}
 			}
-			// 6. 更新指令中的使用
-			for (k = 0; k < size5; k++) {
+		}
+		// 以基本块为单位遍历, j 是基本块编号
+		for (j = 1; j < size3; j++) {
+			int size6 = blockCore[i][j].Ir.size();
+			// 5. 更新中间代码中的使用
+			for (k = 0; k < size6; k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
 				if (ci.getCodetype() == STORE || ci.getCodetype() == STOREARR) {
+					// op1是新定义的变量，result和op2是使用的变量
 					// 更新result的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getResult()) != varPool.end()) {
 						string tmp = ci.getResult();
-						if (!varSequence[ci.getResult()].empty()) tmp = varSequence[ci.getResult()].back();	// 最后一个元素
+						if (lastVarName[ci.getResult()].find(j) != lastVarName[ci.getResult()].end()) tmp = lastVarName[ci.getResult()][j];
 						else {
 							vector<int> queue;
 							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
@@ -724,13 +728,12 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), tmp, ci.getOperand1(), ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
-						varSequence[ci.getResult()].push_back(tmp);
 					}
 					// 更新op2的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getOperand2()) != varPool.end()) {
 						string tmp = ci.getOperand2();
-						if (!varSequence[ci.getOperand2()].empty()) tmp = varSequence[ci.getOperand2()].back();	// 最后一个元素
+						if (lastVarName[ci.getOperand2()].find(j) != lastVarName[ci.getOperand2()].end()) tmp = lastVarName[ci.getOperand2()][j];
 						else {
 							vector<int> queue;
 							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
@@ -744,23 +747,21 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
 						blockCore[i][j].Ir[k] = nci;
-						varSequence[ci.getOperand2()].push_back(tmp);
 					}
 				}
 				else {
+					// result是新定义的变量，op1和op2是使用的变量
 					// 更新op1的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getOperand1()) != varPool.end()) {
 						string tmp = ci.getOperand1();
-						if (!varSequence[ci.getOperand1()].empty()) tmp = varSequence[ci.getOperand1()].back();	// 最后一个元素
+						if (lastVarName[ci.getOperand1()].find(j) != lastVarName[ci.getOperand1()].end()) tmp = lastVarName[ci.getOperand1()][j];
 						else {
 							vector<int> queue;
 							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
 							int flag = 0;
 							for (int p = 0; p < queue.size(); p++) {
-								if (lastVarName[ci.getOperand1()].find(queue[p]) != lastVarName[ci.getOperand1()].end()) {
-									tmp = lastVarName[ci.getOperand1()][queue[p]]; flag++;
-								}
+								if (lastVarName[ci.getOperand1()].find(queue[p]) != lastVarName[ci.getOperand1()].end()) { tmp = lastVarName[ci.getOperand1()][queue[p]]; flag++;  break; }
 								for (set<int>::iterator iter2 = blockCore[i][queue[p]].pred.begin(); iter2 != blockCore[i][queue[p]].pred.end(); iter2++)
 									if (find(queue.begin(), queue.end(), *iter2) == queue.end()) queue.push_back(*iter2);
 							}
@@ -768,13 +769,12 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), tmp, ci.getOperand2());
 						blockCore[i][j].Ir[k] = nci;
-						varSequence[ci.getOperand1()].push_back(tmp);
 					}
 					// 更新op2的变量名
 					ci = blockCore[i][j].Ir[k];
 					if (varPool.find(ci.getOperand2()) != varPool.end()) {
 						string tmp = ci.getOperand2();
-						if (!varSequence[ci.getOperand2()].empty()) tmp = varSequence[ci.getOperand2()].back();	// 最后一个元素
+						if (lastVarName[ci.getOperand2()].find(j) != lastVarName[ci.getOperand2()].end()) tmp = lastVarName[ci.getOperand2()][j];
 						else {
 							vector<int> queue;
 							for (set<int>::iterator iter1 = blockCore[i][j].pred.begin(); iter1 != blockCore[i][j].pred.end(); iter1++) queue.push_back(*iter1);
@@ -788,7 +788,6 @@ void SSA::renameVar() {
 						}
 						CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), tmp);
 						blockCore[i][j].Ir[k] = nci;
-						varSequence[ci.getOperand2()].push_back(tmp);
 					}
 				}
 			}
@@ -840,6 +839,15 @@ void SSA::deal_phi_function() {
 		for (j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry块和exit块
 			for (k = 0; k < blockCore[i][j].phi.size(); k++) {
 				phiFun pf = blockCore[i][j].phi[k];
+				if (pf.subIndexs.size() <= 1) {	// 如果对应的选择只有一个则不用添加phi函数
+					cout << pf.primaryName << " " << pf.name << " " << pf.subIndexs.back();
+					for (vector<int>::iterator iter10 = pf.blockNums.begin(); iter10 != pf.blockNums.end(); iter10++)
+						cout << " " << *iter10;
+					cout << endl;
+					blockCore[i][j].phi.erase(blockCore[i][j].phi.begin() + k);
+					k--;
+					continue;
+				}
 				for (m = 0; m < pf.blockNums.size(); m++) {
 					// e.g. x3 = \phi(x1, x2)
 					// 在x1和x2的基本块末尾分别添加x3 = x1; x3 = x2; 赋值语句
