@@ -47,68 +47,8 @@ struct Allocation {
 
 void registerAllocation();
 
-//=============================================
-//2. 线性扫描算法
-//=============================================
+class ActiveAnalyse {
 
-//1. 基本块线性化
-//class BlockOrder {
-//	//loop dectection循环检测
-//	map<int, basicBlock> blocks;
-//	map<int, int> blk2index;
-//	map<int, int> blk2depth;
-//
-//	vector<pair<int, int>> loop_end_lists;			//pair<int, int> : loop_end -> loop_header
-//	int index = 0;
-//	vector<pair<int, int>> loop_header_index;		//loop_header index
-//	vector<int> orders;	//基本块的线性化顺序
-//
-//public:
-//	BlockOrder(vector<basicBlock> blks);
-//	void loop_detection(int nblks);
-//	void sortInstr();
-//};
-//
-////变量的范围
-//struct Range {
-//	int from;
-//	int to;
-//	Range(int _from, int _to) : from(_from), to(_to) {}
-//};
-//
-////变量使用的位置
-//struct UsePosition {
-//	int position;
-//	int use_kind; //1: regster, 2: memory
-//	UsePosition(int pos, int kind) : position(pos), use_kind(kind) {}
-//};
-//
-////变量的生存周期
-//class Interval {
-//	string var;
-//	string reg;
-//	vector<Range> ranges;
-//	vector<UsePosition> positions;
-//	Interval* split_parent = nullptr;
-//	vector<Interval> split_children;
-//	Interval* register_hint = nullptr;
-//public:
-//	Interval();
-//	Interval(string var);
-//	~Interval();
-//
-//	void add_range(int from, int to);
-//	void add_usePosition(int pos, int use_kind);
-//	Interval split(int op_id);
-//};
-//
-//
-//
-//class RegsiterAllocation {
-//
-//public:
-//
-//};
-
+};
 
 #endif // _REGISTER_H_
