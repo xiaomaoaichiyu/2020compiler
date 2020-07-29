@@ -54,14 +54,18 @@ void SSA::pre_optimize() {
 
 //ssa形式上的优化
 void SSA::ssa_optimize() {
+	/*关闭常量传播
 	// 重新计算use-def关系
 	build_def_use_chain();
 	// 重新进行活跃变量分析
 	active_var_analyse();
-	
 	//常量传播
-	const_propagation();
+	const_propagation();*/
 
+	// 重新计算use-def关系
+	build_def_use_chain();
+	// 重新进行活跃变量分析
+	active_var_analyse();
 	// 死代码删除
 	delete_dead_codes();
 	// 重新计算use-def关系
@@ -69,9 +73,9 @@ void SSA::ssa_optimize() {
 	// 重新进行活跃变量分析
 	active_var_analyse();
 	// 函数内联
-	//judge_inline_function();
-	//inline_function();
-
+	judge_inline_function();
+	inline_function();
+	/*关闭循环优化
 	// 将phi函数加入到中间代码
 	add_phi_to_Ir();
 
@@ -90,7 +94,7 @@ void SSA::ssa_optimize() {
 	// 删除中间代码中的phi
 	delete_Ir_phi();
 
-	//count_use_def_chain();
+	//count_use_def_chain();*/
 }
 
 //========================================================
