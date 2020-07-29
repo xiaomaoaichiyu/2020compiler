@@ -429,16 +429,6 @@ void SSA::delete_dead_codes() {
 //	常量传播 + 复写传播
 //==================================================
 
-struct InitValue {
-	string var;
-	string offset;
-	string value;
-};
-
-string getValue(string var, string offset) {
-	//...
-}
-
 map<string, string> var2value;
 
 void SSA::const_propagation() {
@@ -446,26 +436,18 @@ void SSA::const_propagation() {
 		auto& blocks = blockCore.at(i);
 		for (int j = 0; j < blocks.size(); j++) {	//遍历每个基本的ir
 			auto& ir = blocks.at(j).Ir;
-			for (int k = 0; k < ir.size(); k++) {	//遍历每条指令，做常量替换
-				auto& instr = ir.at(k);
-				auto op = instr.getCodetype();
-				auto res = instr.getResult();
-				auto ope1 = instr.getOperand1();
-				auto ope2 = instr.getOperand2();
-
-			}
-			//常量折叠：计算全部为常数的表达式
+			var2value.clear();
+			//常量替换+常量折叠
 			for (int k = 0; k < ir.size(); k++) {
 				auto& instr = ir.at(k);
 				auto op = instr.getCodetype();
 				auto res = instr.getResult();
 				auto ope1 = instr.getOperand1();
 				auto ope2 = instr.getOperand2();
-				switch (op)
-				{
+				switch (op) {
 				case ADD: case SUB: case DIV: case MUL: case REM: 
 				case AND: case OR: case NOT:
-				case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE: {
+				case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE: {	//一个def 两个use （not例外）
 					if (var2value.find(ope1) != var2value.end()) {	//操作数1的值是一个立即数，替换
 						instr.setOperand1(var2value[ope1]);
 					}
@@ -473,29 +455,59 @@ void SSA::const_propagation() {
 						instr.setOperand2(var2value[ope2]);
 					}
 					if (isNumber(ope1) && isNumber(ope2)) {	//两个操作数都是立即数
-						instr.setResult(calculate(op, ope1, ope2));
+						string tmp = calculate(op, ope1, ope2);
+						//instr.setResult(tmp); //设置结果对应的值即可，在死代码删除的时候删去这一指令
+						var2value[res] = tmp;
 					}
 					break;
 				}
-				case STORE:
-				case STOREARR:
-				case LOAD:
-				case LOADARR:
-				case INDEX:
-				case CALL:
-				case RET:
-				case PUSH:
-				case POP:
-				case LABEL:
-				case BR:
-				case DEFINE:
-				case PARA:
-				case GLOBAL:
-				case NOTE:
-				case MOV:
-				case LEA:
-				case GETREG:
-				case PHI:
+				case STORE: {	//一个use
+					if (var2value.find(res) != var2value.end()) {
+						instr.setResult(var2value[res]);
+					}
+					break;
+				}
+				case STOREARR: {	//两个use
+					if (var2value.find(res) != var2value.end()) {
+						instr.setResult(var2value[res]);
+					}
+					if (var2value.find(ope2) != var2value.end()) {
+						instr.setOperand2(var2value[ope2]);
+					}
+					break;
+				}
+				case LOAD: {	//一开始的值是全局变量的初始值？怎么处理，标记一下，只能用一次？
+					if (ope2 != "para" && ope2 != "array") {
+						if (var2value.find(ope1) != var2value.end()) {
+							var2value[res] = var2value[ope1];
+						}
+					}
+					break;
+				}
+				case LOADARR: {	//数组常量的值的加载这么处理？同样只能用第一次？
+					if (var2value.find(ope2) != var2value.end()) {
+						instr.setOperand2(var2value[ope2]);
+					}
+					break;
+				}
+				case RET: case PUSH: {
+					if (var2value.find(ope1) != var2value.end()) {
+						instr.setOperand1(var2value[ope1]);
+					}
+					break;
+				}
+				case BR: {
+					if (var2value.find(ope1) != var2value.end()) {
+						instr.setOperand1(var2value[ope1]);
+						if (A2I(var2value[ope1]) == 0) {
+							instr.setInstr(res, instr.getResult(), "");	//如果结果==0，就直接跳转到res对应的标签
+						}
+						else {
+							instr.setInstr(res, instr.getOperand2(), "");	//如果结果!=0，直接跳转到ope2对应的标签
+						}
+					}
+					break;
+				}
 				default:
 					break;
 				}
@@ -504,8 +516,34 @@ void SSA::const_propagation() {
 	}
 }
 
-void SSA::copy_propagation() {
+//存放相等变量的对应关系
+map<string, string> var2copy;
 
+void SSA::copy_propagation() {
+	for (int i = 1; i < blockCore.size(); i++) {	//遍历每个函数
+		auto& blocks = blockCore.at(i);
+		for (int j = 0; j < blocks.size(); j++) {	//遍历每个基本的ir
+			auto& ir = blocks.at(j).Ir;
+			var2copy.clear();
+			//常量替换+常量折叠
+			for (int k = 0; k < ir.size(); k++) {
+				auto& instr = ir.at(k);
+				auto op = instr.getCodetype();
+				auto res = instr.getResult();
+				auto ope1 = instr.getOperand1();
+				auto ope2 = instr.getOperand2();
+				switch (op)
+				{
+				case STORE:
+				case STOREARR:
+				case LOAD:
+				case LOADARR:
+				default:
+					break;
+				}
+			}
+		}
+	}
 }
 
 string calculate(irCodeType op, string ope1, string ope2) {
