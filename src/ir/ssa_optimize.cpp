@@ -9,6 +9,35 @@
 
 //==========================================================
 
+void printCircleIr(vector<vector<basicBlock>>& v, ofstream& debug_ssa) {
+	if (TIJIAO) {
+		int size1 = v.size();
+		for (int i = 1; i < size1; i++) {
+			// 首先输出这是第几个函数
+			debug_ssa << "---------------- function " << i << " ----------------" << endl;
+			int size2 = v[i].size();
+			// 依次输出该函数下所有的基本块信息
+			for (int j = 0; j < size2; j++) {
+				debug_ssa << "\n" << "B" << v[i][j].number << "\t\t";	// 基本块编号
+				set<int>::iterator iter;
+				// 即可以跳转到该基本块的基本块序号
+				debug_ssa << "前序节点和后序节点: {  ";
+				for (iter = v[i][j].pred.begin(); iter != v[i][j].pred.end(); iter++) debug_ssa << *iter << "  ";
+				debug_ssa << "}" << "\t\t";
+				// 即通过该基本块可以跳转到的基本块序号
+				debug_ssa << "{  ";
+				for (iter = v[i][j].succeeds.begin(); iter != v[i][j].succeeds.end(); iter++) debug_ssa << *iter << "  ";
+				debug_ssa << "}" << endl;
+				// 输出该基本块中的中间代码
+				for (int k = 0; k < v[i][j].Ir.size(); k++) {
+					auto instr = v[i][j].Ir.at(k);
+					debug_ssa << k << "    " << instr.getContent() << endl;
+				}
+			}
+		}
+	}
+}
+
 // 在睿轩生成的中间代码做优化
 void SSA::pre_optimize() {
 	// 简化load和store指令相邻的指令
@@ -38,10 +67,16 @@ void SSA::ssa_optimize() {
 	// 将phi函数加入到中间代码
 	add_phi_to_Ir();
 
-	count_UDchains();
 	//循环优化
-	back_edge();
-	mark_invariant();
+	count_UDchains();		//计算使用-定义链
+	back_edge();			//找循环
+	mark_invariant();		//确定不变式
+	ofstream ly1("lyceshi1.txt");
+	printCircleIr(this->blockCore, ly1);
+	code_outside();			//不变式外提
+	ofstream ly2("lyceshi2.txt");
+	printCircleIr(this->blockCore, ly2);
+
 	
 	// 删除中间代码中的phi
 	delete_Ir_phi();
@@ -396,31 +431,45 @@ class Circle {
 public:
 	set<int> cir_blks;	//循环的基本块结点
 	set<int> cir_outs;	//循环的退出结点
+	int cir_begin;
+	Circle() {}
 	Circle(set<int>& blks) : cir_blks(blks) {}
 };
 
 //每个函数的循环，已连续的基本块构成；
-vector<Circle> circles;
+vector<vector<Circle>> func2circles;
 
 void printCircle() {
 	if (TIJIAO) {
-		for (auto circle : circles) {
-			cout << "circle's blocks: { ";
-			for (auto blk : circle.cir_blks) {
-				cout << "B" << blk << " ";
+		int i = 0;
+		for (auto circles : func2circles) {
+			if (circles.empty()) {
+				continue;
 			}
-			cout << "}	Quit block in circle: { ";
-			for (auto blk : circle.cir_outs) {
-				cout << "B" << blk << " ";
+			cout << "function_" << i << endl;
+			i++;
+			for (auto circle : circles) {
+				cout << "circle's blocks: { ";
+				for (auto blk : circle.cir_blks) {
+					cout << "B" << blk << " ";
+				}
+				cout << "}	Quit block in circle: { ";
+				for (auto blk : circle.cir_outs) {
+					cout << "B" << blk << " ";
+				}
+				cout << "}  ";
+				cout << "Begin block of circle: { B" << circle.cir_begin << " }" << endl;
 			}
-			cout << "}" << endl;
+			cout << endl;
 		}
 		cout << endl;
 	}
 }
 
+//存放每个函数的使用-定义链
 vector<UDchain> func2udChains;
 
+//计算每个函数的使用-定义链
 void SSA::count_UDchains() {
 	func2udChains.push_back(UDchain());
 	for (int i = 1; i < blockCore.size(); i++) {
@@ -438,7 +487,9 @@ void SSA::count_UDchains() {
 
 
 void SSA::back_edge() {
+	func2circles.push_back(vector<Circle>());
 	for (int i = 1; i < blockCore.size(); i++) {
+		func2circles.push_back(vector<Circle>());
 		//每一个函数的基本块
 		auto blocks = blockCore.at(i);
 		vector<pair<int, int>> backEdges;		//存储找到的回边
@@ -457,16 +508,14 @@ void SSA::back_edge() {
 			}
 		}
 
-		set<int> circle;
-		set<int> cir_out;
+		Circle circle;
 		//查找循环的基本块，每个回边对应着一个循环，后续应该合并某些循环，不合并效率可能比较低？
 		for (auto backEdge : backEdges) {
-			circle.clear();
 			int end = backEdge.first;
 			int begin = backEdge.second;
-			circle.insert(end);
-			circle.insert(begin);
-
+			circle.cir_blks.insert(end);
+			circle.cir_blks.insert(begin);
+			circle.cir_begin = begin;
 			queue<int> work;
 			work.push(end);
 			while (!work.empty()) {
@@ -474,24 +523,21 @@ void SSA::back_edge() {
 				work.pop();
 				auto preds = blocks.at(tmp).pred;
 				for (auto pred : preds) {
-					if (pred != begin && circle.find(pred) == circle.end()) {
+					if (pred != begin && circle.cir_blks.find(pred) == circle.cir_blks.end()) {
 						work.push(pred);
-						circle.insert(pred);
+						circle.cir_blks.insert(pred);
 					}
 				}
 			}
-			cir_out.clear();
-			for (auto one : circle) {
+			for (auto one : circle.cir_blks) {
 				auto succs = blocks.at(one).succeeds;
 				for (auto suc : succs) {
-					if (circle.find(suc) == circle.end()) {
-						cir_out.insert(one);
+					if (circle.cir_blks.find(suc) == circle.cir_blks.end()) {
+						circle.cir_outs.insert(one);
 					}
 				}
 			}
-			Circle tmp(circle);
-			tmp.cir_outs = cir_out;
-			circles.push_back(tmp);
+			func2circles.at(i).push_back(circle);
 		}
 	}
 	printCircle();
@@ -507,7 +553,7 @@ void SSA::mark_invariant() {
 		auto& udchain = func2udChains.at(i);
 		try {
 			//处理函数内部的所有循环
-			for (auto circle : circles) {
+			for (auto circle : func2circles.at(i)) {
 				//第一遍标记运算对象为常数和定值点在循环外的
 				for (auto idx : circle.cir_blks) {
 					auto& ir = blocks.at(idx).Ir;
@@ -592,6 +638,9 @@ void SSA::mark_invariant() {
 					auto& ir = blocks.at(idx).Ir;
 					for (int j = 0; j < ir.size(); j++) { //这里判断每条指令的操作数是否为常数或者定值在循环外面
 						auto& instr = ir.at(j);
+						if (instr.getInvariant() == 1) {
+							continue;
+						}
 						auto op = instr.getCodetype();
 						auto res = instr.getResult();
 						auto ope1 = instr.getOperand1();
@@ -606,6 +655,9 @@ void SSA::mark_invariant() {
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+									instr.setInvariant();
+								}
 							}
 							break; }
 						case STORE: {	//先不考虑全局变量和局部变量的区别
@@ -615,6 +667,9 @@ void SSA::mark_invariant() {
 							else {	//赋值为变量，查看变量的定义
 								auto def = udchain.getDef(Node(idx, j, res), res);
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
 									instr.setInvariant();
 								}
 							}
@@ -627,10 +682,16 @@ void SSA::mark_invariant() {
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+									instr.setInvariant();
+								}
 							}
 							else if (isNumber(ope2)) {
 								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
 									instr.setInvariant();
 								}
 							}
@@ -639,8 +700,14 @@ void SSA::mark_invariant() {
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+									instr.setInvariant();
+								}
 								def = udchain.getDef(Node(idx, j, ope2), ope2);
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
 									instr.setInvariant();
 								}
 							}
@@ -651,12 +718,18 @@ void SSA::mark_invariant() {
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+									instr.setInvariant();
+								}
 							}
 						}
 						case RET: case PUSH: case BR: {
 							if (isTmp(ope1)) {
 								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
 								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
 									instr.setInvariant();
 								}
 							}
@@ -672,22 +745,88 @@ void SSA::mark_invariant() {
 			WARN_MSG("wrong in mark invariant! maybe the circle find is wrong!");
 		}
 	}
+}
+
+//遍历每一条指令s: A = B op C | A = B
+//a)
+//循环不变式外提条件1：所在节点是所有出口结点的必经结点
+bool SSA::condition1(set<int> outBlk, int instrBlk, int func) {
+	for (auto one : outBlk) {
+		if (blockCore.at(func).at(one).domin.find(instrBlk) == blockCore.at(func).at(one).domin.end()) {
+			return false;
+		}
+	}
+	return true;
+}
+//循环不变式外提条件2：循环中没有A的其他定制语句，SSA格式天然满足？？？
+//循环不变式外提条件3：循环对于A的引用，只有s对于A的定值能够到达，SSA格式天然满足？？？
+
+//b)
+//循环不变式外提条件1：变量离开循环后不活跃
+bool SSA::condition2(set<int> outBlk, string var, int func) {
+	for (auto one : outBlk) {
+		if (blockCore.at(func).at(one).out.find(var) != blockCore.at(func).at(one).out.end()) {
+			return false;
+		}
+	}
+	return true;
+}
+//循环不变式外提条件2：循环中没有A的其他定制语句，SSA格式天然满足？？？
+//循环不变式外提条件3：循环对于A的引用，只有s对于A的定值能够到达，SSA格式天然满足？？？
+
+
+void SSA::code_outside() {
+	//外提代码
 	for (int i = 1; i < blockCore.size(); i++) {
-		for (int j = 0; j < blockCore.at(i).size(); j++) {
-			auto ir = blockCore.at(i).at(j).Ir;
-			for (auto instr : ir) {
-				cout << instr.getContent() << endl;
+		auto& blocks = blockCore.at(i);
+		try {
+			//处理函数内部的所有循环
+			for (auto circle : func2circles.at(i)) {
+				//第一遍标记运算对象为常数和定值点在循环外的
+				
+				for (auto idx : circle.cir_blks) {
+					auto& ir = blocks.at(idx).Ir;
+					int pos = 0;
+					for (int j = 0; j < ir.size(); j++) { //这里判断每条指令的操作数是否为常数或者定值在循环外面
+						auto& instr = ir.at(j);
+						if (instr.getInvariant() == 1) {	//不变式代码
+							//外提到循环开始基本块的label前面
+							if (condition1(circle.cir_outs, idx, i) || condition2(circle.cir_outs, instr.getResult(), i)) {
+								
+								blocks.at(circle.cir_begin).Ir.insert(blocks.at(circle.cir_begin).Ir.begin() + pos++, instr);
+								instr.setCodeOut();
+							}
+						}
+					}
+				}
 			}
+		}
+		catch (exception e) {
+			WARN_MSG("code outside wrong!!");
+		}
+	}
+	//删除标记为outcode的代码
+	for (int i = 1; i < blockCore.size(); i++) {
+		auto& blocks = blockCore.at(i);
+		try {
+			for (auto& blk : blocks) {
+				auto& ir = blk.Ir;
+				for (auto it = ir.begin(); it != ir.end();) {
+					if (it->getCodeOut() == 1) {	//被外提的代码，删除
+						it = ir.erase(it);
+						continue;
+					}
+					it++;
+				}
+			}
+		}
+		catch (exception e) {
+			WARN_MSG("delete code out wrong!!");
 		}
 	}
 }
-//
-//void SSA::code_outside() {
-//	//计算不变式
-//
-//	//外提代码
-//}
-//
+
+
 //void SSA::strength_reduction()
 //{
 //}

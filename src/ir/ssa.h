@@ -123,7 +123,7 @@ private:
 	void judge_inline_function();	// 判断内联函数
 	void inline_function();	// 函数内联
 	
-	//ly：循环优化：代码外提、强度削弱、规约变量删除
+	//ly：循环优化：代码外提  待做：强度削弱、规约变量删除
 	void count_UDchains();	//计算使用-定义链 用来查找不变式代码
 	void back_edge();	//计算回边+查找循环
 	void code_outside();	//代码外提
@@ -131,7 +131,9 @@ private:
 	void protocol_variable_deletion(); //规约变量删除
 	void mark_invariant();				//标记不变式
 	void count_use_def_chain();			//计算使用-定义链
-
+	bool condition1(set<int> outBlk, int instrBlk, int func);
+	bool condition2(set<int> outBlk, string var, int func);
+	//ly：循环优化
 
 	// 功能函数，可能在各个地方都会用到
 	std::string deleteSuffix(std::string name);	// 删除后缀，如输入参数为%a^1，返回%a; 若不含^则直接返回；

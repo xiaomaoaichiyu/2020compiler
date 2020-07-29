@@ -187,6 +187,10 @@ string CodeItem::getContent()
 		content = "getReg                " + standardLength(operand1);
 		break;
 	}
+	case PHI: {
+		content = "Phi        " + standardLength(result);
+		break;
+	}
 	default:
 		break;
 	}
@@ -199,6 +203,7 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->operand2 = ope2;
 	this->id = -1;
 	this->invariant = "";
+	this->codeout = "";
 }
 
 void CodeItem::setID(int id) {
@@ -217,6 +222,15 @@ void CodeItem::setInvariant() {
 int CodeItem::getInvariant()
 {
 	return this->invariant == "invariant";
+}
+
+void CodeItem::setCodeOut() {
+	this->codeout = "codeout!";
+}
+
+int CodeItem::getCodeOut()
+{
+	return this->codeout == "codeout!";
 }
 
 irCodeType CodeItem::getCodetype()

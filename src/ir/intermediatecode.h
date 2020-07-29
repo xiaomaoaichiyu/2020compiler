@@ -41,6 +41,8 @@ public:
 	int getId();
 	void setInvariant();
 	int getInvariant();
+	void setCodeOut();
+	int getCodeOut();
 	irCodeType getCodetype();
 	void setCodetype(irCodeType type);
 	string getOperand1();
@@ -57,6 +59,7 @@ public:
 private:
 	int id;					//索引
 	string invariant;			//标明指令结果是一个不变式
+	string codeout;				//标明指令是否被提取到循环的前置结点中
 	irCodeType codetype;     //中间代码种类
 	string result;				//结果
 	string operand1;			//左操作数
