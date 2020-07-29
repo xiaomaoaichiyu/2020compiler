@@ -313,6 +313,10 @@ void SSA::judge_inline_function() {
 					flag = false;
 					break;
 				}
+				else if (ci.getCodetype() == PARA && ci.getOperand1().compare("int*") == 0) {
+					flag = false;
+					break;
+				}
 			}
 		}
 		inlineFlag.push_back(flag);
