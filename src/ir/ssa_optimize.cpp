@@ -59,9 +59,7 @@ void SSA::ssa_optimize() {
 	
 	//常量传播
 	//const_propagation();
-	//复写传播
-	copy_propagation();
-
+	
 	// 死代码删除
 	delete_dead_codes();
 	// 重新计算use-def关系
@@ -528,6 +526,17 @@ void SSA::const_propagation() {
 //存放相等变量的对应关系
 map<string, string> var2copy;
 
+//将对应到变量var的关系删除，当变量被重新赋值后使用这一函数删除之前的联系！
+void releaseCopy(string var) {
+	for (auto it = var2copy.begin(); it != var2copy.end();) {
+		if (it->second == var) {
+			it = var2copy.erase(it);
+			continue;
+		}
+		it++;
+	}
+}
+
 void SSA::copy_propagation() {
 	for (int i = 1; i < blockCore.size(); i++) {	//遍历每个函数
 		auto& blocks = blockCore.at(i);
@@ -544,25 +553,23 @@ void SSA::copy_propagation() {
 				switch (op)
 				{
 				case STORE: {
-					if (isTmp(res)) {
-						if (var2copy.find(ope1) != var2copy.end()) {	//被赋值的变量有对应的关系，复写关系
-							
-						}
+					if (isTmp(res)) {	//变量赋值，非立即数赋值
 						if (var2copy.find(res) != var2copy.end()) {	//如果赋值的中间变量对应某个变量，那么被赋值的变量也对应那个变量
 							var2copy[ope1] = var2copy[res];
 						}
-						else {
-						
-						}
+						releaseCopy(ope1);
 					}
 					break;
 				}
 				case LOAD: {
-					if (var2copy.find(ope1) != var2copy.end()) {
-						var2copy[res] = var2copy[ope1];
-					}
-					else {
-						var2copy[res] = ope1;
+					if (ope2 != "para" && ope2 != "array") {	//加载变量的值
+						if (var2copy.find(ope1) != var2copy.end()) {	//变量ope1已经有了对应关系
+							var2copy[res] = var2copy[ope1];
+							instr.setOperand1(var2copy[ope1]);	//将ope1设置为ope1对应的变量
+						}
+						else {											//创建新的变量对应关系
+							var2copy[res] = ope1;
+						}
 					}
 					break;
 				}
