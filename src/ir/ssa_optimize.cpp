@@ -61,8 +61,6 @@ void SSA::ssa_optimize() {
 	
 	//常量传播
 	//const_propagation();
-	//复写传播
-	//copy_propagation();
 
 	// 死代码删除
 	delete_dead_codes();
@@ -75,21 +73,22 @@ void SSA::ssa_optimize() {
 	inline_function();
 
 	// 将phi函数加入到中间代码
-	//add_phi_to_Ir();
+	add_phi_to_Ir();
 
 	//循环优化
-	//count_UDchains();		//计算使用-定义链
-	//back_edge();			//找循环
-	//mark_invariant();		//确定不变式
-	//ofstream ly1("lyceshi1.txt");
-	//printCircleIr(this->blockCore, ly1);
-	//code_outside();			//不变式外提
-	//ofstream ly2("lyceshi2.txt");
-	//printCircleIr(this->blockCore, ly2);
+	count_UDchains();		//计算使用-定义链
+	back_edge();			//找循环
+	mark_invariant();		//确定不变式
+	ofstream ly1("lyceshi1.txt");
+	printCircleIr(this->blockCore, ly1);
 
+	code_outside();			//不变式外提
+
+	ofstream ly2("lyceshi2.txt");
+	printCircleIr(this->blockCore, ly2);
 	
 	// 删除中间代码中的phi
-	//delete_Ir_phi();
+	delete_Ir_phi();
 
 	//count_use_def_chain();
 }

@@ -256,7 +256,7 @@ int frontExecute(string syname)
 	//检测中间代码正确性
 	TestIrCode("ir.txt");
 	//outfile.close();
-	cout<<"yes"<<endl;
+	//cout<<"yes"<<endl;
 	return 0;
 }
 
