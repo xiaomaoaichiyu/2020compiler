@@ -521,6 +521,9 @@ void irOptimize() {
 		printLIR("LIR.txt");
 		countVars();
 
+		//计算活跃变量
+		
+
 		//寄存器直接指派
 		registerAllocation();
 
