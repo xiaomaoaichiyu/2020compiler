@@ -388,7 +388,6 @@ void SSA::delete_dead_codes() {
 					case ADD: case SUB: case MUL: case DIV: case REM:
 					case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
 					case LOAD:
-					case ALLOC:
 						if (tmpout.find(ci.getResult()) == tmpout.end()) {
 							update = true;
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
@@ -422,6 +421,14 @@ void SSA::delete_dead_codes() {
 						break;
 					case LABEL: case DEFINE: case GLOBAL: case NOTE:
 						// 不做处理
+						break;
+					case ALLOC:
+						for (set<string>::iterator iter = tmpout.begin(); iter != tmpout.end(); iter++)
+							if (deleteSuffix(*iter).compare(ci.getResult()) == 0) tmpout.insert(ci.getResult());
+						if (tmpout.find(ci.getResult()) == tmpout.end()) {
+							update = true;
+							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+						}
 						break;
 					default:
 						break;
