@@ -60,7 +60,7 @@ void SSA::ssa_optimize() {
 	//常量传播
 	//const_propagation();
 	//复写传播
-	copy_propagation();
+	//copy_propagation();
 
 	// 死代码删除
 	delete_dead_codes();
@@ -388,6 +388,7 @@ void SSA::delete_dead_codes() {
 					case ADD: case SUB: case MUL: case DIV: case REM:
 					case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
 					case LOAD:
+					case ALLOC:
 						if (tmpout.find(ci.getResult()) == tmpout.end()) {
 							update = true;
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
@@ -419,7 +420,7 @@ void SSA::delete_dead_codes() {
 						if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
 							tmpout.insert(ci.getOperand2());
 						break;
-					case LABEL: case DEFINE: case ALLOC: case GLOBAL: case NOTE:
+					case LABEL: case DEFINE: case GLOBAL: case NOTE:
 						// 不做处理
 						break;
 					default:
