@@ -892,7 +892,18 @@ void SSA::rename_back() {
 		}
 	}
 	// 将中间代码存回codetotal
-	for (int i = 1; i < size1; i++) {		// 遍历函数
+	//for (int i = 1; i < size1; i++) {		// 遍历函数
+	//	codetotal[i].clear();
+	//	int size2 = blockCore[i].size();
+	//	for (int j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry和exit块
+	//		codetotal[i].insert(codetotal[i].end(), blockCore[i][j].Ir.begin(), blockCore[i][j].Ir.end());
+	//	}
+	//}
+}
+
+void SSA::turn_back_codetotal() {
+	// 将中间代码存回codetotal
+	for (int i = 1; i < blockCore.size(); i++) {		// 遍历函数
 		codetotal[i].clear();
 		int size2 = blockCore[i].size();
 		for (int j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry和exit块
@@ -1081,8 +1092,14 @@ void SSA::generate() {
 	// 恢复变量命名
 	rename_back();
 
+	//复写传播
+	copy_propagation();
+
 	// 恢复为之前中间代码形式后再做一次无用代码删除
 	pre_optimize();
+
+	//将SSA格式代码转换到codetotal格式
+	turn_back_codetotal();
 
 	// 输出中间代码
 	TestIrCode("ir2.txt");

@@ -99,6 +99,8 @@ private:
 	void add_phi_to_Ir();												// 将phi函数加入到中间代码
 	void delete_Ir_phi();												// 删除中间代码中的phi
 	void rename_back();												// 将SSA变量带下标的中间代码恢复为正常中间代码，即做完优化后去掉下标
+	void turn_back_codetotal();										//将SSA代码格式改回到codetotal格式
+	
 	// 测试专用函数
 	void Test_SSA();			// 测试函数的总入口
 	void Test_Divide_Basic_Block();	
@@ -134,7 +136,7 @@ private:
 	bool condition1(set<int> outBlk, int instrBlk, int func);
 	bool condition2(set<int> outBlk, string var, int func);
 
-
+	
 	void const_propagation();	//常量传播
 	void copy_propagation();	//复写传播
 	//ly：循环优化
