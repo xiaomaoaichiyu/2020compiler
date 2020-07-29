@@ -56,6 +56,12 @@ void SSA::ssa_optimize() {
 	build_def_use_chain();
 	// 重新进行活跃变量分析
 	active_var_analyse();
+	
+	//常量传播
+	const_propagation();
+	//复写传播
+	//copy_propagation();
+
 	// 死代码删除
 	delete_dead_codes();
 	// 重新计算use-def关系
@@ -67,7 +73,7 @@ void SSA::ssa_optimize() {
 	//inline_function();
 
 	// 将phi函数加入到中间代码
-	add_phi_to_Ir();
+	//add_phi_to_Ir();
 
 	//循环优化
 	//count_UDchains();		//计算使用-定义链
@@ -81,7 +87,7 @@ void SSA::ssa_optimize() {
 
 	
 	// 删除中间代码中的phi
-	delete_Ir_phi();
+	//delete_Ir_phi();
 
 	//count_use_def_chain();
 }
@@ -454,8 +460,8 @@ void SSA::const_propagation() {
 					if (var2value.find(ope2) != var2value.end()) {	//操作数2的值是一个立即数，替换
 						instr.setOperand2(var2value[ope2]);
 					}
-					if (isNumber(ope1) && isNumber(ope2)) {	//两个操作数都是立即数
-						string tmp = calculate(op, ope1, ope2);
+					if (isNumber(instr.getOperand1()) && isNumber(instr.getOperand2())) {	//两个操作数都是立即数
+						string tmp = calculate(op, instr.getOperand1(), instr.getOperand2());
 						//instr.setResult(tmp); //设置结果对应的值即可，在死代码删除的时候删去这一指令
 						var2value[res] = tmp;
 					}
@@ -464,6 +470,9 @@ void SSA::const_propagation() {
 				case STORE: {	//一个use
 					if (var2value.find(res) != var2value.end()) {
 						instr.setResult(var2value[res]);
+					}
+					if (isNumber(instr.getResult())) {	//设置被赋值的变量
+						var2value[ope1] = instr.getResult();
 					}
 					break;
 				}
@@ -534,10 +543,29 @@ void SSA::copy_propagation() {
 				auto ope2 = instr.getOperand2();
 				switch (op)
 				{
-				case STORE:
-				case STOREARR:
-				case LOAD:
-				case LOADARR:
+				case STORE: {
+					if (isTmp(res)) {
+						if (var2copy.find(ope1) != var2copy.end()) {	//被赋值的变量有对应的关系，复写关系
+							
+						}
+						if (var2copy.find(res) != var2copy.end()) {	//如果赋值的中间变量对应某个变量，那么被赋值的变量也对应那个变量
+							var2copy[ope1] = var2copy[res];
+						}
+						else {
+						
+						}
+					}
+					break;
+				}
+				case LOAD: {
+					if (var2copy.find(ope1) != var2copy.end()) {
+						var2copy[res] = var2copy[ope1];
+					}
+					else {
+						var2copy[res] = ope1;
+					}
+					break;
+				}
 				default:
 					break;
 				}
