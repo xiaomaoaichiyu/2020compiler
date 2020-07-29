@@ -58,9 +58,9 @@ void SSA::ssa_optimize() {
 	active_var_analyse();
 	
 	//常量传播
-	const_propagation();
+	//const_propagation();
 	//复写传播
-	//copy_propagation();
+	copy_propagation();
 
 	// 死代码删除
 	delete_dead_codes();
