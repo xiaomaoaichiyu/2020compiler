@@ -1,4 +1,6 @@
 ﻿#include "ssa.h"
+#include "ssa.h"
+#include "ssa.h"
 #include "../front/symboltable.h"
 #include "../front/syntax.h"
 #include "../util/meow.h"
@@ -68,14 +70,14 @@ void SSA::ssa_optimize() {
 	add_phi_to_Ir();
 
 	//循环优化
-	count_UDchains();		//计算使用-定义链
-	back_edge();			//找循环
-	mark_invariant();		//确定不变式
-	ofstream ly1("lyceshi1.txt");
-	printCircleIr(this->blockCore, ly1);
-	code_outside();			//不变式外提
-	ofstream ly2("lyceshi2.txt");
-	printCircleIr(this->blockCore, ly2);
+	//count_UDchains();		//计算使用-定义链
+	//back_edge();			//找循环
+	//mark_invariant();		//确定不变式
+	//ofstream ly1("lyceshi1.txt");
+	//printCircleIr(this->blockCore, ly1);
+	//code_outside();			//不变式外提
+	//ofstream ly2("lyceshi2.txt");
+	//printCircleIr(this->blockCore, ly2);
 
 	
 	// 删除中间代码中的phi
@@ -421,6 +423,147 @@ void SSA::delete_dead_codes() {
 			}
 		}
 	}
+}
+
+//==================================================
+//	常量传播 + 复写传播
+//==================================================
+
+struct InitValue {
+	string var;
+	string offset;
+	string value;
+};
+
+string getValue(string var, string offset) {
+	//...
+}
+
+map<string, string> var2value;
+
+void SSA::const_propagation() {
+	for (int i = 1; i < blockCore.size(); i++) {	//遍历每个函数
+		auto& blocks = blockCore.at(i);
+		for (int j = 0; j < blocks.size(); j++) {	//遍历每个基本的ir
+			auto& ir = blocks.at(j).Ir;
+			for (int k = 0; k < ir.size(); k++) {	//遍历每条指令，做常量替换
+				auto& instr = ir.at(k);
+				auto op = instr.getCodetype();
+				auto res = instr.getResult();
+				auto ope1 = instr.getOperand1();
+				auto ope2 = instr.getOperand2();
+
+			}
+			//常量折叠：计算全部为常数的表达式
+			for (int k = 0; k < ir.size(); k++) {
+				auto& instr = ir.at(k);
+				auto op = instr.getCodetype();
+				auto res = instr.getResult();
+				auto ope1 = instr.getOperand1();
+				auto ope2 = instr.getOperand2();
+				switch (op)
+				{
+				case ADD: case SUB: case DIV: case MUL: case REM: 
+				case AND: case OR: case NOT:
+				case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE: {
+					if (var2value.find(ope1) != var2value.end()) {	//操作数1的值是一个立即数，替换
+						instr.setOperand1(var2value[ope1]);
+					}
+					if (var2value.find(ope2) != var2value.end()) {	//操作数2的值是一个立即数，替换
+						instr.setOperand2(var2value[ope2]);
+					}
+					if (isNumber(ope1) && isNumber(ope2)) {	//两个操作数都是立即数
+						instr.setResult(calculate(op, ope1, ope2));
+					}
+					break;
+				}
+				case STORE:
+				case STOREARR:
+				case LOAD:
+				case LOADARR:
+				case INDEX:
+				case CALL:
+				case RET:
+				case PUSH:
+				case POP:
+				case LABEL:
+				case BR:
+				case DEFINE:
+				case PARA:
+				case GLOBAL:
+				case NOTE:
+				case MOV:
+				case LEA:
+				case GETREG:
+				case PHI:
+				default:
+					break;
+				}
+			}
+		}
+	}
+}
+
+void SSA::copy_propagation() {
+
+}
+
+string calculate(irCodeType op, string ope1, string ope2) {
+	if (op == ADD) {
+		return I2A(A2I(ope1) + A2I(ope2));
+	}
+	else if (op == SUB) {
+		return I2A(A2I(ope1) - A2I(ope2));
+	}
+	else if (op == MUL) {
+		return I2A(A2I(ope1) * A2I(ope2));
+	}
+	else if (op == DIV) {
+		return I2A(A2I(ope1) / A2I(ope2));
+	}
+	else if (op == REM) {
+		return I2A(A2I(ope1) % A2I(ope2));
+	}
+	else if (op == AND) {
+		int res = A2I(ope1) && A2I(ope2);
+		return I2A(res);
+	}
+	else if (op == OR) {
+		int res = A2I(ope1) || A2I(ope2);
+		return I2A(res);
+	}
+	else if (op == NOT) {
+		int res = !A2I(ope1);
+		return I2A(res);
+	}
+	else if (op == EQL) {
+		int res = A2I(ope1) == A2I(ope2);
+		return I2A(res);
+	}
+	else if (op == NEQ) {
+		int res = A2I(ope1) != A2I(ope2);
+		return I2A(res);
+	}
+	else if (op == SLT) {
+		int res = A2I(ope1) < A2I(ope2);
+		return I2A(res);
+	}
+	else if (op == SLE) {
+		int res = A2I(ope1) <= A2I(ope2);
+		return I2A(res);
+	}
+	else if (op == SGT) {
+		int res = A2I(ope1) > A2I(ope2);
+		return I2A(res);
+	}
+	else if (op == SGE) {
+		int res = A2I(ope1) >= A2I(ope2);
+		return I2A(res);
+	}
+	else {
+		WARN_MSG("problem in calculate!!");
+	}
+	return "wrong";
 }
 
 //============================================================
@@ -771,6 +914,7 @@ bool SSA::condition2(set<int> outBlk, string var, int func) {
 	}
 	return true;
 }
+
 //循环不变式外提条件2：循环中没有A的其他定制语句，SSA格式天然满足？？？
 //循环不变式外提条件3：循环对于A的引用，只有s对于A的定值能够到达，SSA格式天然满足？？？
 

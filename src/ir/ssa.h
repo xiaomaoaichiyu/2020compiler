@@ -130,9 +130,12 @@ private:
 	void strength_reduction();	//强度削弱
 	void protocol_variable_deletion(); //规约变量删除
 	void mark_invariant();				//标记不变式
-	void count_use_def_chain();			//计算使用-定义链
 	bool condition1(set<int> outBlk, int instrBlk, int func);
 	bool condition2(set<int> outBlk, string var, int func);
+
+
+	void const_propagation();	//常量传播
+	void copy_propagation();	//复写传播
 	//ly：循环优化
 
 	// 功能函数，可能在各个地方都会用到
@@ -151,5 +154,7 @@ public:
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化
 };
+
+string calculate(irCodeType op, string ope1, string ope2);
 
 #endif //_SSA_H_

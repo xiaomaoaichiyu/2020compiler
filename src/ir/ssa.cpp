@@ -1087,7 +1087,4 @@ void SSA::generate() {
 	// 输出中间代码
 	TestIrCode("ir2.txt");
 
-	// 恢复变量命名
-	rename_back();
-
 }
