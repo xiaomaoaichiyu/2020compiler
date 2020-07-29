@@ -21,7 +21,7 @@ public:
 	void setparaLength(int a);
 	int getblockIndex();
 	int getDimension();
-	void setMatrixLength(vector<int> a);
+	void setMatrixLength(vector<int> a,int index);
 	vector<int> getMatrixLength();   
 	void setIntValue(int a,int offset);
 	void setfirstNodesize(int a);

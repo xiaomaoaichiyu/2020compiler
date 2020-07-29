@@ -32,7 +32,7 @@ int symbolTable::getblockIndex()
 {
 	return this->blockIndex;
 }
-void symbolTable::setMatrixLength(vector<int> a)
+void symbolTable::setMatrixLength(vector<int> a,int index)
 {
 	this->matrixLength = a;
 	if (this->dimension > 0) {
@@ -40,8 +40,8 @@ void symbolTable::setMatrixLength(vector<int> a)
 		for (int j = 0; j < a.size(); j++) {
 			i = i * a[j];
 		}
-		if (this->getForm() == CONSTANT) {
-			vector<int> b(i, 0);  //初始化b大小为i而且每个元素值均为0
+		if (this->getForm() == CONSTANT||index == 0) {
+			vector<int> b(i, 0);  //初始化b大小为i而且每个元素值均为0,对于常量数组和全局数组有用
 			this->intValue = b;
 		}
 	}
