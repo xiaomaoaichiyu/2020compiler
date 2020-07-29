@@ -48,6 +48,8 @@ void SSA::pre_optimize() {
 	simplify_add_minus_multi_div_mod();
 	// 简化紧邻的跳转
 	simplify_br_label();
+	// 删除多余alloc指令
+	simplify_alloc();
 }
 
 //ssa形式上的优化
@@ -93,6 +95,33 @@ void SSA::ssa_optimize() {
 }
 
 //========================================================
+
+// 删除多余alloc指令
+void SSA::simplify_alloc() {
+	int i, j, k;
+	int size1 = codetotal.size();
+	for (i = 1; i < size1; i++) {
+		map<string, bool> ifUse;
+		int size2 = codetotal[i].size();
+		for (j = 1; j < size2; j++) {
+			CodeItem ci = codetotal[i][j];
+			if (ci.getCodetype() != ALLOC) {
+				if (ifLocalVariable(ci.getResult())) ifUse[ci.getResult()] = true;
+				if (ifLocalVariable(ci.getOperand1())) ifUse[ci.getOperand1()] = true;
+				if (ifLocalVariable(ci.getOperand2())) ifUse[ci.getOperand2()] = true;
+			}
+		}
+		for (j = 1; j < codetotal[i].size(); j++) {
+			CodeItem ci = codetotal[i][j];
+			if (ci.getCodetype() == ALLOC && ifUse.find(ci.getResult()) == ifUse.end()) {
+				codetotal[i].erase(codetotal[i].begin() + j);
+				j--;
+			}
+			if (ci.getCodetype() != ALLOC && ci.getCodetype() != DEFINE && ci.getCodetype() != PARA)
+				break;
+		}
+	}
+}
 
 // 简化条件判断为常值的跳转指令
 void SSA::simplify_br() {
@@ -419,16 +448,8 @@ void SSA::delete_dead_codes() {
 						if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
 							tmpout.insert(ci.getOperand2());
 						break;
-					case LABEL: case DEFINE: case GLOBAL: case NOTE:
+					case LABEL: case DEFINE: case GLOBAL: case NOTE:case ALLOC:
 						// 不做处理
-						break;
-					case ALLOC:
-						for (set<string>::iterator iter = tmpout.begin(); iter != tmpout.end(); iter++)
-							if (deleteSuffix(*iter).compare(ci.getResult()) == 0) tmpout.insert(ci.getResult());
-						if (tmpout.find(ci.getResult()) == tmpout.end()) {
-							update = true;
-							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
-						}
 						break;
 					default:
 						break;
