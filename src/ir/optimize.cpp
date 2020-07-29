@@ -531,7 +531,7 @@ void irOptimize() {
 
 		printLIR("armIR_2.txt");
 	}
-	catch (exception e){
+	catch (exception e) {
 		exit(0);
 	}
 }

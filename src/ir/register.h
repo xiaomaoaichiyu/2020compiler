@@ -39,16 +39,11 @@ private:
 	string allocReg();
 };
 
-struct Allocation {
-	int from;		//指令id开始
-	int to;			//指令id结束
-	string reg;		//分配的物理寄存器或者内存位置
-};
-
 void registerAllocation();
 
 class ActiveAnalyse {
-
+	map<int, set<string>> line2varsIn;
+	map<int, set<string>> line2varsOut;
 };
 
 #endif // _REGISTER_H_
