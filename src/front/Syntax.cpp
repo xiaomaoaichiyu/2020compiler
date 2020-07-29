@@ -227,6 +227,22 @@ int frontExecute(string syname)
 		cout << "\n";   //一个作用域换一行
 	}
 	*/
+	//检查全局变量是否赋值
+	/*
+	vector<symbolTable> item = total[0];
+	for (int j = 0; j < item.size(); j++) {
+		if (item[j].getDimension() == 0) {
+			cout << item[j].getName() << " " << numToString(item[j].getIntValue()[0]);
+		}
+		else {
+			cout << item[j].getName();
+			for (int p = 0; p < item[j].getIntValue().size(); p++) {
+				cout << " " << item[j].getIntValue()[p];
+			}
+		}
+		cout << "\n";   //一个元素换一行
+	}
+	*/	
 	//检测数组赋值正确性 testcase8
 	/*
 	for (int i = 0; i < total[0].size(); i++) {
@@ -371,7 +387,7 @@ void ConstDef(int index, int block)			   //常量定义
 		token = wordAnalysis.getToken(); //预读
 	}
 	symbolTable item = symbolTable(CONSTANT, INT, name, dimenson, block);
-	item.setMatrixLength(length);
+	item.setMatrixLength(length,index);
 	total[index].push_back(item);
 	names[index][name]++;
 	//printMessage();   //输出=信息
@@ -581,7 +597,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 			if (Range != 0) {
 				b = "%";
 			}
-			if (b == "%") {
+			if (b == "%") {		//全局变量不用出现STOREARR 0,因为后端对于全局默认没有就是0
 				int zzzzz = offset + mod;
 				while (offset < zzzzz) {
 					offset++;
@@ -606,7 +622,7 @@ void ConstInitVal(int index)	//ConstExp | '{' [ConstInitVal{ ',' ConstInitVal } 
 			if (Range != 0) {
 				b = "%";
 			}
-			if (b == "@") {
+			if (b == "@") {     //全局变量不用出现STOREARR 0,因为后端对于全局默认没有就是0
 				while (offset % mod != 0) {
 					offset++;
 				}
@@ -703,7 +719,7 @@ void VarDef(int index, int block)             //变量定义
 		token = wordAnalysis.getToken();//预读
 	}
 	symbolTable item = symbolTable(VARIABLE, INT, name, dimenson, block);
-	item.setMatrixLength(length);
+	item.setMatrixLength(length,index);
 	total[index].push_back(item);
 	names[index][name]++;
 	totalSize = 1;
@@ -721,6 +737,8 @@ void VarDef(int index, int block)             //变量定义
 		b = "@";
 	}
 	if (b == "@" && dimenson == 0) {			//全局变量初值默认为0
+		int size = total[index].size() - 1;
+		total[index][size].setIntValue(0, 0); //赋值
 		CodeItem citem = CodeItem(codetype, b + name, "0", numToString(totalSize));
 		citem.setFatherBlock(fatherBlock);
 		codetotal[index].push_back(citem);
@@ -816,7 +834,7 @@ void InitVal(int index)
 			if (Range != 0) {
 				b = "%";
 			}
-			if (b == "%") {
+			if (b == "%") {			//全局变量不用出现STOREARR 0,因为后端对于全局默认没有就是0
 				int zzzzz = offset + mod;
 				while (offset < zzzzz) {
 					offset++;
@@ -831,7 +849,7 @@ void InitVal(int index)
 					codetotal[index].push_back(citem);
 				}
 			}
-			else {
+			else {     //全局变量往符号表里赋值
 				offset += mod;
 			}
 		}
@@ -841,7 +859,7 @@ void InitVal(int index)
 			if (Range != 0) {
 				b = "%";
 			}
-			if (b == "@") {
+			if (b == "@") {			//全局变量不用出现STOREARR 0,因为后端对于全局默认没有就是0
 				while (offset % mod != 0) {
 					offset++;
 				}
@@ -889,6 +907,8 @@ void InitVal(int index)
 				citem1.changeContent(citem1.getResult(), interRegister, citem1.getOperand2());
 				codetotal[index].pop_back();
 				codetotal[index].push_back(citem1);
+				int size = total[index].size() - 1;
+				total[index][size].setIntValue(stringToNum(interRegister), 0); //赋值
 			}
 		}
 		else {
@@ -909,6 +929,10 @@ void InitVal(int index)
 				CodeItem citem = CodeItem(STOREARR, interRegister, b + nodeName, offset_string);
 				citem.setFatherBlock(fatherBlock);
 				codetotal[index].push_back(citem);
+				if (b == "@") {		//全局变量赋值到符号表
+					int size = total[index].size() - 1;
+					total[index][size].setIntValue(stringToNum(interRegister), offset-1); //赋值
+				}
 			}
 		}
 	}
@@ -1073,7 +1097,7 @@ void FuncFParam()
 		}
 	}
 	symbolTable item = symbolTable(PARAMETER, INT, name, dimenson, 1);
-	item.setMatrixLength(length);
+	item.setMatrixLength(length,Funcindex);
 	total[Funcindex].push_back(item);
 	names[Funcindex][name]++;
 	string b = "int";
