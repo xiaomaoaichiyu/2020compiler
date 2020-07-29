@@ -67,12 +67,12 @@ void SSA::ssa_optimize() {
 	// 死代码删除
 	delete_dead_codes();
 	// 重新计算use-def关系
-	// build_def_use_chain();
+	build_def_use_chain();
 	// 重新进行活跃变量分析
-	// active_var_analyse();
+	active_var_analyse();
 	// 函数内联
-	//judge_inline_function();
-	//inline_function();
+	judge_inline_function();
+	inline_function();
 
 	// 将phi函数加入到中间代码
 	//add_phi_to_Ir();
