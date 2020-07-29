@@ -1093,7 +1093,7 @@ void SSA::generate() {
 	rename_back();
 
 	//复写传播
-	copy_propagation();
+	// copy_propagation();
 
 	// 恢复为之前中间代码形式后再做一次无用代码删除
 	pre_optimize();
