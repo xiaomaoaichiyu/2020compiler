@@ -60,7 +60,7 @@ void SSA::ssa_optimize() {
 	active_var_analyse();
 	
 	//常量传播
-	//const_propagation();
+	const_propagation();
 
 	// 死代码删除
 	delete_dead_codes();
@@ -69,8 +69,8 @@ void SSA::ssa_optimize() {
 	// 重新进行活跃变量分析
 	active_var_analyse();
 	// 函数内联
-	judge_inline_function();
-	inline_function();
+	//judge_inline_function();
+	//inline_function();
 
 	// 将phi函数加入到中间代码
 	add_phi_to_Ir();
@@ -499,7 +499,7 @@ void SSA::const_propagation() {
 					if (var2value.find(res) != var2value.end()) {
 						instr.setResult(var2value[res]);
 					}
-					if (isNumber(instr.getResult())) {	//设置被赋值的变量
+					if (isNumber(instr.getResult()) && !isGlobal(ope1)) {	//设置被赋值的变量
 						var2value[ope1] = instr.getResult();
 					}
 					break;
@@ -597,7 +597,8 @@ void SSA::copy_propagation() {
 							var2copy[res] = var2copy[ope1];
 							instr.setOperand1(var2copy[ope1]);	//将ope1设置为ope1对应的变量
 						}
-						else {											//创建新的变量对应关系
+						else {
+							//创建新的变量对应关系
 							var2copy[res] = ope1;
 						}
 					}
