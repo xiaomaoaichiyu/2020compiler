@@ -37,10 +37,10 @@
 | 关系小于(signed)       | slt                 | res                                | ope1                | ope2                      |
 | 关系小于等于(signed)   | sle                 | res                                | ope1                | ope2                      |
 | **赋值单值**           | store               | value ➡                            | name                |                           |
-| **存VR**               | $\color{red}store$  | mpReg ➡                            | VR[0-9]             | offset                    |
+| **存VR**               | $\color{blue}store$ | tmpReg ➡                           | VR[0-9]             | offset                    |
 | **赋值数组**           | storeArr            | value ➡                            | address(暂时用name) | offset                    |
 | **取内存**             | load                | tmpReg ⬅                           | name                |                           |
-| **取VR**               | $\color{red}load$   | tmpReg ⬅                           | VR[0-9]             | offset                    |
+| **取VR**               | $\color{blue}load$  | tmpReg ⬅                           | VR[0-9]             | offset                    |
 | **取数组参数的地址**   | load                | tmpReg ⬅                           | 数组（参数）        | "para" \| "array"         |
 | **取内存**             | loadArr             | tmpReg ⬅                           | address(暂时用name) | offset                    |
 | 加载地址               | $\color{red} lea$   |                                    | tmpReg              | name(全局变量或全局数组)  |
@@ -50,8 +50,8 @@
 | 函数返回(变了)         | ret                 |                                    | retValue            | int\|void                 |
 | 函数传参(变了)         | push                | type(int\|int*\|string)            | tmpReg              | num(第几个)               |
 | 压栈                   | push                |                                    | reg物理寄存器       | vReg(reg存储的虚拟寄存器) |
-| 退栈                   | $\color{red}pop$    |                                    |                     | offset                    |
-| 退栈                   | $\color{red}pop $   |                                    | tmpReg              |                           |
+| 退栈                   | pop                 |                                    |                     | offset                    |
+| 退栈                   | pop ​                |                                    | tmpReg              |                           |
 | 标签                   | label               | name                               |                     |                           |
 | 直接跳转(变了)         | br                  |                                    | label               |                           |
 | 条件跳转(变了)         | br                  | lable2(错误)                       | tmpReg              | label1(正确)              |
