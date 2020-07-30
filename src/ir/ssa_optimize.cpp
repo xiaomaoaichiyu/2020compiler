@@ -55,7 +55,8 @@ void SSA::pre_optimize() {
 //ssa形式上的优化
 void SSA::ssa_optimize() {
 	
-	if (0) {	// 关闭常量传播
+	// 常量传播
+	if (1) {
 		// 重新计算use-def关系
 		build_def_use_chain();
 		// 重新进行活跃变量分析
@@ -64,12 +65,15 @@ void SSA::ssa_optimize() {
 		const_propagation();
 	}
 
-	// 重新计算use-def关系
-	build_def_use_chain();
-	// 重新进行活跃变量分析
-	active_var_analyse();
 	// 死代码删除
-	delete_dead_codes();
+	if (1) {
+		// 重新计算use-def关系
+		build_def_use_chain();
+		// 重新进行活跃变量分析
+		active_var_analyse();
+		// 死代码删除
+		delete_dead_codes();
+	}
 	
 	if (0) { // 关闭函数内联
 	// 重新计算use-def关系
