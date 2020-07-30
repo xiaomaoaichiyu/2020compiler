@@ -134,9 +134,11 @@ void UDchain::count_in_and_out() {
 }
 
 bool UDchain::checkPhi(string var, int blkNum) {
-	for (int i = 0; i < CFG.at(blkNum).phi.size(); i++) {
-		if (CFG.at(blkNum).phi.at(i).name == var) {
-			return true;
+	for (int i = 0; i < CFG.size(); i++) {
+		for (int j = 0; j < CFG.at(i).phi.size(); j++) {
+			if (CFG.at(i).phi.at(j).name == var) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -150,7 +152,7 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 	for (auto def : in.at(i)) {
 		if (def2var[def] == var) {	//定义点找到
 			if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
-				auto tmp = FORMAT("{} <{},{}> def over one time!", var, i, j);
+				auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 				WARN_MSG(tmp.c_str());
 			}
 			chains[tmp] = def;
@@ -161,7 +163,7 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 		if (def2var[def] == var) {
 			if (chains.find(tmp) != chains.end()) {
 				if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
-					auto tmp = FORMAT("{} <{},{}> def over one time!", var, i, j);
+					auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 					WARN_MSG(tmp.c_str());
 				}
 				if (chains[tmp].lIdx > def.lIdx) {
@@ -170,7 +172,7 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 			}
 			else if (def.lIdx < j) {
 				if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
-					auto tmp = FORMAT("{} <{},{}> def over one time!", var, i, j);
+					auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 					WARN_MSG(tmp.c_str());
 				}
 				chains[tmp] = def;
