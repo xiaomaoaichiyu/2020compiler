@@ -1101,12 +1101,6 @@ void SSA::generate() {
 	//将SSA格式代码转换到codetotal格式
 	turn_back_codetotal();
 
-	// 计算ud链，即分析每个基本块的use和def变量
-	build_def_use_chain();
-
-	// 活跃变量分析，生成in、out集合
-	active_var_analyse();
-
 	// 输出中间代码
 	TestIrCode("ir2.txt");
 

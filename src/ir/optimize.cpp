@@ -522,7 +522,7 @@ void irOptimize() {
 		countVars();
 
 		//计算活跃变量
-		
+		SSA ssa;
 
 		//寄存器直接指派
 		registerAllocation();
