@@ -305,7 +305,6 @@ void CompUnit()
 					symbol = sym_tag;
 					Funcindex++;
 					func2tmpIndex.push_back(Temp);
-					Temp = 0;
 					vector<symbolTable> item;
 					total.push_back(item);
 					vector<CodeItem> item1;
@@ -323,7 +322,6 @@ void CompUnit()
 			else {
 				Funcindex++;
 				func2tmpIndex.push_back(Temp);
-				Temp = 0;
 				vector<symbolTable> item;
 				total.push_back(item);
 				vector<CodeItem> item1;
