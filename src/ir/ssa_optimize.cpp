@@ -55,7 +55,7 @@ void SSA::pre_optimize() {
 //ssa形式上的优化
 void SSA::ssa_optimize() {
 	
-	if (0) {	// 关闭常量传播
+	if (1) {	// 关闭常量传播
 		// 重新计算use-def关系
 		build_def_use_chain();
 		// 重新进行活跃变量分析
@@ -81,7 +81,7 @@ void SSA::ssa_optimize() {
 		inline_function();
 	}
 
-	if (1) { // 关闭循环优化
+	if (0) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -768,7 +768,6 @@ void SSA::back_edge() {
 				}
 			}
 		}
-
 		
 		//查找循环的基本块，每个回边对应着一个循环，后续应该合并某些循环，不合并效率可能比较低？
 		for (auto backEdge : backEdges) {
@@ -1065,9 +1064,10 @@ void SSA::code_outside() {
 						if (instr.getInvariant() == 1) {	//不变式代码
 							//外提到循环开始基本块的label前面
 							if (condition1(circle.cir_outs, idx, i) || condition2(circle.cir_outs, instr.getResult(), i)) {
-								
-								blocks.at(circle.cir_begin).Ir.insert(blocks.at(circle.cir_begin).Ir.begin() + pos++, instr);
+								auto tmp = instr;
 								instr.setCodeOut();
+								blocks.at(circle.cir_begin).Ir.insert(blocks.at(circle.cir_begin).Ir.begin() + pos++, tmp);
+								j++;
 							}
 						}
 					}

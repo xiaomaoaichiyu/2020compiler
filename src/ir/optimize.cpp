@@ -36,7 +36,6 @@ string dealTmpOpe(string operand) {
 }
 
 //中间代码保证不会出现两个立即数的情况
-
 //如果第一操作数是立即数，和第二个操作数进行交换
 void dealNumber(CodeItem& instr) {
 	auto op = instr.getCodetype();
@@ -106,7 +105,7 @@ void MIR2LIRpass() {
 
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
-			//dealNumber(instr);
+			dealNumber(instr);
 			irCodeType op = instr.getCodetype();
 			string res = instr.getResult();
 			string ope1 = instr.getOperand1();
@@ -124,10 +123,10 @@ void MIR2LIRpass() {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
 				}
-				if (isNumber(ope2) && (A2I(ope2) < -128 || A2I(ope2) > 127)) {
+				/*if (isNumber(ope2) && (A2I(ope2) < -128 || A2I(ope2) > 127)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope2));
 					ope2 = curVreg;
-				}
+				}*/
 				res = dealTmpOpe(res);
 				ope1 = dealTmpOpe(ope1);
 				ope2 = dealTmpOpe(ope2);
@@ -139,10 +138,10 @@ void MIR2LIRpass() {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
 				}
-				if (isNumber(ope2)) {
+				/*if (isNumber(ope2)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope2));
 					ope2 = curVreg;
-				}
+				}*/
 				res = dealTmpOpe(res);
 				ope1 = dealTmpOpe(ope1);
 				ope2 = dealTmpOpe(ope2);
@@ -382,11 +381,11 @@ void MIR2LIRpass() {
 					dst.push_back(instr);
 				}
 				else {
-					if (isNumber(ope1)) {
+					/*if (isNumber(ope1)) {
 						CodeItem tmp(MOV, "", getVreg(), ope1);
 						ope1 = curVreg;
 						dst.push_back(tmp);
-					}
+					}*/
 					ope1 = dealTmpOpe(ope1);
 					instr.setInstr(res, ope1, ope2);
 					dst.push_back(instr);
