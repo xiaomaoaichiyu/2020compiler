@@ -1775,6 +1775,22 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 		token = wordAnalysis.getToken();//预读
 		LAndExp();
 		registerR = interRegister;
+		if (registerL[0] != '@' && registerL[0] != '%') { //立即数只能为0和1
+			if (registerL == "0") {
+				registerL = "0";
+			}
+			else {
+				registerL = "1";
+			}
+		}
+		if (registerR[0] != '@' && registerR[0] != '%') { //立即数只能为0和1
+			if (registerR == "0") {
+				registerR = "0";
+			}
+			else {
+				registerR = "1";
+			}
+		}
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
 			int value;
 			int valueL = stringToNum(registerL);
@@ -1817,6 +1833,22 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 		token = wordAnalysis.getToken();//预读
 		LAndExp();
 		registerR = interRegister;
+		if (registerL[0] != '@' && registerL[0] != '%') { //立即数只能为0和1
+			if (registerL == "0") {
+				registerL = "0";
+			}
+			else {
+				registerL = "1";
+			}
+		}
+		if (registerR[0] != '@' && registerR[0] != '%') { //立即数只能为0和1
+			if (registerR == "0") {
+				registerR = "0";
+			}
+			else {
+				registerR = "1";
+			}
+		}
 		if (registerL == "1" || registerR == "1") {
 			flag = 1;
 		}
@@ -1874,6 +1906,22 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		token = wordAnalysis.getToken();//预读
 		EqExp();
 		registerR = interRegister;
+		if (registerL[0] != '@' && registerL[0] != '%') { //立即数只能为0和1
+			if (registerL == "0") {
+				registerL = "0";
+			}
+			else {
+				registerL = "1";
+			}
+		}
+		if (registerR[0] != '@' && registerR[0] != '%') { //立即数只能为0和1
+			if (registerR == "0") {
+				registerR = "0";
+			}
+			else {
+				registerR = "1";
+			}
+		}
 		if (registerL[0] != '@' && registerL[0] != '%' && registerR[0] != '@' && registerR[0] != '%') {
 			int value;
 			int valueL = stringToNum(registerL);
@@ -1915,6 +1963,22 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		token = wordAnalysis.getToken();//预读
 		EqExp();
 		registerR = interRegister;
+		if (registerL[0] != '@' && registerL[0] != '%') { //立即数只能为0和1
+			if (registerL == "0") {
+				registerL = "0";
+			}
+			else {
+				registerL = "1";
+			}
+		}
+		if (registerR[0] != '@' && registerR[0] != '%') { //立即数只能为0和1
+			if (registerR == "0") {
+				registerR = "0";
+			}
+			else {
+				registerR = "1";
+			}
+		}
 		if (registerL == "0" || registerR == "0") {
 			flag = 1;
 		}
