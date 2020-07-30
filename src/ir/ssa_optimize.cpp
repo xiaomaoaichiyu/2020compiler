@@ -54,42 +54,52 @@ void SSA::pre_optimize() {
 
 //ssa形式上的优化
 void SSA::ssa_optimize() {
+	
+	if (0) {	// 关闭常量传播
+		// 重新计算use-def关系
+		build_def_use_chain();
+		// 重新进行活跃变量分析
+		active_var_analyse();
+		//常量传播
+		const_propagation();
+	}
+
 	// 重新计算use-def关系
 	build_def_use_chain();
 	// 重新进行活跃变量分析
 	active_var_analyse();
-	
-	//常量传播
-	const_propagation();
-
 	// 死代码删除
 	delete_dead_codes();
+	
+	if (0) { // 关闭函数内联
 	// 重新计算use-def关系
-	// build_def_use_chain();
-	// 重新进行活跃变量分析
-	// active_var_analyse();
-	// 函数内联
-	//judge_inline_function();
-	//inline_function();
+		build_def_use_chain();
+		// 重新进行活跃变量分析
+		active_var_analyse();
+		// 函数内联
+		judge_inline_function();
+		inline_function();
+	}
 
+	if (0) { // 关闭循环优化
 	// 将phi函数加入到中间代码
-	/*add_phi_to_Ir();*/
+		add_phi_to_Ir();
 
-	//循环优化
-	//count_UDchains();		//计算使用-定义链
-	//back_edge();			//找循环
-	//mark_invariant();		//确定不变式
-	//ofstream ly1("lyceshi1.txt");
-	//printCircleIr(this->blockCore, ly1);
+		//循环优化
+		count_UDchains();		//计算使用-定义链
+		back_edge();			//找循环
+		mark_invariant();		//确定不变式
+		ofstream ly1("lyceshi1.txt");
+		printCircleIr(this->blockCore, ly1);
 
-	//code_outside();			//不变式外提
+		code_outside();			//不变式外提
 
-	//ofstream ly2("lyceshi2.txt");
-	//printCircleIr(this->blockCore, ly2);
-	//
-	// 删除中间代码中的phi
-	/*delete_Ir_phi();*/
+		ofstream ly2("lyceshi2.txt");
+		printCircleIr(this->blockCore, ly2);
 
+		// 删除中间代码中的phi
+		delete_Ir_phi();
+	}
 	//count_use_def_chain();
 }
 
@@ -306,6 +316,10 @@ void SSA::judge_inline_function() {
 			for (j = 0; j < size3; j++) {
 				CodeItem ci = blockCore[i][1].Ir[j];
 				if (ci.getCodetype() == CALL) {	// 含有函数调用指令
+					flag = false;
+					break;
+				}
+				else if (ci.getCodetype() == PARA && ci.getOperand1().compare("int*") == 0) {
 					flag = false;
 					break;
 				}
