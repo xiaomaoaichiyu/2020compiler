@@ -703,7 +703,8 @@ void _push(CodeItem* ir)
 		sp -= 56;
 	}*/
 	if (pushNum <= 4) {
-		OUTPUT("MOV R" + to_string(pushNum - 1) + "," + name);
+		if (pushNum - 1 != 0 || name.compare("R0") != 0 )	// add by lzh
+			OUTPUT("MOV R" + to_string(pushNum - 1) + "," + name);
 	}
 	else {
 		OUTPUT("PUSH {" + name + "}");
