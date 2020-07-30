@@ -1019,12 +1019,13 @@ void SSA::delete_Ir_phi() {
 	for (i = 1; i < size1; i++) {	// 遍历函数
 		int size2 = blockCore[i].size();
 		for (j = 1; j < size2; j++) {	// 遍历基本块
-			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {	// 遍历中间代码
-				if (blockCore[i][j].Ir[k].getCodetype() == PHI) {
-					blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin());
-					k--;
+			auto& ir = blockCore[i][j].Ir;
+			for (auto it = ir.begin(); it != ir.end();) {	// 遍历中间代码
+				if (it->getCodetype() == PHI) {
+					it = ir.erase(it);
+					continue;
 				}
-				else break;
+				it++;
 			}
 		}
 	}

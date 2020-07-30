@@ -69,7 +69,7 @@ void SSA::ssa_optimize() {
 	// 重新进行活跃变量分析
 	active_var_analyse();
 	// 死代码删除
-	delete_dead_codes();
+	//delete_dead_codes();
 	
 	if (0) { // 关闭函数内联
 	// 重新计算use-def关系
@@ -81,7 +81,7 @@ void SSA::ssa_optimize() {
 		inline_function();
 	}
 
-	if (0) { // 关闭循环优化
+	if (1) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -769,9 +769,10 @@ void SSA::back_edge() {
 			}
 		}
 
-		Circle circle;
+		
 		//查找循环的基本块，每个回边对应着一个循环，后续应该合并某些循环，不合并效率可能比较低？
 		for (auto backEdge : backEdges) {
+			Circle circle;
 			int end = backEdge.first;
 			int begin = backEdge.second;
 			circle.cir_blks.insert(end);
