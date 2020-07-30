@@ -34,9 +34,11 @@ void UDchain::count_gen() {
 				def2var[def1] = res;
 				break;
 			} case STORE: {
-				Node def1(i, j, ope1);
-				gen.at(i).insert(def1);
-				def2var[def1] = ope1;
+				if (!isGlobal(ope1)) {
+					Node def1(i, j, ope1);
+					gen.at(i).insert(def1);
+					def2var[def1] = ope1;
+				}
 				break;
 			} case CALL: {
 				if (isTmp(res)) {
@@ -46,9 +48,11 @@ void UDchain::count_gen() {
 				}
 				break;
 			} case PHI: {
-				Node def1(i, j, res);
-				gen.at(i).insert(def1);
-				def2var[def1] = res;
+				if (!isGlobal(res)) {
+					Node def1(i, j, res);
+					gen.at(i).insert(def1);
+					def2var[def1] = res;
+				}
 				break;
 			}
 			default:
@@ -214,7 +218,7 @@ void UDchain::count_UDchain() {
 				if (isTmp(ope2)) add_A_UDChain(ope2, Node(i, j, ope2));
 				break;
 			}
-			case LOAD: {
+			case LOAD: {	//全局变量如何处理
 				if (ope2 != "para" && ope2 != "array") add_A_UDChain(ope1, Node(i, j, ope1));
 				break;
 			}
