@@ -141,10 +141,10 @@ string CodeItem::getContent()
 	}
 	case BR: {
 		if (operand1.size() > 0) {
-			content = "br         " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+			content = "br         " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
 		}
 		else {
-			content = "br                    " + standardLength(operand1);
+			content = "br                    " + standardLength(operand1) + standardLength(invariant);
 		}
 		break;
 	}

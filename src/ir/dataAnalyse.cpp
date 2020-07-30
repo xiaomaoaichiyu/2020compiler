@@ -34,9 +34,11 @@ void UDchain::count_gen() {
 				def2var[def1] = res;
 				break;
 			} case STORE: {
-				Node def1(i, j, ope1);
-				gen.at(i).insert(def1);
-				def2var[def1] = ope1;
+				if (!isGlobal(ope1)) {
+					Node def1(i, j, ope1);
+					gen.at(i).insert(def1);
+					def2var[def1] = ope1;
+				}
 				break;
 			} case CALL: {
 				if (isTmp(res)) {
@@ -46,9 +48,11 @@ void UDchain::count_gen() {
 				}
 				break;
 			} case PHI: {
-				Node def1(i, j, res);
-				gen.at(i).insert(def1);
-				def2var[def1] = res;
+				if (!isGlobal(res)) {
+					Node def1(i, j, res);
+					gen.at(i).insert(def1);
+					def2var[def1] = res;
+				}
 				break;
 			}
 			default:
@@ -130,9 +134,11 @@ void UDchain::count_in_and_out() {
 }
 
 bool UDchain::checkPhi(string var, int blkNum) {
-	for (int i = 0; i < CFG.at(blkNum).phi.size(); i++) {
-		if (CFG.at(blkNum).phi.at(i).name == var) {
-			return true;
+	for (int i = 0; i < CFG.size(); i++) {
+		for (int j = 0; j < CFG.at(i).phi.size(); j++) {
+			if (CFG.at(i).phi.at(j).name == var) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -146,7 +152,7 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 	for (auto def : in.at(i)) {
 		if (def2var[def] == var) {	//定义点找到
 			if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
-				auto tmp = FORMAT("{} <{},{}> def over one time!", var, i, j);
+				auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 				WARN_MSG(tmp.c_str());
 			}
 			chains[tmp] = def;
@@ -157,7 +163,7 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 		if (def2var[def] == var) {
 			if (chains.find(tmp) != chains.end()) {
 				if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
-					auto tmp = FORMAT("{} <{},{}> def over one time!", var, i, j);
+					auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 					WARN_MSG(tmp.c_str());
 				}
 				if (chains[tmp].lIdx > def.lIdx) {
@@ -166,7 +172,7 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 			}
 			else if (def.lIdx < j) {
 				if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
-					auto tmp = FORMAT("{} <{},{}> def over one time!", var, i, j);
+					auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 					WARN_MSG(tmp.c_str());
 				}
 				chains[tmp] = def;
@@ -214,7 +220,7 @@ void UDchain::count_UDchain() {
 				if (isTmp(ope2)) add_A_UDChain(ope2, Node(i, j, ope2));
 				break;
 			}
-			case LOAD: {
+			case LOAD: {	//全局变量如何处理
 				if (ope2 != "para" && ope2 != "array") add_A_UDChain(ope1, Node(i, j, ope1));
 				break;
 			}

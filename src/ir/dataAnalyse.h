@@ -76,7 +76,12 @@ public:
 	void count_UDchain();					//计算整个流程图的使用-定义链
 	void printUDchain(ofstream& ud);
 	Node getDef(Node use, string var) {
-		return chains[pair<string, Node>(var, use)];
+		pair<string, Node> tmp(var, use);
+		if (chains.find(tmp) != chains.end()) {
+			return chains[tmp];
+		}else {
+			return Node(-1, -1, "");
+		}
 	}
 private:
 	bool find_var_def(set<Node> container, string var);			//寻找变量的定义

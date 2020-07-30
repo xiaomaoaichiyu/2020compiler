@@ -831,9 +831,11 @@ void SSA::mark_invariant() {
 								instr.setInvariant();
 							}
 							else {	//取变量的值，看变量的定义位置def是否在循环外
-								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-									instr.setInvariant();
+								if (!isGlobal(ope1)) {
+									auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+									if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+										instr.setInvariant();
+									}
 								}
 							}
 							break; } 
@@ -843,7 +845,7 @@ void SSA::mark_invariant() {
 							}
 							else {	//赋值为变量，查看变量的定义
 								auto def = udchain.getDef(Node(idx, j, res), res);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
 							}
@@ -853,23 +855,22 @@ void SSA::mark_invariant() {
 						case NEQ: case SGT: case SGE: case SLT: case SLE: {
 							if (isNumber(ope1)) {
 								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
 							}
 							else if (isNumber(ope2)) {
 								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
 							}
-							else {	//操作数全是变量
-								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-									instr.setInvariant();
-								}
-								def = udchain.getDef(Node(idx, j, ope2), ope2);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+							else {	//操作数全是变量		//如果是全局变量的use那么没有定义怎么办？
+								auto def1 = udchain.getDef(Node(idx, j, ope1), ope1);
+								auto def2 = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (def1.var != "" && def2.var != "" 
+									&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end() 
+									&& circle.cir_blks.find(def2.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
 							}
@@ -877,15 +878,16 @@ void SSA::mark_invariant() {
 						case STOREARR: case LOADARR: {
 							if (!isNumber(ope2)) {
 								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
 							}
+							break;
 						}
 						case RET: case PUSH: case BR: {
 							if (isTmp(ope1)) {
 								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
 							}
@@ -909,28 +911,26 @@ void SSA::mark_invariant() {
 						auto ope2 = instr.getOperand2();
 						switch (op) {
 						case LOAD: {
-							if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
-								instr.setInvariant();
-							}
-							else {	//取变量的值，看变量的定义位置def是否在循环外
+							//取变量的值，看变量的定义位置def是否在循环外
+							if (!isGlobal(ope1)) {	//不是全局变量
 								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
-								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-									instr.setInvariant();
+								else {
+									if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+										instr.setInvariant();
+									}
 								}
 							}
 							break; }
 						case STORE: {	//先不考虑全局变量和局部变量的区别
-							if (isNumber(res)) {	//赋值是常数，直接设置为不变式
+							//赋值为变量，查看变量的定义
+							auto def = udchain.getDef(Node(idx, j, res), res);
+							if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 								instr.setInvariant();
 							}
-							else {	//赋值为变量，查看变量的定义
-								auto def = udchain.getDef(Node(idx, j, res), res);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-									instr.setInvariant();
-								}
+							else {
 								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
 									instr.setInvariant();
 								}
@@ -941,58 +941,68 @@ void SSA::mark_invariant() {
 						case NEQ: case SGT: case SGE: case SLT: case SLE: {
 							if (isNumber(ope1)) {
 								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
-								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-									instr.setInvariant();
+								else {
+									if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+										instr.setInvariant();
+									}
 								}
 							}
 							else if (isNumber(ope2)) {
 								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
-								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-									instr.setInvariant();
+								else {
+									if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+										instr.setInvariant();
+									}
 								}
 							}
 							else {	//操作数全是变量
-								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-									instr.setInvariant();
-								}
-								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-									instr.setInvariant();
-								}
-								def = udchain.getDef(Node(idx, j, ope2), ope2);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-									instr.setInvariant();
-								}
-								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-									instr.setInvariant();
+								auto def1 = udchain.getDef(Node(idx, j, ope1), ope1);
+								auto def2 = udchain.getDef(Node(idx, j, ope2), ope2);
+								if (def1.var != "" && def2.var != "" ) {	//定义都有意义
+									if (circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end() 
+										&& blocks.at(def2.bIdx).Ir.at(def2.lIdx).getInvariant() == 1) {	//ope1定义在循环外，ope2定义是不变量
+										instr.setInvariant();
+									}
+									else if (circle.cir_blks.find(def2.bIdx) == circle.cir_blks.end()
+										&& blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {	//ope2定义在循环外，ope1定义是不变量
+										instr.setInvariant();
+									}
+									else if (blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1 
+										&& blocks.at(def2.bIdx).Ir.at(def2.lIdx).getInvariant() == 1) {	//ope1和ope2定义均是不变量
+										instr.setInvariant();
+									}
 								}
 							}
 							break; }
 						case STOREARR: case LOADARR: {
 							if (!isNumber(ope2)) {
 								auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
-								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-									instr.setInvariant();
+								else {
+									if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+										instr.setInvariant();
+									}
 								}
 							}
 						}
 						case RET: case PUSH: case BR: {
 							if (isTmp(ope1)) {
 								auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 									instr.setInvariant();
 								}
-								if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-									instr.setInvariant();
+								else {
+									if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+										instr.setInvariant();
+									}
 								}
 							}
 							break; }
