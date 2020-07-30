@@ -1096,11 +1096,11 @@ void SSA::generate() {
 	//复写传播
 	// copy_propagation();
 
-	// 恢复为之前中间代码形式后再做一次无用代码删除
-	pre_optimize();
-
 	//将SSA格式代码转换到codetotal格式
 	turn_back_codetotal();
+
+	// 恢复为之前中间代码形式后再做一次无用代码删除
+	pre_optimize();
 
 	// 输出中间代码
 	TestIrCode("ir2.txt");
