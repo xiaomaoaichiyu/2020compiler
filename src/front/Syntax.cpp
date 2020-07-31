@@ -131,7 +131,7 @@ void assignStmt();        //赋值语句
 void ifStmt();            //条件语句
 void Cond();              //条件表达式(逻辑或表达式)
 void loopStmt();          //循环语句
-void FuncRParams();		  //值参数表
+void FuncRParams(string name);		  //值参数表
 void returnStmt();        //返回语句
 void LAndExp();			  //逻辑与表达式
 void EqExp();			  //相等性表达式
@@ -165,7 +165,11 @@ symbolTable checkTable(string checkname, int function_number, vector<int> father
 void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 void changeForInline(int index);		//如果为内联函数修改符号表和中间代码的名字
-
+void changecodeForInline();			//修改中间代码
+int judgeSpecialFunc(string name);		//判断是否为特殊函数
+int findFuncindex(string name);			//查找函数名在符号表中下标
+string newLabelName(string name, int houzhui);		//修改内敛函数的标签名
+string newTempName(string name);					//修改临时变量%后的下标名
 //=============================================================================================================
 //        以上为全局变量定义以及函数定义
 //=============================================================================================================
@@ -259,8 +263,10 @@ int frontExecute(string syname)
 		cout << "\n";
 	}
 	*/
+	TestIrCode("irbeforeInline.txt");
+	//changecodeForInline();
 	//检测中间代码正确性
-	TestIrCode("ir.txt");
+	//TestIrCode("irafterInline.txt");
 	//outfile.close();
 	cout<<"yes"<<endl;
 	return 0;
@@ -1246,7 +1252,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			citem1.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem1);//函数开始注释
 			if (symbol != RPARENT) {
-				FuncRParams();
+				FuncRParams("@"+Functionname);
 			}
 			//printMessage();    //输出)信息
 			wordAnalysis.getsym();
@@ -2168,7 +2174,7 @@ void loopStmt()          //循环语句
 	//退出前均预读
 	//outfile << "<循环语句>" << endl;
 }
-void FuncRParams()    //函数实参数表
+void FuncRParams(string name)    //函数实参数表
 {
 	if (symbol == RPARENT) {
 		return;
@@ -2194,17 +2200,20 @@ void FuncRParams()    //函数实参数表
 			interRegister = interRegister + "\\0\"";
 			CodeItem citem = CodeItem(PUSH, "string", interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
+			citem.setFuncName(name);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
 			CodeItem citem = CodeItem(PUSH, "int", interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
+			citem.setFuncName(name);
 			codetotal[Funcindex].push_back(citem);
 		}
 	}
 	else {
 		CodeItem citem = CodeItem(PUSH, "int*", interRegister, numToString(paranum));  //传参
 		citem.setFatherBlock(fatherBlock);
+		citem.setFuncName(name);
 		codetotal[Funcindex].push_back(citem);
 		paraIntNode = 0;
 	}
@@ -2225,11 +2234,13 @@ void FuncRParams()    //函数实参数表
 		if (paraIntNode == 0) {
 			CodeItem citem = CodeItem(PUSH, "int", interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
+			citem.setFuncName(name);
 			codetotal[Funcindex].push_back(citem);
 		}
 		else {
 			CodeItem citem = CodeItem(PUSH, "int*", interRegister, numToString(paranum));  //传参
 			citem.setFatherBlock(fatherBlock);
+			citem.setFuncName(name);
 			codetotal[Funcindex].push_back(citem);
 			paraIntNode = 0;
 		}
@@ -2515,4 +2526,192 @@ void changeForInline(int index)
 		}
 	}
 	total.push_back(a);
+}
+
+void changecodeForInline()
+{
+	int i, j, k ,p;
+	int funcIndex;	//函数在符号表中下标
+	string funcName;
+	int inlineTime = 0; //记录内联次数，用于区分下标使用
+	vector<vector<string>> canshu;
+	for (i = 0; i < 20; i++) {		//先对参数初始化
+		vector<string> a;
+		canshu.push_back(a);
+	}
+	//全局中间代码不动
+	for (i = 1; i < codetotal.size(); i++) {
+		map<string, int> message;	//存储信息
+		int allocIndex = 1;		//alloc截至的下标
+		for (j = 1; j < codetotal[i].size(); j++) {
+			if (codetotal[i][j].getCodetype() == PARA || codetotal[i][j].getCodetype() == ALLOC) {
+				allocIndex++;
+			}
+			if (codetotal[i][j].getCodetype() == PUSH) {
+				funcName = codetotal[i][j].getFuncName();
+				if (judgeSpecialFunc(funcName)) {
+					continue;
+				}
+				funcIndex = findFuncindex(funcName);
+				if (total[funcIndex][0].getisinlineFunc()==0) {
+					continue;
+				}
+				else {	//内联函数，将push类型中间代码改成STORE赋值
+					//先把push的东西暂存起来，等到有CALL的时候再按顺序STORE
+					int paraIndex = stringToNum(codetotal[i][j].getOperand2());
+					string paravalue = codetotal[i][j].getOperand1();
+					canshu[paraIndex].push_back(paravalue);
+					codetotal[i].erase(codetotal[i].begin() + j);
+					j--;
+					/*
+					CodeItem citem = CodeItem(STORE, codetotal[i][j].getOperand1(), paraName, "");	//赋值单值
+					codetotal[i].erase(codetotal[i].begin() + j);
+					codetotal[i].insert(codetotal[i].begin() + j, citem);
+					*/
+				}
+			}
+			if (codetotal[i][j].getCodetype() == CALL) {
+				funcName = codetotal[i][j].getOperand1();
+				if (judgeSpecialFunc(funcName)) {
+					continue;
+				}
+				funcIndex = findFuncindex(funcName);
+				if (total[funcIndex][0].getisinlineFunc() == 0) {
+					continue;
+				}
+				else {	//内联函数，将该函数中间代码全加到当前中间代码里面
+					CodeItem callResult = codetotal[i][j];
+					codetotal[i].erase(codetotal[i].begin() + j);		//当前CALL可以删除了
+					//开头加入被内敛函数的ALLOC声明,被内敛的PARA当ALLOC,ALLOC还是ALLOC，插在原函数ALLOC后面即可
+					//同时修改函数的符号表
+					if (message.count(funcName) == 0) {
+						message[funcName] = 1;
+						for (k = 0, p = 0; k < codetotal[funcIndex].size(); k++) {	//从1开始，最开始的define就不要了
+							if (codetotal[funcIndex][k].getCodetype() == ALLOC) {
+								codetotal[i].insert(codetotal[i].begin() + allocIndex + p, codetotal[funcIndex][k]);
+								p++;
+							}
+							if (codetotal[funcIndex][k].getCodetype() == PARA) {
+								CodeItem citem = CodeItem(ALLOC, codetotal[funcIndex][k].getResult(), "", "1");
+								codetotal[i].insert(codetotal[i].begin() + allocIndex + p, citem);
+								p++;
+							}
+						}
+						j = j + p;
+						//修改符号表
+						for (k = 1; k < total[funcIndex].size(); k++) {
+							if (total[funcIndex][k].getForm() == PARAMETER) {	//参数变成普通变量
+								symbolTable item = symbolTable(VARIABLE, INT, total[funcIndex][k].getName(), 0, 0);
+								total[i].push_back(item);
+							}
+							else {
+								total[i].push_back(total[funcIndex][k]);
+							}
+						}
+					}
+					//给参数赋初值
+					for (int aa = 0; aa < total[funcIndex][0].getparaLength(); aa++) {
+						int size = canshu[aa + 1].size();
+						CodeItem citem = CodeItem(STORE, canshu[aa+1][size-1], total[funcIndex][aa+1].getName(), "");	//赋值单值
+						codetotal[i].insert(codetotal[i].begin() + j, citem);
+						j++;
+						canshu[aa + 1].pop_back();
+					}
+					inlineTime++;
+					Temp++;
+					string tem = funcName;
+					tem.erase(0, 1);
+					string funcEndLabel = tem + numToString(inlineTime);
+					for (k = 0,p=0; k < codetotal[funcIndex].size(); k++) {	//从1开始，最开始的define就不要了
+						if (codetotal[funcIndex][k].getCodetype() == BR || codetotal[funcIndex][k].getCodetype() == LABEL) {	//标签需要改成分
+							string res = newLabelName(codetotal[funcIndex][k].getResult(),inlineTime);
+							string ope1 = newLabelName(codetotal[funcIndex][k].getOperand1(),inlineTime);
+							string ope2 = newLabelName(codetotal[funcIndex][k].getOperand2(),inlineTime);
+							res = newTempName(res);
+							ope1 = newTempName(ope1);
+							ope2 = newTempName(ope2);
+							CodeItem citem = CodeItem(codetotal[funcIndex][k].getCodetype(), res, ope1, ope2);	//更改完成分
+							codetotal[i].insert(codetotal[i].begin() + j + p, citem);
+							p++;
+						}
+						else if(codetotal[funcIndex][k].getCodetype()==RET){
+							if (codetotal[funcIndex][k].getOperand2() == "int") {
+								CodeItem citem = CodeItem(MOV, "", callResult.getResult(), newTempName(codetotal[funcIndex][k].getOperand1()));
+								codetotal[i].insert(codetotal[i].begin() + j + p, citem);
+								p++;
+							}
+							CodeItem citem = CodeItem(BR, "", funcEndLabel, "");   //BR if.end
+							codetotal[i].insert(codetotal[i].begin() + j + p, citem);
+							p++;
+						}
+						else if (codetotal[funcIndex][k].getCodetype() == ALLOC || codetotal[funcIndex][k].getCodetype() == PARA
+							|| codetotal[funcIndex][k].getCodetype() == DEFINE) {
+							continue;		//这种直接跳过
+						}
+						else {
+							string res = newTempName(codetotal[funcIndex][k].getResult());
+							string ope1 = newTempName(codetotal[funcIndex][k].getOperand1());
+							string ope2 = newTempName(codetotal[funcIndex][k].getOperand2());
+							CodeItem citem = CodeItem(codetotal[funcIndex][k].getCodetype(), res, ope1, ope2);	//更改完成分
+							codetotal[i].insert(codetotal[i].begin() + j + p, citem);
+							p++;
+						}
+					}
+					CodeItem citem = CodeItem(LABEL, funcEndLabel, "", "");	//label if.else
+					codetotal[i].insert(codetotal[i].begin() + j + p, citem);
+					p++;
+					j = j + p;
+				}
+			}
+		}
+	}
+	for (i = 1; i < codetotal.size(); i++) {	
+		if (total[i][0].getisinlineFunc() == 1) {	//被内联的函数的中间代码没有存在的必要
+			codetotal[i].clear();
+		}
+	}
+}
+
+int judgeSpecialFunc(string name)
+{
+	if (name != "@printf" && name != "@_sysy_starttime" && name != "@_sysy_stoptime"
+		&& name != "@putarray" && name != "@putch" && name != "@putint"
+		&& name != "@getint" && name != "@getarray" && name != "@getch") {
+		return 0;
+	}
+	return 1;
+}
+int findFuncindex(string name)
+{
+	int i;
+	for (i = 1; i < total.size(); i++) {
+		if (total[i][0].getName() == name) {
+			break;
+		}
+	}
+	return i;
+}
+string newLabelName(string name,int houzhui)
+{
+	string aa = name;
+	string bb = name;
+	if (aa.size() > 7) {
+		aa = aa.substr(0, 7);
+	}
+	if (bb.size() > 4) {
+		bb = bb.substr(0, 4);
+	}
+	if (aa == "%while." || bb == "%if.") {
+		name = name + numToString(houzhui);
+	}
+	return name;
+}
+string newTempName(string name)
+{
+	if (name.size() > 0 && name[0] == '%' && isdigit(name[1])) {
+		name.erase(0, 1);
+		name =  numToString(Temp)+name;
+		name = "%" + name;
+	}
+	return name;
 }
