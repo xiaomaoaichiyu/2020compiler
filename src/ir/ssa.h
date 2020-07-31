@@ -72,6 +72,9 @@ private:
 	// 优化要用到的数据结构
 	std::vector<bool> inlineFlag;									// 函数能否内联的标志
 	std::map<std::string, int> funName2Num;				// 对应第几个函数的函数名是什么
+	std::map<int, std::string> funNum2Name;				// 函数名和函数序号的对应关系
+
+	std::set<std::string> inlineArrayName;					// 内联函数数组传参新定义变量名
 
 	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块

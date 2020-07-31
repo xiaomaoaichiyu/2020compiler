@@ -308,29 +308,55 @@ void SSA::simplify_br_label() {
 void SSA::inline_function() {
 	int i, j, k;
 	int size1 = blockCore.size();
+	// 建立函数名与对应序号的对应关系
+	for (i = 1; i < size1; i++) {
+		string funName = codetotal[i][0].getResult();	// define
+		funName2Num[funName] = i;
+		funNum2Name[i] = funName;
+	}
 	for (i = 1; i < size1; i++) {	// 遍历函数
 		int size2 = blockCore[i].size();
+		vector<CodeItem> newInsertAllocIr;	// 要在该函数开始添加的alloc中间代码
+		set<string> newInsertAllocName;	// 要在该函数开始添加的alloc变量名
+		int labelIndex = 0;					// 重命名标签编号
 		for (j = 0; j < size2; j++) {	// 遍历基本块
 			// int size3 = blockCore[i][j].Ir.size(); 不能事先求好size3，因为其大小可能会变
 			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
 				CodeItem ci = blockCore[i][j].Ir[k];
-				if (ci.getCodetype() == NOTE && ci.getOperand1().compare("func") == 0 && ci.getOperand2().compare("begin") == 0) {
-					string funName = ci.getResult();				// 要调用的函数名
+				if (ci.getCodetype() == NOTE 
+					&& ci.getOperand1().compare("func") == 0 
+					&& ci.getOperand2().compare("begin") == 0
+					&& funName2Num.find(ci.getResult()) != funName2Num.end()) {
+					string funName = ci.getResult();				// 函数名
 					int funNum = funName2Num[funName];	// 该函数对应的序号
-					if (!inlineFlag[funNum]) continue;
-					// 要调用的函数可以内联
-					symbolTable st;								// 函数结构
+					symbolTable funSt;									// 函数对应的符号表结构
 					for (int iter1 = 1; iter1 < total.size(); iter1++) {
 						if (total[iter1][0].getName().compare(funName) == 0) {
-							st = total[iter1][0]; 
+							funSt = total[iter1][0]; 
 							break;
 						}
 					}
-					int paraNum = st.getparaLength();	// 参数个数
-					vector<string> paraTable;				// 参数列表
-					for (int iter1 = 1; iter1 <= paraNum; iter1++) {
-						paraTable.push_back(blockCore[funNum][1].Ir[iter1].getResult());
+					if (funSt.getName().compare(funName) != 0) {
+						cout << "函数内联不应该发生的情况：没有在符号表中找到函数定义." << endl;
+						break;
 					}
+					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
+						continue;
+					}
+					else {
+						cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
+					}
+					int paraNum = funSt.getparaLength();	// 参数个数
+					vector<string> paraTable;					// 参数列表
+					for (int iter1 = 1; iter1 <= paraNum; iter1++) {
+						string paraName = blockCore[funNum][1].Ir[iter1].getResult();
+						paraTable.push_back(paraName);
+						if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
+							newInsertAllocName.insert(paraName);
+							CodeItem nci(ALLOC, paraName, "", "1");
+						}
+					}
+					
 					/* 1. 处理传参指令 */
 					k = k + 1;
 					for (int iter2 = paraNum; iter2 > 0; iter2--, k++) {	// 中间代码倒序，而符号表顺序
@@ -358,7 +384,7 @@ void SSA::inline_function() {
 					/* 3. 删除call指令 */
 					ci = blockCore[i][j].Ir[k];
 					if (ci.getCodetype() == CALL) {
-						if (st.getValuetype() == INT) {	// 有返回值函数调用
+						if (funSt.getValuetype() == INT) {	// 有返回值函数调用
 							k--;	ci = blockCore[i][j].Ir[k];
 							if (ci.getCodetype() == RET) {
 								CodeItem nci(MOV, "", blockCore[i][j].Ir[k + 1].getResult(), ci.getOperand1());
