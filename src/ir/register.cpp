@@ -236,7 +236,7 @@ void registerAllocation() {
 				resReg = allocTmpReg(regpool, res, funcTmp);
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
-			else if (op == ADD || op == DIV ||
+			else if (op == ADD || op == MUL ||
 					 op == AND || op == OR ||
 					 op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
 				if (!isNumber(ope2)) {	//不是立即数
