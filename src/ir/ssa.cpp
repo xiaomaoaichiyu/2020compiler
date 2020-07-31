@@ -58,6 +58,7 @@ int lookForLabel(vector<CodeItem> v, string label) {
 int locBlockForLabel(vector<int> v, int key) {
 	int size = v.size();
 	for (int i = 0; i < size; i++) if (v[i] == key) return i;
+	cout << "locBlockForLabel Wrong!" << endl; 
 	return -1;
 }
 
@@ -120,7 +121,7 @@ void SSA::find_primary_statement() {
 		for (j = 0; j < size2; j++) {
 			CodeItem c = v[j];
 			if (c.getCodetype() == BR) {			// 跳转指令
-				if (ifTempVariable(c.getOperand1())) {
+				if (ifTempVariable(c.getOperand1()) || ifVR(c.getOperand1())) {
 					k = lookForLabel(v, c.getResult());
 					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 					k = lookForLabel(v, c.getOperand2());
@@ -205,20 +206,26 @@ void SSA::build_pred_and_succeeds() {
 				CodeItem ci = tmp[j].Ir.back();
 				if (ci.getCodetype() == BR) {
 					// 跳转指令
-					if (ifTempVariable(ci.getOperand1())) {
+					if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1())) {
 						// step1: 找到跳转到标签所在的基本块序号
+						// cout << "step1";
 						k = lookForLabel(codetotal[i], ci.getResult());
 						k = locBlockForLabel(v, k + 1);
 						// step2: 插入当前基本块的后序节点
+						// cout << "step2";
 						tmp[j].succeeds.insert(k);
 						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
+						// cout << "step3";
 						tmp[k].pred.insert(j);
 						// step1: 找到跳转到标签所在的基本块序号
+						// cout << "step4";
 						k = lookForLabel(codetotal[i], ci.getOperand2());
 						k = locBlockForLabel(v, k + 1);
 						// step2: 插入当前基本块的后序节点
+						// cout << "step5";
 						tmp[j].succeeds.insert(k);
 						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
+						// cout << "step6" << endl;
 						tmp[k].pred.insert(j);
 					}
 					else {
@@ -1116,10 +1123,10 @@ void SSA::generate() {
 void SSA::generate_activeAnalyse() {
 
 	// 简化条件判断为常值的跳转指令
-	//simplify_br();
+	simplify_br();
 
 	// 在睿轩生成的中间代码上做优化
-	//pre_optimize();
+	pre_optimize();
 
 	// 计算每个基本块的起始语句
 	find_primary_statement();

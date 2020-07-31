@@ -389,7 +389,7 @@ void SSA::inline_function() {
 						cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
 					int paraNum = funSt.getparaLength();	// 参数个数
-					vector<symbolTable> paraTable;			// 参数列表
+					vector<string> paraTable;			// 参数列表
 
 					for (int iter1 = 1; iter1 <= paraNum; iter1++) {
 						string paraName = blockCore[funNum][1].Ir[iter1].getResult();
