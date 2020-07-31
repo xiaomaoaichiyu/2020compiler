@@ -320,6 +320,7 @@ void SSA::inline_function() {
 		int size2 = blockCore[i].size();
 		vector<CodeItem> newInsertAllocIr;	// 要在该函数开始添加的alloc中间代码
 		set<string> newInsertAllocName;	// 要在该函数开始添加的alloc变量名
+		int addrIndex = 0;					// 参数数组地址编号
 		int labelIndex = 0;					// 重命名标签编号
 		for (j = 0; j < size2; j++) {	// 遍历基本块
 			// int size3 = blockCore[i][j].Ir.size(); 不能事先求好size3，因为其大小可能会变
@@ -349,7 +350,8 @@ void SSA::inline_function() {
 						cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
 					int paraNum = funSt.getparaLength();	// 参数个数
-					vector<string> paraTable;					// 参数列表
+					vector<symbolTable> paraTable;			// 参数列表
+
 					for (int iter1 = 1; iter1 <= paraNum; iter1++) {
 						string paraName = blockCore[funNum][1].Ir[iter1].getResult();
 						paraTable.push_back(paraName);
