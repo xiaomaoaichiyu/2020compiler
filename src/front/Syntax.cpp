@@ -333,7 +333,7 @@ void CompUnit()
 				func2tmpIndex.push_back(Temp);
 				vector<symbolTable> item;
 				total.push_back(item);
-				vector<CodeItem> item1;
+				vector<CodeItem> item1; 
 				codetotal.push_back(item1);
 				map<string, int> item2;
 				names.push_back(item2);
@@ -2424,7 +2424,7 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 				}
 				else {
 					a.push_back(temp[i][j]);
-				}
+				} 
 			}
 		}
 		codetotal.push_back(a);
@@ -2460,25 +2460,43 @@ void changeForInline(int index)
 		string ope1 = b[i].getOperand1();
 		string ope2 = b[i].getOperand2();
 		if (res.size() > 0 && res[0] == '%' && (!isdigit(res[1]))) {  //res必须是变量或参数
-			res.erase(0, 1);  //去掉首字母
-			if (names[index].find(res) != names[index].end()) { //names[index][res] > 0
+			string aa = res;
+			string bb = res;
+			if (aa.size() > 7) {
+				aa = aa.substr(0, 7);
+			}
+			if (bb.size() > 4) {
+				bb = bb.substr(0, 4);
+			}
+			if (aa != "%while." && bb != "%if.") {
 				res = newinlineName(res, Funcname);
 			}
-			res = "%" + res;
 		}
 		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res必须是变量
-			ope1.erase(0, 1);
-			if (names[index].find(ope1) != names[index].end()) {
+			string aa = ope1;
+			string bb = ope1;
+			if (aa.size() > 7) {
+				aa = aa.substr(0, 7);
+			}
+			if (bb.size() > 4) {
+				bb = bb.substr(0, 4);
+			}
+			if (aa != "%while." && bb != "%if.") {
 				ope1 = newinlineName(ope1, Funcname);
 			}
-			ope1 = "%" + ope1;
 		}
 		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res必须是变量
-			ope2.erase(0, 1);
-			if (names[index].find(ope2) != names[index].end()) {
+			string aa = ope2;
+			string bb = ope2;
+			if (aa.size() > 7) {
+				aa = aa.substr(0, 7);
+			}
+			if (bb.size() > 4) {
+				bb = bb.substr(0, 4);
+			}
+			if (aa != "%while." && bb != "%if.") {
 				ope2 = newinlineName(ope2, Funcname);
 			}
-			ope2 = "%" + ope2;
 		}
 		b[i].changeContent(res, ope1, ope2);
 	}
