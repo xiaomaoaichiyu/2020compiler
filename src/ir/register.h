@@ -41,9 +41,6 @@ private:
 
 void registerAllocation();
 
-class ActiveAnalyse {
-	map<int, set<string>> line2varsIn;
-	map<int, set<string>> line2varsOut;
-};
+
 
 #endif // _REGISTER_H_
