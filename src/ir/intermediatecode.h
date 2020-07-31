@@ -55,6 +55,8 @@ public:
 	void setFatherBlock(vector<int> a);        //可以set的位置：所有变量、参数出现的地方
 	void changeContent(string res, string ope1, string ope2);
 	vector<int> getFatherBlock();
+	void setFuncName(string name);
+	string getFuncName();
 	string getContent();
 private:
 	int id;					//索引
@@ -65,6 +67,8 @@ private:
 	string operand1;			//左操作数
 	string operand2;			//右操作数
 	vector<int> fatherBlock;	//当前中间代码所在作用域
+	int inlineMatrixTag;        //数组能否内联
+	string funcName;			//push类型中间代码所属的函数
 };
 
 #endif 

@@ -11,10 +11,10 @@ using namespace std;
 
 vector<string> output_buffer;
 int symbol_pointer;
-map<string, int> var2addr;//¼ÇÂ¼º¯ÊýÄÚµÄ¾ø¶ÔµØÖ·,½á¹û¼õÈ¥spµÃµ½Ïà¶ÔÆ«ÒÆ
-int sp; //¸ú×Ùsp
+map<string, int> var2addr;
+int sp; 
 int sp_without_para;
-int pushNum = 0;//¼ÇÂ¼´«²ÎË³Ðò
+int pushNum = 0;
 string global_var_name;
 int global_var_size = 0;
 vector<pair<string,int>> ini_value;
@@ -24,6 +24,25 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+int is_power2(string im) {
+	unsigned int n = stoi(im);
+	if (n == -1) {
+		return -33; //è¡¨ç¤ºæ˜¯-1
+	}
+	int flag = n >= 0 ? 1 : -1;
+	n *= flag;
+	if (n & (n - 1) != 0) {
+		return 33; //è¡¨ç¤ºéžäºŒçš„å¹‚æ¬¡æ–¹
+	}
+	int cnt = 0;
+	if (n >> 16) { n >>= 16; cnt |= 16; }
+	if (n >> 8) { n >>= 8; cnt |= 8; }
+	if (n >> 4) { n >>= 4; cnt |= 4; }
+	if (n >> 2) { n >>= 2; cnt |= 2; }
+	if (n >> 1) { n >>= 1; cnt |= 1; }
+	return flag * cnt; //0è¡¨ç¤º1
+}
+
 bool check_format(CodeItem * ir) {
 	string ops[3] = { ir->getResult(),ir->getOperand1(),ir->getOperand2() };
 	for (auto s : ops) {
@@ -32,6 +51,21 @@ bool check_format(CodeItem * ir) {
 		}
 	}
 	return true;
+}
+
+bool is_illegal(string im) {
+	int i = stoi(im);
+	if (i <= 127 && i >= -128) {
+		return true;
+	}
+	unsigned int mask = 0xff;
+	while (mask != 0xfe000000) {
+		if (i & (~mask) == 0) {
+			return true;
+		}
+		mask <<= 1;
+	}
+	return false;
 }
 
 void global_flush()
@@ -54,8 +88,8 @@ void global_flush()
 		}
 		pre = off + 4;
 	}
-	if (pre != global_var_size * 4) {
-		OUTPUT(".zero " + to_string(global_var_size * 4 - pre));
+	if (pre/4 != global_var_size) {
+		OUTPUT(".zero " + to_string((long long)global_var_size * 4 - pre));
 	}
 
 	/*int zero_cnt = 0;
@@ -97,7 +131,7 @@ pair<string, int> get_location(string name)
 		return { getname(name),-1 };
 	}
 	else if (isdigit(name[1]) && name[0] == '%') {
-		return { "R" + to_string(stoi(name.substr(1)) % 7 + 4),-2 }; //´Ë´¦Ó¦µ±Ä£8,Áô³ör11×öÁÙÊ±¼Ä´æÆ÷
+		return { "R" + to_string(stoi(name.substr(1)) % 7 + 4),-2 }; //ï¿½Ë´ï¿½Ó¦ï¿½ï¿½Ä£8,ï¿½ï¿½ï¿½ï¿½r11ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ä´ï¿½ï¿½ï¿½
 	}
 	else if (var2addr.find(name) != var2addr.end()) {
 		if (var2addr[name] > 0) {
@@ -372,7 +406,7 @@ void _add(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -388,8 +422,13 @@ void _sub(CodeItem* ir)
 	string target = ir->getResult();
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
+	if (op1[0] != 'R') {
+		OUTPUT("LDR LR,=" + op1);
+		OUTPUT("SUB " + target + ",LR," + op2);
+		return;
+	}
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -406,6 +445,7 @@ void _mul(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
+		//æ­¤å¤„å¯ä»¥çœ‹ä¸€ä¸‹èƒ½å¦ä½¿ç”¨ç§»ä½å®žçŽ°ä¹˜æ³•
 		OUTPUT("LDR LR,=" + op2);
 		op2 = "LR";
 	}
@@ -417,32 +457,87 @@ void _div(CodeItem* ir)
 	string target = ir->getResult();
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
-	OUTPUT("PUSH {R0}");
-	OUTPUT("PUSH {R1,R2,R3,R12}");
-	if (op2 == "R0") {
-		OUTPUT("MOV LR,R0");
-	}
-	OUTPUT("MOV R0," + op1);
-	if (op2[0] == 'R') {
-		if (op2 == "R0") {
-			OUTPUT("MOV R1,LR");
+	if (op1[0] != 'R') {
+		OUTPUT("PUSH {R0}");
+		OUTPUT("PUSH {R1,R2,R3,R12}");
+		OUTPUT("MOV R1," + op2);
+		OUTPUT("LDR R0,=" + op1);
+		OUTPUT("BL __aeabi_idiv");
+		if (target == "R0") {
+			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("MOV R1," + op2);
+			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("MOV " + target + ",R0");
+			OUTPUT("POP {R0}");
 		}
+		return;
 	}
-	else {
-		OUTPUT("LDR R1,=" + op2);
+	if (op2[0] != 'R') {
+		int bitoff = is_power2(op2);
+		if (bitoff == -33) {
+			OUTPUT("MOV LR,#0");
+			OUTPUT("SUB " + target + ",LR," + op1);
+		}
+		else if (bitoff == 33) {
+			OUTPUT("PUSH {R0}");
+			OUTPUT("PUSH {R1,R2,R3,R12}");
+			OUTPUT("MOV R0," + op1);
+			OUTPUT("LDR R1,=" + op2);
+			OUTPUT("BL __aeabi_idiv");
+			if (target == "R0") {
+				OUTPUT("POP {R1,R2,R3,R12}");
+				OUTPUT("ADD SP,SP,#4");
+			}
+			else {
+				OUTPUT("POP {R1,R2,R3,R12}");
+				OUTPUT("MOV " + target + ",R0");
+				OUTPUT("POP {R0}");
+			}
+		}
+		else if (bitoff == 0) {
+			OUTPUT("MOV " + target + "," + op1);
+		}
+		else if (bitoff > 0) {
+			OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(bitoff));
+		}
+		else if (bitoff < 0) {
+			OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(-bitoff));
+			OUTPUT("MOV LR,#0");
+			OUTPUT("SUB " + target + ",LR," + target);
+		}
+		return;
 	}
-	OUTPUT("BL __aeabi_idiv");
-	if (target == "R0") {
-		OUTPUT("POP {R1,R2,R3,R12}");
-		OUTPUT("ADD SP,SP,#4");
-	}
-	else {
-		OUTPUT("POP {R1,R2,R3,R12}");
-		OUTPUT("MOV " + target + ",R0");
-		OUTPUT("POP {R0}");
+	{
+		OUTPUT("PUSH {R0}");
+		OUTPUT("PUSH {R1,R2,R3,R12}");
+		if (op2 == "R0") {
+			OUTPUT("MOV LR,R0");
+		}
+		OUTPUT("MOV R0," + op1);
+		if (op2[0] == 'R') {
+			if (op2 == "R0") {
+				OUTPUT("MOV R1,LR");
+			}
+			else {
+				OUTPUT("MOV R1," + op2);
+			}
+		}
+		else {
+			OUTPUT("LDR R1,=" + op2);
+		}
+		OUTPUT("BL __aeabi_idiv");
+		if (target == "R0") {
+			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("ADD SP,SP,#4");
+		}
+		else {
+			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("MOV " + target + ",R0");
+			OUTPUT("POP {R0}");
+		}
+		return;
 	}
 }
 
@@ -451,32 +546,61 @@ void _rem(CodeItem* ir)
 	string target = ir->getResult();
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
-	OUTPUT("PUSH {R1}");
-	OUTPUT("PUSH {R0,R2,R3,R12}");
-	if (op2 == "R0") {
-		OUTPUT("MOV LR,R0");
-	}
-	OUTPUT("MOV R0," + op1);
-	if (op2[0] == 'R') {
-		if (op2 == "R0") {
-			OUTPUT("MOV R1,LR");
+	if (op1[0] != 'R') {
+		OUTPUT("PUSH {R1}");
+		OUTPUT("PUSH {R0,R2,R3,R12}");
+		OUTPUT("MOV R1," + op2);
+		OUTPUT("LDR R0,=" + op1);
+		OUTPUT("BL __aeabi_idivmod");
+		if (target == "R1") {
+			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("MOV R1," + op2);
+			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("MOV " + target + ",R1");
+			OUTPUT("POP {R1}");
+		}
+		return;
+	}
+	if (op2[0] != 'R') {
+		int bitoff = is_power2(op2);
+		//ç›®å‰ä»…è€ƒè™‘æ­£æ•°æ¨¡æ­£æ•°çš„æƒ…å†µ
+		if (bitoff >= 0 && bitoff != 33) {
+			OUTPUT("LDR LR,=" + op2);
+			OUTPUT("SUB LR,LR,#-1");
+			OUTPUT("AND " + target + ",LR," + op1);
+			return;
 		}
 	}
-	else {
-		OUTPUT("LDR R1,=" + op2);
-	}
-	OUTPUT("BL __aeabi_idivmod");
-	if (target == "R1") {
-		OUTPUT("POP {R0,R2,R3,R12}");
-		OUTPUT("ADD SP,SP,#4");
-	}
-	else {
-		OUTPUT("POP {R0,R2,R3,R12}");
-		OUTPUT("MOV " + target + ",R1");
-		OUTPUT("POP {R1}");
+	{
+		OUTPUT("PUSH {R1}");
+		OUTPUT("PUSH {R0,R2,R3,R12}");
+		if (op2 == "R0") {
+			OUTPUT("MOV LR,R0");
+		}
+		OUTPUT("MOV R0," + op1);
+		if (op2[0] == 'R') {
+			if (op2 == "R0") {
+				OUTPUT("MOV R1,LR");
+			}
+			else {
+				OUTPUT("MOV R1," + op2);
+			}
+		}
+		else {
+			OUTPUT("LDR R1,=" + op2);
+		}
+		OUTPUT("BL __aeabi_idivmod");
+		if (target == "R1") {
+			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("ADD SP,SP,#4");
+		}
+		else {
+			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("MOV " + target + ",R1");
+			OUTPUT("POP {R1}");
+		}
 	}
 }
 
@@ -558,7 +682,7 @@ void _eql(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -577,7 +701,7 @@ void _neq(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -596,7 +720,7 @@ void _sgt(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -615,7 +739,7 @@ void _sge(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -634,7 +758,7 @@ void _slt(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -653,7 +777,7 @@ void _sle(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		if (stoi(op2) > 127 || stoi(op2) < -127) {
+		if (!is_illegal(op2)) {
 			OUTPUT("LDR LR,=" + op2);
 			op2 = "LR";
 		}
@@ -703,8 +827,7 @@ void _push(CodeItem* ir)
 		sp -= 56;
 	}*/
 	if (pushNum <= 4) {
-		if (pushNum - 1 != 0 || name.compare("R0") != 0 )	// add by lzh
-			OUTPUT("MOV R" + to_string(pushNum - 1) + "," + name);
+		OUTPUT("MOV R" + to_string(pushNum - 1) + "," + name);
 	}
 	else {
 		OUTPUT("PUSH {" + name + "}");
@@ -871,13 +994,13 @@ void arm_generate(string sname)
 				_sub(ir_now);
 				break;
 			case DIV:
-				_div(ir_now); //´ý¶¨
+				_div(ir_now); //ï¿½ï¿½ï¿½ï¿½
 				break;
 			case MUL:
 				_mul(ir_now);
 				break;
 			case REM:
-				_rem(ir_now); //´ý¶¨
+				_rem(ir_now); //ï¿½ï¿½ï¿½ï¿½
 				break;
 			case AND:
 				_and(ir_now);
@@ -907,10 +1030,10 @@ void arm_generate(string sname)
 				_sle(ir_now);
 				break;
 			case ALLOC:
-				//_alloc(ir_now); //É¶¶¼²»ÓÃ¸É£¿
+				//_alloc(ir_now); //É¶ï¿½ï¿½ï¿½ï¿½ï¿½Ã¸É£ï¿½
 				break;
 			case STORE:
-				_store(ir_now); //È«¾ÖÔõÃ´¸ã£¿
+				_store(ir_now); //È«ï¿½ï¿½ï¿½ï¿½Ã´ï¿½ã£¿
 				break;
 			case STOREARR:
 				_storearr(ir_now);
@@ -924,16 +1047,16 @@ void arm_generate(string sname)
 			case INDEX:
 				break;
 			case CALL:
-				_call(ir_now); //R0¸²¸Ç£¿
+				_call(ir_now); //R0ï¿½ï¿½ï¿½Ç£ï¿½
 				break;
 			case RET:
-				_ret(ir_now); //RETÔõÃ´¸ã
+				_ret(ir_now); //RETï¿½ï¿½Ã´ï¿½ï¿½
 				break;
 			case PUSH:
-				_push(ir_now); //Ç°ËÄ¸öÎÊÌâ£¬´«²ÎË³ÐòÎÊÌâ¡£
+				_push(ir_now); //Ç°ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½â£¬ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½â¡£
 				break;
 			case POP:
-				break;//ËùÒÔPOPµ½µ×¸ÉÂï
+				break;//ï¿½ï¿½ï¿½ï¿½POPï¿½ï¿½ï¿½×¸ï¿½ï¿½ï¿½
 			case LABEL:
 				_label(ir_now);
 				break;
@@ -973,6 +1096,7 @@ void arm_generate(string sname)
 	arm << ".global main\n";
 	arm << ".global __aeabi_idiv\n"; 
 	arm << ".global __aeabi_idivmod\n";
+	//arm << "main:\nMOV PC,LR\n";
 	for (auto s : output_buffer) {
 		arm << s << "\n";
 	}

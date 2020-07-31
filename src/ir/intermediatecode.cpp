@@ -129,7 +129,16 @@ string CodeItem::getContent()
 		break;
 	}
 	case PUSH: {
-		content = "push       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
+		if (result == "int*") {
+			string a = "0";
+			if (inlineMatrixTag == 1) {
+				a = "1";
+			}
+			content = "push       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + a;
+		}
+		else {
+			content = "push       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + standardLength(invariant);
+		}
 		break;
 	}
 	case POP: {
@@ -280,7 +289,14 @@ vector<int> CodeItem::getFatherBlock()
 {
 	return this->fatherBlock;
 }
-
+void CodeItem::setFuncName(string name)
+{
+	this->funcName = name;
+}
+string CodeItem::getFuncName()
+{
+	return this->funcName;
+}
 
 #define ENUM_TO_STRING(enumName) (#enumName)
 
