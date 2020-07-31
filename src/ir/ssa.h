@@ -147,6 +147,7 @@ private:
 	bool ifDigit(std::string name);						// 判断是否是数字
 	bool ifGlobalVariable(std::string name);		// 判断是否是全局变量
 	bool ifLocalVariable(std::string name);		// 判断是否是局部变量
+	bool ifVR(std::string name);						// 判断是否是虚拟寄存器
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
@@ -154,6 +155,7 @@ public:
 	}*/
 	SSA() {}
 	void generate();		// 开始函数
+	void generate_activeAnalyse();
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化
 	void active_count();
