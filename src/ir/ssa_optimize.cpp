@@ -345,36 +345,73 @@ void SSA::simplify_br_label() {
 	}
 }
 
+string SSA::getNewInsertAddr(int funNum) {
+	string ans = "%Addr*" + to_string(addrIndex[funNum]);
+	inlineArrayName[funNum].insert(ans);
+	addrIndex[funNum]++;
+	return ans;
+}
+
+string SSA::getNewInsertLabel(int funNum, string name) {
+	string ans = name + "." + to_string(labelIndex[funNum]);
+	labelIndex[funNum]++;
+	return ans;
+}
+
+string SSA::getNewFunEndLabel(int funNum, string name) {
+	string ans = "function." + name + "." + to_string(funCallCount[funNum]);
+	funCallCount[funNum]++;
+	return ans;
+}
+
+string SSA::getFunEndLabel(int funNum, string name) {
+	return ("function." + name + "." + to_string(funCallCount[funNum]));
+}
+
+string SSA::getRetValName(string name) {
+	return ("Ret*" + name);
+}
+
 // 函数内联
 void SSA::inline_function() {
-	int i, j, k;
+	int i, j;
 	int size1 = blockCore.size();
-	// 建立函数名与对应序号的对应关系
-	for (i = 1; i < size1; i++) {
+	// init & 建立函数名与对应序号的对应关系
+	for (i = 0; i < size1; i++) {
+		addrIndex.push_back(0);
+		labelIndex.push_back(0);
+		set<string> s; inlineArrayName.push_back(s);
+		funCallCount.push_back(0);
+		if (i == 0) continue;
 		string funName = codetotal[i][0].getResult();	// define
 		funName2Num[funName] = i;
 		funNum2Name[i] = funName;
 	}
+	// 函数内联主体部分
 	for (i = 1; i < size1; i++) {	// 遍历函数
-		int size2 = blockCore[i].size();
 		vector<CodeItem> newInsertAllocIr;	// 要在该函数开始添加的alloc中间代码
-		set<string> newInsertAllocName;	// 要在该函数开始添加的alloc变量名
-		int addrIndex = 0;					// 参数数组地址编号
-		int labelIndex = 0;					// 重命名标签编号
-		for (j = 0; j < size2; j++) {	// 遍历基本块
-			// int size3 = blockCore[i][j].Ir.size(); 不能事先求好size3，因为其大小可能会变
-			for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
-				CodeItem ci = blockCore[i][j].Ir[k];
-				if (ci.getCodetype() == NOTE 
-					&& ci.getOperand1().compare("func") == 0 
-					&& ci.getOperand2().compare("begin") == 0
-					&& funName2Num.find(ci.getResult()) != funName2Num.end()) {
-					string funName = ci.getResult();				// 函数名
-					int funNum = funName2Num[funName];	// 该函数对应的序号
-					symbolTable funSt;									// 函数对应的符号表结构
+		set<string> newInsertAllocName;		// 要在该函数开始添加的alloc变量名
+		bool step1 = true, step2 = true, step3 = true, step4 = true, step5 = true, step6 = true;	// debug
+		/*
+		 step1: 判断调用函数是否可以内联
+		 step2: 处理参数及传参指令，alloc
+		 step3. 插入调用函数的除函数和参数声明之外的指令
+		 step4. 添加函数调用结束标签
+		 step5. 删除call指令
+		 step6. 添加alloc指令到函数开始位置
+		 */
+		for (j = 1; j < codetotal[i].size(); j++) {
+			CodeItem ci = codetotal[i][j];
+			/* step0: 找到函数调用 */
+			if (ci.getCodetype() == NOTE && ci.getOperand1().compare("func") == 0 && ci.getOperand2().compare("begin") == 0
+				&& funName2Num.find(ci.getResult()) != funName2Num.end()) {
+				string funName = ci.getResult();				// 函数名
+				int funNum = funName2Num[funName];	// 该函数对应的序号
+				symbolTable funSt;									// 函数对应的符号表结构
+				if (step1) {	/* step1: 判断调用函数是否可以内联 */
 					for (int iter1 = 1; iter1 < total.size(); iter1++) {
 						if (total[iter1][0].getName().compare(funName) == 0) {
-							funSt = total[iter1][0]; 
+							funSt = total[iter1][0];	// 正常情况下一定会有这一步
 							break;
 						}
 					}
@@ -388,67 +425,164 @@ void SSA::inline_function() {
 					else {
 						cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
-					int paraNum = funSt.getparaLength();	// 参数个数
-					vector<string> paraTable;			// 参数列表
-
-					for (int iter1 = 1; iter1 <= paraNum; iter1++) {
-						string paraName = blockCore[funNum][1].Ir[iter1].getResult();
-						paraTable.push_back(paraName);
-						if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
-							newInsertAllocName.insert(paraName);
-							CodeItem nci(ALLOC, paraName, "", "1");
-						}
-					}
-					
-					/* 1. 处理传参指令 */
-					k = k + 1;
-					for (int iter2 = paraNum; iter2 > 0; iter2--, k++) {	// 中间代码倒序，而符号表顺序
-						ci = blockCore[i][j].Ir[k];
-						if (ci.getCodetype() == LOAD || ci.getCodetype() == LOADARR) {
-							k++;
-							ci = blockCore[i][j].Ir[k];
-							if (ci.getCodetype() == PUSH) {
-								CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
-								blockCore[i][j].Ir[k] = nci;
+				}
+				int paraNum = funSt.getparaLength();	// 参数个数
+				vector<string> paraTable;					// 参数列表
+				if (step2) {	/* step2: 处理参数及传参指令 */
+					for (int iter1 = 1; iter1 <= total[funNum].size(); iter1++) {
+						symbolTable st = total[funNum][iter1];
+						if (st.getForm() == PARAMETER) {	// 从符号表中获得该函数下的所有参数名
+							string paraName = st.getDimension() == 0 ? st.getName() : getNewInsertAddr(i);
+							if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
+								newInsertAllocName.insert(paraName);
+								CodeItem nci(ALLOC, paraName, "", "1");
+								newInsertAllocIr.push_back(nci);	// 将要内联函数的形参全部转换成alloc指令
 							}
-							else { cout << "inline_function: 我没有考虑到的情况1" << endl; }
+							paraTable.push_back(paraName);
+						}
+						else break;
+					}
+					if (paraTable.size() != paraNum) {
+						cout << "函数内联不应该发生的情况：参数表和符号表中函数对应的参数数量不一致. " << endl;
+						break;
+					}
+					j++;	// 跳过note指令，后面应跟传参指令
+					for (int iter2 = paraNum; iter2 > 0; iter2--, j++) {	// 中间代码倒序，而符号表顺序
+						ci = codetotal[i][j];
+						if (ci.getCodetype() == LOAD || ci.getCodetype() == LOADARR) {
+							if (codetotal[i][j + 1].getCodetype() == PUSH && codetotal[i][j + 1].getOperand1().compare(ci.getResult()) == 0 && ifTempVariable(ci.getResult())) {
+								j++;
+								ci = codetotal[i][j];
+								CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
+								codetotal[i][j] = nci;
+							}
+							else { cout << "函数内联不应该发生的情况：参数入栈时load指令后没有跟push指令. " << endl; break; }
 						}
 						else if (ci.getCodetype() == PUSH) {
-							CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
-							blockCore[i][j].Ir[k] = nci;
-						}
-						else { cout << "inline_function: 我没有考虑到的情况2" << endl; }
-					}
-					/* 2. 插入调用函数的除函数和参数声明之外的指令 */
-					vector<CodeItem> v = blockCore[funNum][1].Ir;
-					for (int iter2 = paraNum + 1; iter2 < v.size(); iter2++, k++) {
-						blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin() + k, v[iter2]);
-					}
-					/* 3. 删除call指令 */
-					ci = blockCore[i][j].Ir[k];
-					if (ci.getCodetype() == CALL) {
-						if (funSt.getValuetype() == INT) {	// 有返回值函数调用
-							k--;	ci = blockCore[i][j].Ir[k];
-							if (ci.getCodetype() == RET) {
-								CodeItem nci(MOV, "", blockCore[i][j].Ir[k + 1].getResult(), ci.getOperand1());
-								blockCore[i][j].Ir[k] = nci;
-								blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k + 1);
+							if (ifDigit(ci.getOperand1())) {
+								CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
+								codetotal[i][j] = nci;
 							}
-							else { cout << "inline_function: 我没有考虑到的情况3" << endl; }
+							else { cout << "函数内联不应该发生的情况：参数入栈时直接push的值不是常数. " << endl; break; }
 						}
-						else {	// 无返回值函数调用
-							k--;	ci = blockCore[i][j].Ir[k];
-							if (ci.getCodetype() == RET) {
-								blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
-								blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
-								k--;
-							}
-							else { cout << "inline_function: 我没有考虑到的情况4" << endl; }
-						}					
+						else { cout << "inline_function: 传参时我没有考虑到的情况. " << endl; break; }
 					}
-					else { cout << "inline_function: 我没有考虑到的情况5" << endl; }
+				}
+				if (step3) {	/* step3. 插入调用函数的除函数和参数声明之外的指令 */
+					map<string, string> label2NewLabel;	// 调用函数内部重命名后的标签名
+					for (int k = 1; k <= paraNum; k++) {
+						ci = codetotal[funNum][k];
+						if (ci.getCodetype() != PARA || (ci.getOperand1().compare("int*") != 0 && ci.getResult().compare(paraTable[k - 1]) != 0)) {
+							cout << "函数内联不应该发生的情况：函数定义的参数与参数表不一致. " << endl; break;
+						}
+					}
+					for (int k = paraNum + 1; k < codetotal[funNum].size(); k++) {
+						ci = codetotal[funNum][k];
+						if (ci.getCodetype() == ALLOC) {	// 处理要内联函数中的alloc指令，对于一个函数内多次内联同一个函数的情况不要加重了
+							string varName = ci.getResult();
+							if (newInsertAllocName.find(varName) == newInsertAllocName.end()) {
+								newInsertAllocName.insert(varName);
+								newInsertAllocIr.push_back(ci);
+							}
+						}
+						else if (ci.getCodetype() == BR) {
+							if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1())) {	// 有条件跳转
+								string newLabel1, newLabel2;
+								if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
+									newLabel1 = getNewInsertLabel(i, ci.getResult());
+									label2NewLabel[ci.getResult()] = newLabel1;
+								}
+								else {
+									newLabel1 = label2NewLabel[ci.getResult()];
+								}
+								if (label2NewLabel.find(ci.getOperand2()) == label2NewLabel.end()) {
+									newLabel2 = getNewInsertLabel(i, ci.getOperand2());
+									label2NewLabel[ci.getOperand2()] = newLabel2;
+								}
+								else {
+									newLabel2 = label2NewLabel[ci.getOperand2()];
+								}
+								CodeItem nci(BR, newLabel1, ci.getOperand1(), newLabel2);
+								newInsertAllocIr.push_back(nci);
+							}
+							else {
+								string newLabel;
+								if (label2NewLabel.find(ci.getOperand1()) == label2NewLabel.end()) {
+									newLabel = getNewInsertLabel(i, ci.getOperand1());
+									label2NewLabel[ci.getOperand1()] = newLabel;
+								}
+								else {
+									newLabel = label2NewLabel[ci.getOperand1()];
+								}
+								CodeItem nci(BR, ci.getResult(), newLabel, ci.getOperand2());
+								codetotal[i].insert(codetotal[i].begin() + j, nci);
+								j++;
+							}
+						}
+						else if (ci.getCodetype() == LABEL) {
+							string newLabel;
+							if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
+								newLabel = getNewInsertLabel(i, ci.getResult());
+								label2NewLabel[ci.getResult()] = newLabel;
+							}
+							else {
+								newLabel = label2NewLabel[ci.getResult()];
+							}
+							CodeItem nci(LABEL, newLabel, "", "");
+							codetotal[i].insert(codetotal[i].begin() + j, nci);
+							j++;
+						}
+						else if (ci.getCodetype() == RET) {
+							if (funSt.getValuetype() == INT && ci.getOperand2().compare("int") == 0) {	// 有返回值函数
+								CodeItem nci(STORE, ci.getOperand1(), getRetValName(funName), "");
+								codetotal[i].insert(codetotal[i].begin() + j, nci);
+								j++;
+							}
+							else if (funSt.getValuetype() == VOID && ci.getOperand2().compare("int") == 0) {	// 无返回值函数
+								
+							}
+							else { cout << "函数内联不应该发生的情况：返回值不合法的函数定义. " << endl; break; }
+							CodeItem nci(BR, "", getFunEndLabel(funNum, funName), "");
+							codetotal[i].insert(codetotal[i].begin() + j, nci);
+							j++;
+						}
+						else {
+							codetotal[i].insert(codetotal[i].begin() + j, ci);
+							j++;
+						}
+					}
+				}
+				if (step4) {	/* step4.添加函数调用结束标签 */
+					CodeItem nci(LABEL, getNewFunEndLabel(funNum, funName), "", "");
+					codetotal[i].insert(codetotal[i].begin() + j, nci);
+					j++;
+				}
+				if (step5) {	/* step5. 删除call指令 */
+					ci = codetotal[i][j];
+					if (ci.getCodetype() != CALL || ci.getResult().compare(funName) != 0) {
+						cout << "函数内联不应该发生的情况：压完参数后没有跟call函数指令. " << endl; break;
+					}
+					if (funSt.getValuetype() == INT) {
+						string retValName = getRetValName(funName);
+						if (newInsertAllocName.find(retValName) == newInsertAllocName.end()) {
+							newInsertAllocName.insert(retValName);
+							CodeItem nci(ALLOC, retValName, "", "1");
+							newInsertAllocIr.push_back(nci);
+						}
+						if (ifTempVariable(ci.getResult())) {
+							CodeItem nci(LOAD, ci.getResult(), getRetValName(funName), "");
+							codetotal[i][j] = nci;
+						}
+						else { cout << "函数内联不应该发生的情况：返回值定义和调用不统一. " << endl; break; }
+					}
+					j++;	// 跳到note指令
 				}
 			}
+		}
+		if (step6) {	/* step6.添加alloc指令到函数开始位置 */
+			for (j = 1; j < codetotal[i].size(); j++) 
+				if (codetotal[i][j].getCodetype() != PARAMETER) break;
+			codetotal[i].insert(codetotal[i].begin() + j, newInsertAllocIr.begin(), newInsertAllocIr.end());
 		}
 	}
 }
