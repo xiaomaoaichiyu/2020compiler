@@ -494,17 +494,6 @@ void registerAllocation() {
 					
 					int num = A2I(ope2);
 					string paraReg = FORMAT("R{}", num - 1);
-					//使用前 看参数寄存器是否被占用，如果被占用，说明是嵌套函数！
-					//if (regpool.checkParaRegUsed(paraReg)) {
-					//	auto str = regpool.spillReg(paraReg);
-					//	CodeItem strTmp(STORE, str.second, str.first, "para");
-					//	setVrIndex(str.first);
-					//	funcTmp.push_back(strTmp);
-					//	//记录下被spill的参数寄存器
-					//	if (callLayer > 0) {
-					//		callRegs.at(callLayer - 1).insert(pair<string, string>(str.first, str.second));
-					//	}
-					//}
 					//push参数后标记对应的参数寄存器r0-3为占用状态！
 					//这里r0还可能被占用吗？？？
 					//理论上不存在，因为中间变量不会夸参数出现，要是被使用了，也一定被释放了
