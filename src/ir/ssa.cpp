@@ -33,6 +33,12 @@ bool SSA::ifLocalVariable(string name) {
 	return regex_match(name, r) && (name.find(".") == string::npos) && !ifTempVariable(name);
 }
 
+// 判断是否是虚拟寄存器
+bool SSA::ifVR(string name) {
+	regex r("VR\\d+");
+	return regex_match(name, r);
+}
+
 // 在一个函数的所有中间代码中找到某个标签的位置，即它是第几条中间代码
 // @result: 0, 1, 2, ..., size-1(size代表该函数总的中间代码条数)
 // @exception: -1(表示没有找到，lzh在调用该函数时正常情况下不应出现该情况)
@@ -77,7 +83,6 @@ bool ifResultDef(irCodeType ct) {
 	case PUSH:
 	case BR:
 	case PARA:
-	case MOV:
 	case CALL:
 		return true;
 	default:
@@ -88,7 +93,8 @@ bool ifResultDef(irCodeType ct) {
 bool ifOp1Def(irCodeType ct) {
 	switch (ct)
 	{
-	case STORE: case STOREARR: case POP:
+	case STORE: case STOREARR: case POP: 
+	case GETREG: case LEA: case MOV:	// 新增对刘阳LIR中间代码支持
 		return true;
 	default:
 		return false;
@@ -427,21 +433,21 @@ void SSA::build_dom_frontier() {
 void SSA::use_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	if (blockCore[funNum][blkNum].def.find(varName) != blockCore[funNum][blkNum].def.end()) return;	// use变量的定义为使用前未被定义的变量
-	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName) || ifVR(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
 }
 
 // 在基本块的def链中插入变量名称
 void SSA::def_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
-	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName) || ifVR(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
 }
 
 // 在基本块的def2链中插入变量名称
 void SSA::def2_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	// if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
-	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def2.insert(varName);	// 不加入全局变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName) || ifVR(varName)) blockCore[funNum][blkNum].def2.insert(varName);	// 不加入全局变量
 }
 
 // 计算ud链，即分析每个基本块的use和def变量
@@ -1105,4 +1111,28 @@ void SSA::generate() {
 	// 输出中间代码
 	TestIrCode("ir2.txt");
 
+}
+
+void SSA::generate_activeAnalyse() {
+
+	// 简化条件判断为常值的跳转指令
+	simplify_br();
+
+	// 在睿轩生成的中间代码上做优化
+	pre_optimize();
+
+	// 计算每个基本块的起始语句
+	find_primary_statement();
+	// 为每个函数划分基本块
+	divide_basic_block();
+	// 建立基本块间的前序和后序关系
+	build_pred_and_succeeds();
+	// 消除无法到达基本块
+	simplify_basic_block();
+
+	// 计算ud链，即分析每个基本块的use和def变量
+	build_def_use_chain();
+
+	// 活跃变量分析，生成in、out集合
+	active_var_analyse();
 }

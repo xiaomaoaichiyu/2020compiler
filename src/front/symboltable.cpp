@@ -100,3 +100,11 @@ valueType symbolTable::getValuetype()
 {
 	return this->valuetype;
 }
+void symbolTable::setisinlineFunc(int a)
+{
+	this->isinlineFunc = a;
+}
+int symbolTable::getisinlineFunc()
+{
+	return this->isinlineFunc;
+}
