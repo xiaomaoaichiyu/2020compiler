@@ -1116,10 +1116,10 @@ void SSA::generate() {
 void SSA::generate_activeAnalyse() {
 
 	// 简化条件判断为常值的跳转指令
-	simplify_br();
+	//simplify_br();
 
 	// 在睿轩生成的中间代码上做优化
-	pre_optimize();
+	//pre_optimize();
 
 	// 计算每个基本块的起始语句
 	find_primary_statement();

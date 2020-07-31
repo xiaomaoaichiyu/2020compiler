@@ -507,7 +507,7 @@ void irOptimize() {
 		codetotal = LIR;
 		//计算活跃变量
 		SSA ssa;
-
+		ssa.generate_activeAnalyse();
 
 		//寄存器直接指派
 		registerAllocation();
