@@ -92,7 +92,7 @@ string matrixName;			  //记录数组名
 //词法、语法分析引入变量
 string token;   //分析出来的单词
 enum Memory symbol;  //分析出来的单词类别
-//ofstream //outfile;
+//ofstream outfile;
 Word wordAnalysis = Word();
 
 void printMessage()
@@ -143,6 +143,12 @@ string newName(string name, int blockindex)
 	trans << blockindex;
 	return name + "-" + trans.str();
 }
+
+int isinlineFunc = 0;		//1代表是，0代表不是
+string newinlineName(string name, string Funcname)
+{
+	return name + "+" + Funcname;
+}
 /*
 string newFuncName(string name)		//给函数名加后缀，防止与变量重名
 {
@@ -158,7 +164,7 @@ string newFuncName(string name)		//给函数名加后缀，防止与变量重名
 symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock);					//查表：改进中间代码和符号表时使用
 void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
-
+void changeForInline(int index);		//如果为内联函数修改符号表和中间代码的名字
 
 //=============================================================================================================
 //        以上为全局变量定义以及函数定义
@@ -256,7 +262,7 @@ int frontExecute(string syname)
 	//检测中间代码正确性
 	TestIrCode("ir.txt");
 	//outfile.close();
-	//cout<<"yes"<<endl;
+	cout<<"yes"<<endl;
 	return 0;
 }
 
@@ -311,8 +317,11 @@ void CompUnit()
 					codetotal.push_back(item1);
 					map<string, int> item2;
 					names.push_back(item2);
+					isinlineFunc = 1;
 					valueFuncDef();
 					change(Funcindex);		//修改中间代码、符号表
+					changeForInline(Funcindex);
+					total[Funcindex][0].setisinlineFunc(isinlineFunc);
 				}
 				else {
 					symbol = sym_tag;
@@ -328,8 +337,11 @@ void CompUnit()
 				codetotal.push_back(item1);
 				map<string, int> item2;
 				names.push_back(item2);
+				isinlineFunc = 1;
 				novalueFuncDef();
 				change(Funcindex);			//修改中间代码、符号表
+				changeForInline(Funcindex);
+				total[Funcindex][0].setisinlineFunc(isinlineFunc);
 			}
 		}
 	}
@@ -1245,6 +1257,11 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			CodeItem citem2 = CodeItem(CALL, interRegister, "@" + Functionname, numToString(paraNum));          //call @foo %3 3
 			citem2.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem2);//函数引用
+			if (Functionname != "printf" && Functionname != "_sysy_starttime" && Functionname != "_sysy_stoptime"
+				&& Functionname != "putarray" && Functionname != "putch" && Functionname != "putint"
+				&& Functionname != "getint" && Functionname != "getarray" && Functionname != "getch") {
+				isinlineFunc = 0;  //当前函数不再是内联函数(即该函数调用除非特殊函数外的函数)  
+			}
 			/*CodeItem citem3 = CodeItem(MOV,"", interRegister, "%" + numToString(Temp));          //call @foo %3 3
 			citem3.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem3);//函数引用
@@ -1504,7 +1521,7 @@ void Stmt()              //语句
 		if (symbol == ASSIGN) {
 			symbol = sym_tag;
 			assignStmt();
-			printMessage();    //输出;信息
+			//printMessage();    //输出;信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();//预读
@@ -1513,7 +1530,7 @@ void Stmt()              //语句
 			symbol = sym_tag;
 			int beforeSize = codetotal[Funcindex].size();		//获取当前中间代码下标
 			Exp();					//CALL函数在EXP中存在
-			printMessage();  //输出分号
+			//printMessage();  //输出分号
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
 			token = wordAnalysis.getToken();  //预读
@@ -1577,7 +1594,7 @@ void Stmt()              //语句
 	else {						//Exp ; 这里直接跳过，没影响
 		int beforeSize = codetotal[Funcindex].size();		//获取当前中间代码下标	
 		Exp();
-		printMessage();  //输出分号
+		//printMessage();  //输出分号
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();  //预读
@@ -1825,7 +1842,7 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 	}
 	while (symbol == OR_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //输出逻辑运算符
+		//printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -1886,7 +1903,7 @@ void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' L
 		}
 		interRegister = numToString(1);
 	}
-	outfile << "<条件>" << endl;
+	//outfile << "<条件>" << endl;
 }
 */
 void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
@@ -1955,7 +1972,7 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 	}
 	while (symbol == AND_WORD) {
 		Memory symbol_tag = symbol;
-		printMessage();    //输出逻辑运算符
+		//printMessage();    //输出逻辑运算符
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
@@ -2412,4 +2429,60 @@ void putAllocGlobalFirst()		//将中间代码中alloc类型前移，同时将CAL
 		}
 		codetotal.push_back(a);
 	}
+}
+string getValue(string var, string offset)	//var是变量，offset是偏移量
+{
+	int i = 0;
+	string name;
+	for (i = 0; i < total[0].size(); i++) {
+		name = total[0][i].getName();
+		if (name == var) {  //从最近的作用域找到了
+			break;
+		}
+	}
+	int offset_int = stringToNum(offset);
+	int value = total[0][i].getIntValue()[offset_int];
+	return numToString(value);
+}
+void changeForInline(int index)
+{
+	if (isinlineFunc == 0) {	//不是内联不用动
+		return;
+	}
+	int i;
+	string Funcname = total[index][0].getName(); //函数名
+	//先修改中间代码中局部变量、参数名
+	vector<CodeItem> b = codetotal[index];
+	codetotal.pop_back();
+	for (i = 0; i < b.size(); i++) {
+		irCodeType codetype = b[i].getCodetype();
+		string res = b[i].getResult();
+		string ope1 = b[i].getOperand1();
+		string ope2 = b[i].getOperand2();
+		if (res.size() > 0 && res[0] == '%' && (!isdigit(res[1]))) {  //res必须是变量或参数
+			res = newinlineName(res, Funcname);
+		}
+		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res必须是变量
+			ope1 = newinlineName(ope1, Funcname);
+		}
+		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res必须是变量
+			ope2 = newinlineName(ope2, Funcname);
+		}
+		b[i].changeContent(res, ope1, ope2);
+	}
+	codetotal.push_back(b);
+	//再修改符号表
+	vector<symbolTable> a = total[index];
+	total.pop_back();
+	for (i = 0; i < a.size(); i++) {
+		if (a[i].getForm() == FUNCTION) {
+			continue;
+		}
+		else {		//常量、变量、参数名字都改
+			string name = a[i].getName();
+			string newname = newinlineName(name, Funcname);
+			a[i].changeName(newname);
+		}
+	}
+	total.push_back(a);
 }
