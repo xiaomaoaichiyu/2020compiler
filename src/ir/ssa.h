@@ -160,7 +160,7 @@ public:
 	void generate_activeAnalyse();
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化
-	void active_count();
+
 };
 
 string calculate(irCodeType op, string ope1, string ope2);

@@ -105,7 +105,7 @@ void MIR2LIRpass() {
 
 		for (int j = 0; j < src.size(); j++) {
 			CodeItem instr = src.at(j);
-			dealNumber(instr);
+			dealNumber(instr);								//如果是第二个条件(if)就交换立即数的位置和对应的操作符
 			irCodeType op = instr.getCodetype();
 			string res = instr.getResult();
 			string ope1 = instr.getOperand1();
@@ -116,32 +116,16 @@ void MIR2LIRpass() {
 				ope1 = dealTmpOpe(ope1);
 				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
-			}else if (op == ADD || op == SUB ||
+			}else if (op == ADD || op == MUL ||		//只有一个立即数，只能放在第二个ope2
 					  op == AND || op == OR ||
 					  op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
-				if (isNumber(ope1)) {
-					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
-					ope1 = curVreg;
-				}
-				/*if (isNumber(ope2) && (A2I(ope2) < -128 || A2I(ope2) > 127)) {
-					dst.push_back(CodeItem(MOV, "", getVreg(), ope2));
-					ope2 = curVreg;
-				}*/
 				res = dealTmpOpe(res);
 				ope1 = dealTmpOpe(ope1);
 				ope2 = dealTmpOpe(ope2);
 				instr.setInstr(res, ope1, ope2);
 				dst.push_back(instr);
 			}
-			else if (op == MUL || op == DIV || op == REM) {
-				if (isNumber(ope1)) {
-					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
-					ope1 = curVreg;
-				}
-				/*if (isNumber(ope2)) {
-					dst.push_back(CodeItem(MOV, "", getVreg(), ope2));
-					ope2 = curVreg;
-				}*/
+			else if (op == SUB || op == DIV || op == REM) {		//只会有一个立即数，第一个和第二个均可，后端处理
 				res = dealTmpOpe(res);
 				ope1 = dealTmpOpe(ope1);
 				ope2 = dealTmpOpe(ope2);
@@ -381,11 +365,11 @@ void MIR2LIRpass() {
 					dst.push_back(instr);
 				}
 				else {
-					/*if (isNumber(ope1)) {
+					if (isNumber(ope1)) {
 						CodeItem tmp(MOV, "", getVreg(), ope1);
 						ope1 = curVreg;
 						dst.push_back(tmp);
-					}*/
+					}
 					ope1 = dealTmpOpe(ope1);
 					instr.setInstr(res, ope1, ope2);
 					dst.push_back(instr);
@@ -520,8 +504,10 @@ void irOptimize() {
 		printLIR("LIR.txt");
 		countVars();
 
+		codetotal = LIR;
 		//计算活跃变量
 		SSA ssa;
+		ssa.generate_activeAnalyse();
 
 		//寄存器直接指派
 		registerAllocation();

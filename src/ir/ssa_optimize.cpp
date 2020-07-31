@@ -1,6 +1,4 @@
 ﻿#include "ssa.h"
-#include "ssa.h"
-#include "ssa.h"
 #include "../front/symboltable.h"
 #include "../front/syntax.h"
 #include "../util/meow.h"
@@ -50,6 +48,10 @@ void SSA::pre_optimize() {
 	simplify_br_label();
 	// 删除多余alloc指令
 	simplify_alloc();
+}
+
+void SSA::get_avtiveAnalyse_result() {
+
 }
 
 //ssa形式上的优化
