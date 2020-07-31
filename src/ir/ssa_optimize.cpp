@@ -81,7 +81,6 @@ void SSA::ssa_optimize() {
 		// 重新进行活跃变量分析
 		active_var_analyse();
 		// 函数内联
-		judge_inline_function();
 		inline_function();
 	}
 
@@ -302,35 +301,6 @@ void SSA::simplify_br_label() {
 				// label就不删了
 			}
 		}
-	}
-}
-
-void SSA::judge_inline_function() {
-	// 函数内联的条件：只有一个基本块且其中没有函数调用指令
-	inlineFlag.push_back(false);
-	funName2Num[""] = 0;	// 全局定义，这个可加可不加，不影响
-	int i, j, k;
-	int size1 = blockCore.size();
-	for (i = 1; i < size1; i++) {	// 遍历函数
-		bool flag = true;
-		int size2 = blockCore[i].size();
-		if (size2 > 3) flag = false;	// 除entry和exit块外不只有一个基本块
-		else {
-			int size3 = blockCore[i][1].Ir.size();
-			for (j = 0; j < size3; j++) {
-				CodeItem ci = blockCore[i][1].Ir[j];
-				if (ci.getCodetype() == CALL) {	// 含有函数调用指令
-					flag = false;
-					break;
-				}
-				else if (ci.getCodetype() == PARA && ci.getOperand1().compare("int*") == 0) {
-					flag = false;
-					break;
-				}
-			}
-		}
-		inlineFlag.push_back(flag);
-		funName2Num[blockCore[i][1].Ir[0].getResult()] = i;
 	}
 }
 

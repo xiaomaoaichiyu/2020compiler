@@ -122,7 +122,6 @@ private:
 	void simplify_br_label();	// 简化紧邻的跳转
 	void ssa_optimize();		// 优化函数入口
 	void delete_dead_codes();	// 删除死代码
-	void judge_inline_function();	// 判断内联函数
 	void inline_function();	// 函数内联
 	void simplify_alloc();// 删除多余alloc指令
 	
