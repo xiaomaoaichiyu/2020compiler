@@ -504,10 +504,16 @@ void irOptimize() {
 		printLIR("LIR.txt");
 		countVars();
 
-		codetotal = LIR;
+		
 		//计算活跃变量
-		SSA ssa;
-		ssa.generate_activeAnalyse();
+		codetotal = LIR;
+		TestIrCode("ly1.txt");
+		SSA ssa1;
+		ssa1.generate_activeAnalyse();
+		ssa1.get_avtiveAnalyse_result();
+
+
+		ly_act.print_ly_act();
 
 		//寄存器直接指派
 		registerAllocation();

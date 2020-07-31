@@ -50,8 +50,47 @@ void SSA::pre_optimize() {
 	simplify_alloc();
 }
 
-void SSA::get_avtiveAnalyse_result() {
+ActiveAnalyse ly_act;
 
+void SSA::get_avtiveAnalyse_result() {
+	ly_act.func2in.push_back(map<int, set<string>>());
+	ly_act.func2out.push_back(map<int, set<string>>());
+	for (int i = 1; i < blockCore.size(); i++) {
+		auto blocks = blockCore.at(i);
+		map<int, set<string>> inTmp;
+		map<int, set<string>> outTmp;
+		for (auto blk : blocks) {
+			inTmp[blk.number] = blk.in;
+			outTmp[blk.number] = blk.out;
+		}
+		ly_act.func2in.push_back(inTmp);
+		ly_act.func2out.push_back(outTmp);
+	}
+	ofstream ly1("ly_ir.txt");
+	printCircleIr(this->blockCore, ly1);
+}
+
+void ActiveAnalyse::print_ly_act() {
+	if (TIJIAO) {
+		ofstream ly_out("activeAnalyse.txt");
+		for (int i = 1; i < ly_act.func2in.size(); i++) {
+			ly_out << "function_" << i << endl;
+			auto inTmp = ly_act.func2in.at(i);
+			auto outTmp = ly_act.func2out.at(i);
+			int size = inTmp.size();
+			for (int j = 0; j < size; j++) {
+				ly_out << "B" << j << ":\n\t in:  {";
+				for (auto var : inTmp[j]) {
+					ly_out << var << " ";
+				}
+				ly_out << "}\n\t out: {";
+				for (auto var : outTmp[j]) {
+					ly_out << var << " ";
+				}
+				ly_out << "}\n";
+			}
+		}
+	}
 }
 
 //ssa形式上的优化
