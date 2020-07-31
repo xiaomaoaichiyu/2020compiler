@@ -2460,13 +2460,25 @@ void changeForInline(int index)
 		string ope1 = b[i].getOperand1();
 		string ope2 = b[i].getOperand2();
 		if (res.size() > 0 && res[0] == '%' && (!isdigit(res[1]))) {  //res必须是变量或参数
-			res = newinlineName(res, Funcname);
+			res.erase(0, 1);  //去掉首字母
+			if (names[index].find(res) != names[index].end()) { //names[index][res] > 0
+				res = newinlineName(res, Funcname);
+			}
+			res = "%" + res;
 		}
 		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res必须是变量
-			ope1 = newinlineName(ope1, Funcname);
+			ope1.erase(0, 1);
+			if (names[index].find(ope1) != names[index].end()) {
+				ope1 = newinlineName(ope1, Funcname);
+			}
+			ope1 = "%" + ope1;
 		}
 		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res必须是变量
-			ope2 = newinlineName(ope2, Funcname);
+			ope2.erase(0, 1);
+			if (names[index].find(ope2) != names[index].end()) {
+				ope2 = newinlineName(ope2, Funcname);
+			}
+			ope2 = "%" + ope2;
 		}
 		b[i].changeContent(res, ope1, ope2);
 	}
