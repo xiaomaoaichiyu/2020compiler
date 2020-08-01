@@ -188,5 +188,6 @@ public:
 extern ActiveAnalyse ly_act;
 
 string calculate(irCodeType op, string ope1, string ope2);
+void printCircleIr(vector<vector<basicBlock>>& v, ofstream& debug_ssa);
 
 #endif //_SSA_H_

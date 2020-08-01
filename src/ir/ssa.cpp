@@ -1149,5 +1149,7 @@ void SSA::generate_activeAnalyse() {
 	// 活跃变量分析，生成in、out集合
 	active_var_analyse();
 
+	ofstream ly1("ssa1.txt");
+	printCircleIr(this->blockCore, ly1);
 }
 
