@@ -63,9 +63,9 @@
 | 局部常量\|变量         | alloc               | variableName                       | value               | size                      |
 | 全局变量\|常量         | global              | variableName                       | value               | size                      |
 | 注释                   | note                |                                    | 注释内容            |                           |
-| 函数参数压栈           | note                | funcName                           | func                | begin \| end              |
-| 数组索引计算           | note                | arrayName                          | array               | begin \| end              |
-|                        |                     |                                    |                     |                           |
+| 函数参数压栈           | note                | funcName                           | "func"              | begin \| end              |
+| 数组索引计算           | note                | arrayName                          | "array"             | begin \| end              |
+| 注释                   | note                | 注释内容                           | "note"              |                           |
 
 *****
 

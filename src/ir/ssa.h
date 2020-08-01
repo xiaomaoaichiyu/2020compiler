@@ -169,6 +169,9 @@ public:
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化
 	void get_avtiveAnalyse_result();
+	vector<vector<basicBlock>>& getblocks() {
+		return this->blockCore;
+	}
 };
 
 class ActiveAnalyse {

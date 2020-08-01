@@ -524,7 +524,9 @@ void irOptimize() {
 		ly_act.print_ly_act();
 
 		//寄存器直接指派
-		registerAllocation();
+		//registerAllocation();
+
+		registerAllocation2(ssa1.getblocks());
 
 		printLIR("armIR.txt");
 

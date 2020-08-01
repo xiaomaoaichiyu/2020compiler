@@ -39,8 +39,29 @@ private:
 	string allocReg();
 };
 
+class GlobalRegPool {
+	vector<string> pool;			//全局寄存器池
+	map<string, bool> reg2avail;	//记录寄存器是否能够使用
+	map<string, string> var2reg;	//记录变量对应的寄存器
+
+	map<string, bool> used;		//用来记录全局寄存器是否被使用过
+public:
+	GlobalRegPool(vector<string> regs) : pool(regs) {
+		for (int i = 0; i < regs.size(); i++) {
+			reg2avail[regs.at(i)] = true;
+			used[regs.at(i)] = false;
+		}
+	}
+	string getReg(string var);		//获取一个变量的寄存器，如果没有返回"memory"
+	string allocReg(string var);	//给一个变量申请全局寄存器，如果没有全局寄存器可用返回"memory"
+	void releaseReg(string var);	//释放这个变量的全局寄存器
+	void releaseNorActRegs(set<string> vars);
+	vector<string> getUsedRegs();
+};
+
+
 void registerAllocation();
 
-
+void registerAllocation2(vector<vector<basicBlock>>& lir);
 
 #endif // _REGISTER_H_
