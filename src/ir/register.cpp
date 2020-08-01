@@ -718,8 +718,16 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 				}
 				else if (op == LOAD) {	//数组地址的加载都放在临时寄存器，变量根据情况采用mov或者load
 					if (ope2 == "para" || ope2 == "array") {	//加载参数数组的地址 或者 局部数组的地址
-						resReg = allocTmpReg(regpool, res, funcTmp);
-						instr.setInstr(resReg, ope1Reg, ope2Reg);
+						string regTmp = gRegpool.getReg(ope1);
+						if (regTmp != "memory") {
+							instr.setCodetype(MOV);
+							resReg = allocTmpReg(regpool, res, funcTmp);
+							instr.setInstr("", resReg, regTmp);
+						}
+						else {
+							resReg = allocTmpReg(regpool, res, funcTmp);
+							instr.setInstr(resReg, ope1Reg, ope2Reg);
+						}
 					}
 					else {	//非数组地址加载
 						if (isVreg(ope1)) {	//全局变量

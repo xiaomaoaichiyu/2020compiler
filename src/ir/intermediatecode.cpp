@@ -184,8 +184,11 @@ string CodeItem::getContent()
 		if (operand1 == "func") {
 			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "----------------";
 		}
-		else {
+		else if (operand1 == "array") {
 			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "--------";
+		}
+		else {
+			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
 		}
 		break;
 	}case LEA: {
