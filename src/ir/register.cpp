@@ -660,6 +660,7 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 		string funcName = "";
 		for (int i = 0; i < func.size(); i++) {
 			int paraNum = 0;
+			int retFlag = 0;
 			auto ir = func.at(i).Ir;
 			for (int j = 0; j < ir.size(); j++) {
 				CodeItem instr = ir.at(j);
@@ -946,6 +947,9 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
 				}
+				else if (op == RET) {
+					retFlag = 1;
+				}
 				else {
 					//do nothing!
 				}
@@ -953,7 +957,9 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 			}	//每个ir的结尾
 			//进行不活跃变量的写回，然后释放寄存器
 			gRegpool.noteRegRelations(funcTmp);
-			gRegpool.releaseNorActRegs(func.at(i).in , func.at(i).out, funcTmp);
+			if (!retFlag) {
+				gRegpool.releaseNorActRegs(func.at(i).in, func.at(i).out, funcTmp);
+			}
 		}
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);
