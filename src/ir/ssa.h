@@ -62,8 +62,8 @@ public:
 
 class SSA {
 private:
-	// std::vector<std::vector<CodeItem>> codetotal;		// 前端传过来的中间代码
-	// std::vector<std::vector<symbolTable>> symtotal;		// 前端传过来的符号表
+	// std::vector<std::vector<CodeItem>> codetotal;	// 前端传过来的中间代码
+	// std::vector<std::vector<symbolTable>> symtotal;	// 前端传过来的符号表
 	std::vector<std::vector<int>> blockOrigin;				// 每个基本块的第一条中间代码
 	std::vector<std::vector<basicBlock>> blockCore;		// 每个基本块结构
 	std::vector<std::vector<int>> postOrder;					// 必经节点数的后序遍历序列
@@ -74,7 +74,10 @@ private:
 	std::map<std::string, int> funName2Num;				// 对应第几个函数的函数名是什么
 	std::map<int, std::string> funNum2Name;				// 函数名和函数序号的对应关系
 
-	std::set<std::string> inlineArrayName;					// 内联函数数组传参新定义变量名
+	std::vector<int> addrIndex;										// 数组参数命名编号
+	std::vector<int> labelIndex;										// 函数内部标签改名编号
+	std::vector<std::set<std::string>> inlineArrayName;// 内联函数数组传参新定义变量名
+	std::vector<int> funCallCount;									// 记录一个函数第几次被调用
 
 	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块
@@ -126,6 +129,11 @@ private:
 	void ssa_optimize();		// 优化函数入口
 	void delete_dead_codes();	// 删除死代码
 	void inline_function();	// 函数内联
+	std::string getNewInsertAddr(int funNum);
+	std::string getNewInsertLabel(int funNum, std::string name);
+	std::string getNewFunEndLabel(int funNum, std::string name);
+	std::string getFunEndLabel(int funNum, std::string name);
+	std::string getRetValName(std::string name);
 	void simplify_alloc();// 删除多余alloc指令
 	
 	//ly：循环优化：代码外提  待做：强度削弱、规约变量删除
