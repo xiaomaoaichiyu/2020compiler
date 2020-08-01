@@ -351,17 +351,17 @@ string SSA::getNewInsertLabel(int funNum, string name) {
 }
 
 string SSA::getNewFunEndLabel(int funNum, string name) {
-	string ans = "%function." + name + ".end" + to_string(funCallCount[funNum]);
+	string ans = "%function." + name.substr(1) + ".end" + to_string(funCallCount[funNum]);
 	funCallCount[funNum]++;
 	return ans;
 }
 
 string SSA::getFunEndLabel(int funNum, string name) {
-	return ("%function." + name + ".end" + to_string(funCallCount[funNum]));
+	return ("%function." + name.substr(1) + ".end" + to_string(funCallCount[funNum]));
 }
 
 string SSA::getRetValName(string name) {
-	return ("%Ret*" + name);
+	return ("%Ret*" + name.substr(1));
 }
 
 // 函数内联
