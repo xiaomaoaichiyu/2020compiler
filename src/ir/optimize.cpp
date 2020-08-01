@@ -99,6 +99,8 @@ void dealNumber(CodeItem& instr) {
 	}
 }
 
+vector<set<string>> inlineArray;	//内联函数数组传参新定义变量名
+
 void MIR2LIRpass() {
 	LIR.push_back(codetotal.at(0));
 	func2vrIndex.push_back(0);
@@ -170,45 +172,65 @@ void MIR2LIRpass() {
 			}
 			else if (op == LOADARR) {
 				if (isNumber(ope2)) {	//偏移是立即数
-					if (isGlobal(ope1)) {	//数组是全局数组
-						CodeItem address(LEA, "", getVreg(), ope1);
+					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
+						dst.push_back(loadTmp);
 						res = dealTmpOpe(res);
-						dst.push_back(address);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
-						if (paras.find(ope1) != paras.end()) { //如果是参数数组，需要加载地址到一个寄存器
-							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+						if (isGlobal(ope1)) {	//数组是全局数组
+							CodeItem address(LEA, "", getVreg(), ope1);
 							ope1 = curVreg;
-							dst.push_back(loadTmp);
+							res = dealTmpOpe(res);
+							dst.push_back(address);
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
 						}
-						res = dealTmpOpe(res);
-						instr.setInstr(res, ope1, ope2);
-						dst.push_back(instr);
+						else {
+							if (paras.find(ope1) != paras.end()) { //如果是参数数组，需要加载地址到一个寄存器
+								CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+								ope1 = curVreg;
+								dst.push_back(loadTmp);
+							}
+							res = dealTmpOpe(res);
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
+						}
 					}
 				}
 				else {
-					if (isGlobal(ope1)) {
-						CodeItem address(LEA, "", getVreg(), ope1);
+					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
+						dst.push_back(loadTmp);
 						res = dealTmpOpe(res);
-						ope2 = dealTmpOpe(ope2);
-						dst.push_back(address);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
-						if (paras.find(ope1) != paras.end()) { //如果是参数数组，需要加载地址到一个寄存器
-							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+						if (isGlobal(ope1)) {
+							CodeItem address(LEA, "", getVreg(), ope1);
 							ope1 = curVreg;
-							dst.push_back(loadTmp);
+							res = dealTmpOpe(res);
+							ope2 = dealTmpOpe(ope2);
+							dst.push_back(address);
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
 						}
-						res = dealTmpOpe(res);
-						ope2 = dealTmpOpe(ope2);
-						instr.setInstr(res, ope1, ope2);
-						dst.push_back(instr);
+						else {
+							if (paras.find(ope1) != paras.end()) { //如果是参数数组，需要加载地址到一个寄存器
+								CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+								ope1 = curVreg;
+								dst.push_back(loadTmp);
+							}
+							res = dealTmpOpe(res);
+							ope2 = dealTmpOpe(ope2);
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
+						}
 					}
 				}
 			}
@@ -251,73 +273,93 @@ void MIR2LIRpass() {
 			}
 			else if (op == STOREARR) {
 				if (isNumber(ope2)) {	//偏移是立即数
-					if (isGlobal(ope1)) {	//全局数组
-						CodeItem address(LEA, "", getVreg(), ope1);
+					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
-						if (isNumber(res)) {
-							CodeItem movNumber(MOV, "", getVreg(), res);
-							dst.push_back(movNumber);
-							res = curVreg;
-						}
-						else {
-							res = dealTmpOpe(res);
-						}
-						dst.push_back(address);
+						dst.push_back(loadTmp);
+						res = dealTmpOpe(res);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
-						if (isNumber(res)) {
-							CodeItem movNumber(MOV, "", getVreg(), res);
-							dst.push_back(movNumber);
-							res = curVreg;
+						if (isGlobal(ope1)) {	//全局数组
+							CodeItem address(LEA, "", getVreg(), ope1);
+							ope1 = curVreg;
+							if (isNumber(res)) {
+								CodeItem movNumber(MOV, "", getVreg(), res);
+								dst.push_back(movNumber);
+								res = curVreg;
+							}
+							else {
+								res = dealTmpOpe(res);
+							}
+							dst.push_back(address);
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
 						}
 						else {
-							res = dealTmpOpe(res);
+							if (isNumber(res)) {
+								CodeItem movNumber(MOV, "", getVreg(), res);
+								dst.push_back(movNumber);
+								res = curVreg;
+							}
+							else {
+								res = dealTmpOpe(res);
+							}
+							if (paras.find(ope1) != paras.end()) {
+								CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+								ope1 = curVreg;
+								dst.push_back(loadTmp);
+							}
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
 						}
-						if (paras.find(ope1) != paras.end()) {
-							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
-							ope1 = curVreg;
-							dst.push_back(loadTmp);
-						}
-						instr.setInstr(res, ope1, ope2);
-						dst.push_back(instr);
 					}
 				}
 				else {		//偏移是寄存器
-					if (isGlobal(ope1)) {		//全局数组
-						CodeItem address(LEA, "", getVreg(), ope1);
+					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
-						if (isNumber(res)) {
-							CodeItem movNumber(MOV, "", getVreg(), res);
-							dst.push_back(movNumber);
-							res = curVreg;
-						}
-						else {
-							res = dealTmpOpe(res);
-						}
-						ope2 = dealTmpOpe(ope2);
-						dst.push_back(address);
+						dst.push_back(loadTmp);
+						res = dealTmpOpe(res);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
 					else {
-						if (isNumber(res)) {
-							CodeItem movNumber(MOV, "", getVreg(), res);
-							dst.push_back(movNumber);
-							res = curVreg;
+						if (isGlobal(ope1)) {		//全局数组
+							CodeItem address(LEA, "", getVreg(), ope1);
+							ope1 = curVreg;
+							if (isNumber(res)) {
+								CodeItem movNumber(MOV, "", getVreg(), res);
+								dst.push_back(movNumber);
+								res = curVreg;
+							}
+							else {
+								res = dealTmpOpe(res);
+							}
+							ope2 = dealTmpOpe(ope2);
+							dst.push_back(address);
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
 						}
 						else {
-							res = dealTmpOpe(res);
+							if (isNumber(res)) {
+								CodeItem movNumber(MOV, "", getVreg(), res);
+								dst.push_back(movNumber);
+								res = curVreg;
+							}
+							else {
+								res = dealTmpOpe(res);
+							}
+							if (paras.find(ope1) != paras.end()) {
+								CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+								ope1 = curVreg;
+								dst.push_back(loadTmp);
+							}
+							ope2 = dealTmpOpe(ope2);
+							instr.setInstr(res, ope1, ope2);
+							dst.push_back(instr);
 						}
-						if (paras.find(ope1) != paras.end()) {
-							CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
-							ope1 = curVreg;
-							dst.push_back(loadTmp);
-						}
-						ope2 = dealTmpOpe(ope2);
-						instr.setInstr(res, ope1, ope2);
-						dst.push_back(instr);
 					}
 				}
 			}
@@ -508,6 +550,7 @@ void irOptimize() {
 
 	try {
 		//寄存器分配优化
+		inlineArray = ssa.getInlineArrayName();
 		MIR2LIRpass();
 		printLIR("LIR.txt");
 		countVars();

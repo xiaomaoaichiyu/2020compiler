@@ -172,6 +172,9 @@ public:
 	vector<vector<basicBlock>>& getblocks() {
 		return this->blockCore;
 	}
+	vector<set<string>>& getInlineArrayName() {
+		return this->inlineArrayName;
+	}
 };
 
 class ActiveAnalyse {
