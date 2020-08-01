@@ -546,10 +546,10 @@ void peepholeOptimization() {
 void irOptimize() {
 	
 	//运行优化
-	/*SSA ssa;
-	ssa.generate();*/
-	//inlineArray = ssa.getInlineArrayName();
-	//inlineFlag=1;
+	SSA ssa;
+	ssa.generate();
+	inlineArray = ssa.getInlineArrayName();
+	inlineFlag=1;
 	try {
 		//寄存器分配优化
 		
