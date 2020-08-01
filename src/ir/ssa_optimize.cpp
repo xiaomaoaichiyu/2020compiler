@@ -55,19 +55,25 @@ ActiveAnalyse ly_act;
 void SSA::get_avtiveAnalyse_result() {
 	ly_act.func2in.push_back(map<int, set<string>>());
 	ly_act.func2out.push_back(map<int, set<string>>());
+	ly_act.func2def.push_back(map<int, set<string>>());
+	ly_act.func2use.push_back(map<int, set<string>>());
 	for (int i = 1; i < blockCore.size(); i++) {
 		auto blocks = blockCore.at(i);
 		map<int, set<string>> inTmp;
 		map<int, set<string>> outTmp;
+		map<int, set<string>> defTmp;
+		map<int, set<string>> useTmp;
 		for (auto blk : blocks) {
 			inTmp[blk.number] = blk.in;
 			outTmp[blk.number] = blk.out;
+			defTmp[blk.number] = blk.def;
+			useTmp[blk.number] = blk.use;
 		}
 		ly_act.func2in.push_back(inTmp);
 		ly_act.func2out.push_back(outTmp);
+		ly_act.func2def.push_back(defTmp);
+		ly_act.func2use.push_back(useTmp);
 	}
-	ofstream ly1("ly_ir.txt");
-	printCircleIr(this->blockCore, ly1);
 }
 
 void ActiveAnalyse::print_ly_act() {
@@ -77,14 +83,24 @@ void ActiveAnalyse::print_ly_act() {
 			ly_out << "function_" << i << endl;
 			auto inTmp = ly_act.func2in.at(i);
 			auto outTmp = ly_act.func2out.at(i);
+			auto defTmp = ly_act.func2def.at(i);
+			auto useTmp = ly_act.func2use.at(i);
 			int size = inTmp.size();
 			for (int j = 0; j < size; j++) {
-				ly_out << "B" << j << ":\n\t in:  {";
+				ly_out << "B" << j << ":\n\tin:  {";
 				for (auto var : inTmp[j]) {
 					ly_out << var << " ";
 				}
-				ly_out << "}\n\t out: {";
+				ly_out << "}\n\tout: {";
 				for (auto var : outTmp[j]) {
+					ly_out << var << " ";
+				}
+				ly_out << "}\n\tdef: {";
+				for (auto var : defTmp[j]) {
+					ly_out << var << " ";
+				}
+				ly_out << "}\n\tuse: {";
+				for (auto var : useTmp[j]) {
 					ly_out << var << " ";
 				}
 				ly_out << "}\n";

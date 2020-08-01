@@ -179,7 +179,7 @@ public:
 
 class ActiveAnalyse {
 public:
-	vector<map<int, set<string>>> func2in, func2out;
+	vector<map<int, set<string>>> func2in, func2out, func2def, func2use;
 	
 	ActiveAnalyse() {}
 	void print_ly_act();
