@@ -235,7 +235,7 @@ void registerAllocation() {
 			}
 			else if (op == ADD || op == MUL ||
 					 op == AND || op == OR ||
-					 op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
+					 op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {	//先申请两个后释放
 				if (!isNumber(ope2)) {	//不是立即数
 					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 				}
@@ -245,15 +245,15 @@ void registerAllocation() {
 				resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
-			else if (op == SUB || op == DIV || op == REM) {
+			else if (op == SUB || op == DIV || op == REM) {	//先申请两个后释放
 				if (!isNumber(ope2)) {	//不是立即数
 					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
-					regpool.releaseVreg(ope2);
 				}
 				if (!isNumber(ope1)) {	//不是立即数
 					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
-					regpool.releaseVreg(ope1);
 				}
+				regpool.releaseVreg(ope1);
+				regpool.releaseVreg(ope2);
 				resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
@@ -587,14 +587,20 @@ void GlobalRegPool::releaseReg(string var) {
 	}
 }
 
-void GlobalRegPool::releaseNorActRegs(set<string> inVars, set<string> outVars, vector<CodeItem>& func) {
+void GlobalRegPool::releaseNorActRegs(set<string> inVars, set<string> outVars, vector<CodeItem>& func, int offset) {
 	for (auto it = var2reg.begin(); it != var2reg.end();) {
 		//在in活跃，在out不活跃，可以释放寄存器
 		if (inVars.find(it->first) != inVars.end() && outVars.find(it->first) == outVars.end()) {
 			string reg = it->second;
 			reg2avail[reg] = true;
 			CodeItem tmp(STORE, reg, it->first, "");
-			func.push_back(tmp);
+			//func.push_back(tmp);
+			if (offset == -1) {
+				func.insert(func.end() - 1, tmp);
+			}
+			else {
+				func.insert(func.end(), tmp);
+			}
 			it = var2reg.erase(it);
 			continue;
 		}
@@ -661,6 +667,7 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 		for (int i = 0; i < func.size(); i++) {
 			int paraNum = 0;
 			int retFlag = 0;
+			int brFlag = 0;
 			auto ir = func.at(i).Ir;
 			for (int j = 0; j < ir.size(); j++) {
 				CodeItem instr = ir.at(j);
@@ -671,6 +678,10 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 				string resReg = res;
 				string ope1Reg = ope1;
 				string ope2Reg = ope2;
+
+				if (j == ir.size() - 1 && op == BR) {	//如果基本块的最后一条是br，那么释放全局寄存器的指令需要放在br的前面
+					brFlag = 1;
+				}
 
 				//res字段分配临时寄存器
 				if (op == DEFINE) {
@@ -956,10 +967,15 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 				funcTmp.push_back(instr);
 			}	//每个ir的结尾
 			//进行不活跃变量的写回，然后释放寄存器
-			gRegpool.noteRegRelations(funcTmp);
 			if (!retFlag) {
-				gRegpool.releaseNorActRegs(func.at(i).in, func.at(i).out, funcTmp);
+				if (brFlag) {
+					gRegpool.releaseNorActRegs(func.at(i).in, func.at(i).out, funcTmp, -1);	//添加指令的位置在倒数第二个
+				}
+				else {
+					gRegpool.releaseNorActRegs(func.at(i).in, func.at(i).out, funcTmp, 0);
+				}
 			}
+			gRegpool.noteRegRelations(funcTmp);
 		}
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);
