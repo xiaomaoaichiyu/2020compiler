@@ -612,6 +612,13 @@ vector<string> GlobalRegPool::getUsedRegs() {
 	return res;
 }
 
+void GlobalRegPool::noteRegRelations(vector<CodeItem>& func) {
+	for (auto one : var2reg) {
+		CodeItem tmp(NOTE, FORMAT("{} -> {}", one.first, one.second), "note", "");
+		func.push_back(tmp);
+	}
+}
+
 void registerAllocation2(vector<vector<basicBlock>>& lir) {
 	vector<vector<CodeItem>> LIRTmp;
 	func2gReg.push_back(vector<string>());
@@ -652,6 +659,7 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 
 		string funcName = "";
 		for (int i = 0; i < func.size(); i++) {
+			int paraNum = 0;
 			auto ir = func.at(i).Ir;
 			for (int j = 0; j < ir.size(); j++) {
 				CodeItem instr = ir.at(j);
@@ -852,17 +860,13 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 					ope1Reg = var2reg[res];
 					instr.setInstr(resReg, ope1Reg, ope2Reg);
 				}
-				else if (op == PARA) {
-					ope1Reg = var2reg[res];
-					instr.setInstr(resReg, ope1Reg, ope2Reg);
-
-					if (isReg(ope1)) {
+				else if (op == PARA) {	//前四个参数立即分配寄存器，后面的在stack的用到的时候再分配
+					paraNum++;
+					if (paraNum <= 4) {	//前四个参数分配全局寄存器
+						string regTmp = gRegpool.allocReg(res);
+						ope1Reg = regTmp;
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
 						funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
-						first[res] = false;
-					}
-					else if (ope1 == "stack" && var2reg[res] != "memory") {	//????
-						funcTmp.push_back(CodeItem(LOAD, var2reg[res], res, "para"));
-						first[res] = false;
 					}
 				}
 				else if (op == GETREG) {
@@ -940,6 +944,7 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 				funcTmp.push_back(instr);
 			}	//每个ir的结尾
 			//进行不活跃变量的写回，然后释放寄存器
+			gRegpool.noteRegRelations(funcTmp);
 			gRegpool.releaseNorActRegs(func.at(i).out);
 		}
 		LIRTmp.push_back(funcTmp);

@@ -57,6 +57,7 @@ public:
 	void releaseReg(string var);	//释放这个变量的全局寄存器
 	void releaseNorActRegs(set<string> vars);
 	vector<string> getUsedRegs();
+	void noteRegRelations(vector<CodeItem>& func);
 };
 
 
