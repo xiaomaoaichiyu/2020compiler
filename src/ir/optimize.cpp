@@ -100,11 +100,12 @@ void dealNumber(CodeItem& instr) {
 }
 
 vector<set<string>> inlineArray;	//内联函数数组传参新定义变量名
+int inlineFlag = 0;
 
 void MIR2LIRpass() {
 	LIR.push_back(codetotal.at(0));
 	func2vrIndex.push_back(0);
-	for (int i = 1; i < codetotal.size(); i++) {
+ 	for (int i = 1; i < codetotal.size(); i++) {
 		vector<CodeItem> src = codetotal.at(i);
 		vector<CodeItem> dst;
 		vrIndex = 0;
@@ -172,7 +173,7 @@ void MIR2LIRpass() {
 			}
 			else if (op == LOADARR) {
 				if (isNumber(ope2)) {	//偏移是立即数
-					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+					if (inlineFlag && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
 						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
@@ -202,7 +203,7 @@ void MIR2LIRpass() {
 					}
 				}
 				else {
-					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+					if (inlineFlag && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
 						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
@@ -273,7 +274,7 @@ void MIR2LIRpass() {
 			}
 			else if (op == STOREARR) {
 				if (isNumber(ope2)) {	//偏移是立即数
-					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+					if (inlineFlag && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
 						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
@@ -317,7 +318,7 @@ void MIR2LIRpass() {
 					}
 				}
 				else {		//偏移是寄存器
-					if (inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
+					if (inlineFlag && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
 						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
@@ -547,10 +548,11 @@ void irOptimize() {
 	//运行优化
 	SSA ssa;
 	ssa.generate();
-
+	//inlineArray = ssa.getInlineArrayName();
+	//inlineFlag=1;
 	try {
 		//寄存器分配优化
-		inlineArray = ssa.getInlineArrayName();
+		
 		MIR2LIRpass();
 		printLIR("LIR.txt");
 		countVars();
@@ -562,8 +564,6 @@ void irOptimize() {
 		SSA ssa1;
 		ssa1.generate_activeAnalyse();
 		ssa1.get_avtiveAnalyse_result();
-
-
 		ly_act.print_ly_act();
 
 		//寄存器直接指派

@@ -599,11 +599,11 @@ void GlobalRegPool::releaseNorActRegs(set<string> vars) {
 	}
 }
 
-vector<string> GlobalRegPool::getUsedRegs() {
-	vector<string> res;
+vector<int> GlobalRegPool::getUsedRegs() {
+	vector<int> res;
 	for (auto one : used) {
 		if (one.second == true) {
-			res.push_back(one.first);
+			res.push_back(A2I(one.first.substr(1)));
 		}
 	}
 	return res;
@@ -946,7 +946,14 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 		}
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);
-		func2gReg.push_back(gRegpool.getUsedRegs());
+		
+		auto usedRegs = gRegpool.getUsedRegs();
+		sort(usedRegs.begin(), usedRegs.end());
+		vector<string> useRegsTmp;
+		for (auto one : usedRegs) {
+			useRegsTmp.push_back(FORMAT("R{}", one));
+		}
+		func2gReg.push_back(useRegsTmp);
 	}
 	LIR = LIRTmp;
 }
