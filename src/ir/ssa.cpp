@@ -947,9 +947,9 @@ void SSA::deal_phi_function() {
 					// e.g. x3 = \phi(x1, x2)
 					// 在x1和x2的基本块末尾分别添加x3 = x1; x3 = x2; 赋值语句
 					// x3 = x1;的赋值语句转换为中间代码为 load %0, x1; store %0, x3; 两条语句
-					int tTempIndex = func2tmpIndex[i];
+					int tTempIndex = func2tmpIndex[codetotal.size() - 1];
 					string tTemp = "%" + to_string(tTempIndex);
-					func2tmpIndex[i] = tTempIndex + 1;
+					func2tmpIndex[codetotal.size() - 1] = tTempIndex + 1;
 					CodeItem ci1(LOAD, tTemp, pf.subIndexs[m], "");
 					CodeItem ci2(STORE, tTemp, pf.name, "");
 					if (!blockCore[i][pf.blockNums[m]].Ir.empty() && 
@@ -1116,7 +1116,7 @@ void SSA::generate() {
 	TestIrCode("ir2.txt");
 
 	// 函数内联
-	//inline_function();
+	inline_function();
 
 	// 恢复为之前中间代码形式后再做一次无用代码删除
 	pre_optimize();

@@ -440,25 +440,14 @@ void SSA::inline_function() {
 						break;
 					}
 					j++;	// 跳过note指令，后面应跟传参指令
-					for (int iter2 = paraNum; iter2 > 0; iter2--, j++) {	// 中间代码倒序，而符号表顺序
+					for (int iter2 = paraNum; iter2 > 0; j++) {	// 中间代码倒序，而符号表顺序
 						ci = codetotal[i][j];
-						if (ci.getCodetype() == LOAD || ci.getCodetype() == LOADARR) {
-							if (codetotal[i][j + 1].getCodetype() == PUSH && codetotal[i][j + 1].getOperand1().compare(ci.getResult()) == 0 && ifTempVariable(ci.getResult())) {
-								j++;
-								ci = codetotal[i][j];
-								CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
-								codetotal[i][j] = nci;
-							}
-							else { cout << "函数内联不应该发生的情况：参数入栈时load指令后没有跟push指令. " << endl; break; }
+						if (ci.getCodetype() == PUSH) {
+							CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
+							codetotal[i][j] = nci;
+							iter2--;
 						}
-						else if (ci.getCodetype() == PUSH) {
-							if (ifDigit(ci.getOperand1())) {
-								CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
-								codetotal[i][j] = nci;
-							}
-							else { cout << "函数内联不应该发生的情况：参数入栈时直接push的值不是常数. " << endl; break; }
-						}
-						else { cout << "inline_function: 传参时我没有考虑到的情况. " << endl; break; }
+						else { continue; }
 					}
 				}
 				if (debug) cout << "step2 done." << endl;
@@ -534,7 +523,7 @@ void SSA::inline_function() {
 								codetotal[i].insert(codetotal[i].begin() + j, nci);
 								j++;
 							}
-							else if (funSt.getValuetype() == VOID && ci.getOperand2().compare("int") == 0) {	// 无返回值函数
+							else if (funSt.getValuetype() == VOID && ci.getOperand2().compare("void") == 0) {	// 无返回值函数
 								
 							}
 							else { cout << "函数内联不应该发生的情况：返回值不合法的函数定义. " << endl; break; }
