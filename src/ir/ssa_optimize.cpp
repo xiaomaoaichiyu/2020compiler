@@ -116,15 +116,6 @@ void SSA::ssa_optimize() {
 		// 死代码删除
 		delete_dead_codes();
 	}
-	
-	if (0) { // 关闭函数内联
-	// 重新计算use-def关系
-		build_def_use_chain();
-		// 重新进行活跃变量分析
-		active_var_analyse();
-		// 函数内联
-		inline_function();
-	}
 
 	if (0) { // 关闭循环优化
 	// 将phi函数加入到中间代码
@@ -360,17 +351,17 @@ string SSA::getNewInsertLabel(int funNum, string name) {
 }
 
 string SSA::getNewFunEndLabel(int funNum, string name) {
-	string ans = "function." + name + "." + to_string(funCallCount[funNum]);
+	string ans = "%function." + name + ".end" + to_string(funCallCount[funNum]);
 	funCallCount[funNum]++;
 	return ans;
 }
 
 string SSA::getFunEndLabel(int funNum, string name) {
-	return ("function." + name + "." + to_string(funCallCount[funNum]));
+	return ("%function." + name + ".end" + to_string(funCallCount[funNum]));
 }
 
 string SSA::getRetValName(string name) {
-	return ("Ret*" + name);
+	return ("%Ret*" + name);
 }
 
 // 函数内联
@@ -392,7 +383,7 @@ void SSA::inline_function() {
 	for (i = 1; i < size1; i++) {	// 遍历函数
 		vector<CodeItem> newInsertAllocIr;	// 要在该函数开始添加的alloc中间代码
 		set<string> newInsertAllocName;		// 要在该函数开始添加的alloc变量名
-		bool step1 = true, step2 = true, step3 = true, step4 = true, step5 = true, step6 = true;	// debug
+		bool step1 = true, step2 = true, step3 = true, step4 = true, step5 = true, step6 = true, debug = false;	// debug
 		/*
 		 step1: 判断调用函数是否可以内联
 		 step2: 处理参数及传参指令，alloc
@@ -424,14 +415,15 @@ void SSA::inline_function() {
 						continue;
 					}
 					else {
-						cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
+						if (debug) cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
 				}
+				if (debug) cout << "step1 done." << endl;
 				int paraNum = funSt.getparaLength();	// 参数个数
 				vector<string> paraTable;					// 参数列表
 				if (step2) {	/* step2: 处理参数及传参指令 */
-					for (int iter1 = 1; iter1 <= total[funNum].size(); iter1++) {
-						symbolTable st = total[funNum][iter1];
+					for (int k = 1; k < total[funNum].size(); k++) {
+						symbolTable st = total[funNum][k];
 						if (st.getForm() == PARAMETER) {	// 从符号表中获得该函数下的所有参数名
 							string paraName = st.getDimension() == 0 ? st.getName() : getNewInsertAddr(i);
 							if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
@@ -469,6 +461,8 @@ void SSA::inline_function() {
 						else { cout << "inline_function: 传参时我没有考虑到的情况. " << endl; break; }
 					}
 				}
+				if (debug) cout << "step2 done." << endl;
+				ci = codetotal[i][j];
 				if (step3) {	/* step3. 插入调用函数的除函数和参数声明之外的指令 */
 					map<string, string> label2NewLabel;	// 调用函数内部重命名后的标签名
 					for (int k = 1; k <= paraNum; k++) {
@@ -504,7 +498,8 @@ void SSA::inline_function() {
 									newLabel2 = label2NewLabel[ci.getOperand2()];
 								}
 								CodeItem nci(BR, newLabel1, ci.getOperand1(), newLabel2);
-								newInsertAllocIr.push_back(nci);
+								codetotal[i].insert(codetotal[i].begin() + j, nci);
+								j++;
 							}
 							else {
 								string newLabel;
@@ -553,14 +548,16 @@ void SSA::inline_function() {
 						}
 					}
 				}
+				if (debug) cout << "step3 done." << endl;
 				if (step4) {	/* step4.添加函数调用结束标签 */
 					CodeItem nci(LABEL, getNewFunEndLabel(funNum, funName), "", "");
 					codetotal[i].insert(codetotal[i].begin() + j, nci);
 					j++;
 				}
+				if (debug) cout << "step4 done." << endl;
 				if (step5) {	/* step5. 删除call指令 */
 					ci = codetotal[i][j];
-					if (ci.getCodetype() != CALL || ci.getResult().compare(funName) != 0) {
+					if (ci.getCodetype() != CALL || ci.getOperand1().compare(funName) != 0) {
 						cout << "函数内联不应该发生的情况：压完参数后没有跟call函数指令. " << endl; break;
 					}
 					if (funSt.getValuetype() == INT) {
@@ -578,6 +575,7 @@ void SSA::inline_function() {
 					}
 					j++;	// 跳到note指令
 				}
+				if (debug) cout << "step5 done." << endl;
 			}
 		}
 		if (step6) {	/* step6.添加alloc指令到函数开始位置 */
@@ -585,6 +583,7 @@ void SSA::inline_function() {
 				if (codetotal[i][j].getCodetype() != PARAMETER) break;
 			codetotal[i].insert(codetotal[i].begin() + j, newInsertAllocIr.begin(), newInsertAllocIr.end());
 		}
+		if (debug) cout << "step6 done." << endl;
 	}
 }
 
