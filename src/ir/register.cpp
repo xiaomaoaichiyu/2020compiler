@@ -567,9 +567,6 @@ string GlobalRegPool::allocReg(string var) {
 			used[pool.at(i)] = true;			//只要全局寄存器被使用过就记录下来
 			return pool.at(i);
 		}
-		else {
-			return "memory";
-		}
 	}
 	return "memory";
 }
