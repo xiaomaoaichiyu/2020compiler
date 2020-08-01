@@ -587,11 +587,14 @@ void GlobalRegPool::releaseReg(string var) {
 	}
 }
 
-void GlobalRegPool::releaseNorActRegs(set<string> vars) {
+void GlobalRegPool::releaseNorActRegs(set<string> inVars, set<string> outVars, vector<CodeItem>& func) {
 	for (auto it = var2reg.begin(); it != var2reg.end();) {
-		if (vars.find(it->first) == vars.end()) {	//不在out的活跃变量中，删除
+		//在in活跃，在out不活跃，可以释放寄存器
+		if (inVars.find(it->first) != inVars.end() && outVars.find(it->first) == outVars.end()) {
 			string reg = it->second;
 			reg2avail[reg] = true;
+			CodeItem tmp(STORE, reg, it->first, "");
+			func.push_back(tmp);
 			it = var2reg.erase(it);
 			continue;
 		}
@@ -950,7 +953,7 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 			}	//每个ir的结尾
 			//进行不活跃变量的写回，然后释放寄存器
 			gRegpool.noteRegRelations(funcTmp);
-			gRegpool.releaseNorActRegs(func.at(i).out);
+			gRegpool.releaseNorActRegs(func.at(i).in , func.at(i).out, funcTmp);
 		}
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);
