@@ -361,7 +361,7 @@ string SSA::getFunEndLabel(int funNum, string name) {
 }
 
 string SSA::getRetValName(string name) {
-	return ("%Ret*" + name);
+	return ("%Ret*" + name.substr(1));
 }
 
 // 函数内联
