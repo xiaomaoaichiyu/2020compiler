@@ -89,6 +89,7 @@ void ActiveAnalyse::print_ly_act() {
 				}
 				ly_out << "}\n";
 			}
+			ly_out << endl << endl;
 		}
 	}
 }

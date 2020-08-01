@@ -1,13 +1,21 @@
 ﻿#include "optimize.h"
 #include "register.h"
 
+//存放给后端的中间代码
 vector<vector<CodeItem>> LIR;
+
+//保存每个函数使用的全局寄存器，从1开始编号，和LIR一样
 vector<vector<string>> func2gReg;
+
+//保存每个函数用到的临时变量，VR->定义顺序
 vector<map<string, int>> func2Vr;
 
-//===============================================================
+
+
+
+//================================================================================
 //将MIR转换为LIR，把临时变量都用虚拟寄存器替换，vrIndex从0开始编号
-//===============================================================
+//================================================================================
 
 vector<int> func2vrIndex;
 int vrIndex;
@@ -506,14 +514,14 @@ void irOptimize() {
 
 		
 		//计算活跃变量
-		/*codetotal = LIR;
+		codetotal = LIR;
 		TestIrCode("ly1.txt");
 		SSA ssa1;
 		ssa1.generate_activeAnalyse();
-		ssa1.get_avtiveAnalyse_result();*/
+		ssa1.get_avtiveAnalyse_result();
 
 
-		//ly_act.print_ly_act();
+		ly_act.print_ly_act();
 
 		//寄存器直接指派
 		registerAllocation();

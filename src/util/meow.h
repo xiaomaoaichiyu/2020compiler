@@ -9,6 +9,10 @@
 
 #define TIJIAO 1
 
+#define isReg(x) ((x.size() > 1) && (x.at(0) == 'R'))
+
+#define isVreg(reg) (reg.size() > 2 && (reg.substr(0,2) == "VR"))
+
 #define isString(x) (x.size() > 1 && (x.at(0) == '\"'))
 
 #define isNumber(x) meow::Meow::isNum(x)
