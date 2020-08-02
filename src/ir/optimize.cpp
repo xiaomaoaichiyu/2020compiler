@@ -557,9 +557,9 @@ void irOptimize() {
 	
 	//运行优化
 	SSA ssa;
-	//ssa.generate();
-	//inlineArray = ssa.getInlineArrayName();
-	//inlineFlag=1;
+	ssa.generate();
+	inlineArray = ssa.getInlineArrayName();
+	inlineFlag=1;
 	try {
 		//寄存器分配优化
 		
@@ -571,14 +571,15 @@ void irOptimize() {
 		//计算活跃变量
 		codetotal = LIR;
 		TestIrCode("ly1.txt");
-		ssa.generate_activeAnalyse();
-		ssa.get_avtiveAnalyse_result();
-		ly_act.print_ly_act();
+		//SSA ssa1;
+		//ssa1.generate_activeAnalyse();
+		//ssa1.get_avtiveAnalyse_result();
+		//ly_act.print_ly_act();
 
 		//寄存器直接指派
-		//registerAllocation();
+		registerAllocation();
 
-		registerAllocation2(ssa.getblocks());
+		//registerAllocation2(ssa1.getblocks());
 
 		printLIR("armIR.txt");
 
