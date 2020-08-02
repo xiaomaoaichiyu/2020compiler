@@ -928,7 +928,7 @@ void _br(CodeItem* ir)
 		string label2 = ir->getResult().substr(1);
 		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
-		OUTPUT("BNE " + label1);
+		//OUTPUT("BNE " + label1);
 	}
 	else {
 		OUTPUT("B " + res.substr(1));
