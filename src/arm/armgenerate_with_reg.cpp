@@ -24,6 +24,32 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+bool replace_div(int d, int* m_high, int* sh_post)
+{
+	bool sign = d >= 0;
+	if (!sign) {
+		d = -d;
+	}
+	int l = 0;
+	int n = d;
+	if (n >> 16) { n >>= 16; l |= 16; }
+	if (n >> 8) { n >>= 8; l |= 8; }
+	if (n >> 4) { n >>= 4; l |= 4; }
+	if (n >> 2) { n >>= 2; l |= 2; }
+	if (n >> 1) { n >>= 1; l |= 1; }
+	int sh = l;
+	long long m_low = (0x100000000L << l) / d;
+	long long m_h = (0x100000002L << l) / d;
+	while (m_low / 2 < m_h / 2 && sh > 0) {
+		m_low /= 2;
+		m_h /= 2;
+		sh--;
+	}
+	*m_high = m_h;
+	*sh_post = sh;
+	return sign;
+}
+
 int is_power2(string im) {
 	unsigned int n = stoi(im);
 	if (n == -1) {
@@ -31,7 +57,7 @@ int is_power2(string im) {
 	}
 	int flag = n >= 0 ? 1 : -1;
 	n *= flag;
-	if (n & (n - 1) != 0) {
+	if ((n & (n - 1)) != 0) {
 		return 33; //表示非二的幂次方
 	}
 	int cnt = 0;
@@ -60,7 +86,7 @@ bool is_illegal(string im) {
 	}
 	unsigned int mask = 0xff;
 	while (mask != 0xfe000000) {
-		if (i & (~mask) == 0) {
+		if ((i & (~mask)) == 0) {
 			return true;
 		}
 		mask <<= 1;
@@ -423,8 +449,13 @@ void _sub(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op1[0] != 'R') {
-		OUTPUT("LDR LR,=" + op1);
-		OUTPUT("SUB " + target + ",LR," + op2);
+		if (!is_illegal(op1)) {
+			OUTPUT("LDR LR,=" + op1);
+			OUTPUT("SUB " + target + ",LR," + op2);
+		}
+		else {
+			OUTPUT("RSB " + target + "," + op2 + ",#" + op1);
+		}
 		return;
 	}
 	if (op2[0] != 'R') {
@@ -477,35 +508,40 @@ void _div(CodeItem* ir)
 	if (op2[0] != 'R') {
 		int bitoff = is_power2(op2);
 		if (bitoff == -33) {
-			OUTPUT("MOV LR,#0");
-			OUTPUT("SUB " + target + ",LR," + op1);
+			/*OUTPUT("MOV LR,#0");
+			OUTPUT("SUB " + target + ",LR," + op1);*/
+			OUTPUT("RSB " + target + "," + op1 + ",#0");
 		}
 		else if (bitoff == 33) {
-			OUTPUT("PUSH {R0}");
-			OUTPUT("PUSH {R1,R2,R3,R12}");
-			OUTPUT("MOV R0," + op1);
-			OUTPUT("LDR R1,=" + op2);
-			OUTPUT("BL __aeabi_idiv");
-			if (target == "R0") {
-				OUTPUT("POP {R1,R2,R3,R12}");
-				OUTPUT("ADD SP,SP,#4");
-			}
-			else {
-				OUTPUT("POP {R1,R2,R3,R12}");
-				OUTPUT("MOV " + target + ",R0");
-				OUTPUT("POP {R0}");
+			int m_high;
+			int sh_post;
+			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
+			bool pop = false;
+			OUTPUT("LDR LR,=" + to_string(m_high));
+			OUTPUT("SMMUL LR,LR," + op1);
+			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
+			OUTPUT("SUB " + target + ",LR," + op1 + ",ASR #31");
+			if (!sign) {
+				/*OUTPUT("MVN " + target + "," + target);
+				OUTPUT("ADD " + target + "," + target + ",#1");*/
+				OUTPUT("RSB " + target + "," + target + ",#0");
 			}
 		}
 		else if (bitoff == 0) {
 			OUTPUT("MOV " + target + "," + op1);
 		}
 		else if (bitoff > 0) {
-			OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(bitoff));
+			OUTPUT("ASR LR," + op1 + ",#31");
+			OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 - bitoff));
+			OUTPUT("ASR " + target + "," + target + ",#" + to_string(bitoff));
 		}
 		else if (bitoff < 0) {
-			OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(-bitoff));
-			OUTPUT("MOV LR,#0");
-			OUTPUT("SUB " + target + ",LR," + target);
+			OUTPUT("ASR LR," + op1 + ",#31");
+			OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 + bitoff));
+			OUTPUT("ASR " + target + "," + target + ",#" + to_string(-bitoff));
+			/*OUTPUT("MOV LR,#0");
+			OUTPUT("SUB " + target + ",LR," + target);*/
+			OUTPUT("RSB " + target + "," + target + ",#0");
 		}
 		return;
 	}
@@ -565,13 +601,53 @@ void _rem(CodeItem* ir)
 	}
 	if (op2[0] != 'R') {
 		int bitoff = is_power2(op2);
-		//目前仅考虑正数模正数的情况
-		if (bitoff >= 0 && bitoff != 33) {
-			OUTPUT("LDR LR,=" + op2);
-			OUTPUT("SUB LR,LR,#-1");
-			OUTPUT("AND " + target + ",LR," + op1);
-			return;
+		if (bitoff == -33 || bitoff == 0) {
+			OUTPUT("MOV " + target + "," + op1);
 		}
+		else if (bitoff == 33) {
+			int m_high;
+			int sh_post;
+			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
+			OUTPUT("LDR LR,=" + to_string(m_high));
+			OUTPUT("SMMUL LR,LR," + op1);
+			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
+			OUTPUT("SUB LR,LR," + op1 + ",ASR #31");
+			if (!sign) {
+				/*OUTPUT("MVN " + target + "," + target);
+				OUTPUT("ADD " + target + "," + target + ",#1");*/
+				OUTPUT("RSB LR,LR,#0");
+			}
+			string tempreg;
+			bool pop = false;
+			if (target != op1) {
+				tempreg = target;
+			}
+			else if (target == "R12") {
+				OUTPUT("PUSH {R3}");
+				tempreg = "R3";
+				pop = true;
+			}
+			else {
+				OUTPUT("PUSH {R12}");
+				tempreg = "R12";
+				pop = true;
+			}
+			OUTPUT("LDR " + tempreg + ",=" + op2);
+			OUTPUT("MUL LR,LR," + tempreg);
+			OUTPUT("SUB " + target + "," + op1 + ",LR");
+			if (pop) {
+				OUTPUT("POP {" + tempreg + "}");
+			}
+		}
+		else {
+			int im = stoi(op2);
+			im = bitoff < 0 ? -im : im;
+			OUTPUT("RSBS LR," + op1 + ",#0");
+			OUTPUT("AND LR,LR,#" + to_string(im - 1));
+			OUTPUT("AND " + target + "," + op1 + ",#" + to_string(im - 1));
+			OUTPUT("RSBPL " + target + ",LR,#0");
+		}
+		return;
 	}
 	{
 		OUTPUT("PUSH {R1}");
