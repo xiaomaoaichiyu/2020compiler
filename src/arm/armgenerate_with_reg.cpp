@@ -815,6 +815,11 @@ void _eql(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BEQ " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVEQ " + target + ",#1");
 	OUTPUT("MOVNE " + target + ",#0");
@@ -833,6 +838,11 @@ void _neq(CodeItem* ir)
 		else {
 			op2 = "#" + op2;
 		}
+	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BNE " + target.substr(1));
+		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVNE " + target + ",#1");
@@ -853,6 +863,11 @@ void _sgt(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BGT " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVGT " + target + ",#1");
 	OUTPUT("MOVLE " + target + ",#0");
@@ -871,6 +886,11 @@ void _sge(CodeItem* ir)
 		else {
 			op2 = "#" + op2;
 		}
+	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BGE " + target.substr(1));
+		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVGE " + target + ",#1");
@@ -891,6 +911,11 @@ void _slt(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BLT " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVLT " + target + ",#1");
 	OUTPUT("MOVGE " + target + ",#0");
@@ -910,6 +935,11 @@ void _sle(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BLE " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVLE " + target + ",#1");
 	OUTPUT("MOVGT " + target + ",#0");
@@ -928,7 +958,7 @@ void _br(CodeItem* ir)
 		string label2 = ir->getResult().substr(1);
 		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
-		//OUTPUT("BNE " + label1);
+		//OUTPUT("BNE " + label1); //有问题可以回复这里试试
 	}
 	else {
 		OUTPUT("B " + res.substr(1));
