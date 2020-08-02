@@ -524,7 +524,7 @@ void _div(CodeItem* ir)
 		}
 		return;
 	}
-	if (op2[0] != 'R' && is_power2(op2) < 30) {
+	if (op2[0] != 'R') {
 		int bitoff = is_power2(op2);
 		if (bitoff == -33) {
 			/*OUTPUT("MOV LR,#0");
@@ -538,6 +538,9 @@ void _div(CodeItem* ir)
 			bool pop = false;
 			OUTPUT("LDR LR,=" + to_string(m_high));
 			OUTPUT("SMMUL LR,LR," + op1);
+			if (m_high < 0) {
+				OUTPUT("ADD LR,LR," + op1);//试试
+			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB " + target + ",LR," + op1 + ",ASR #31");
 			if (!sign) {
@@ -618,7 +621,7 @@ void _rem(CodeItem* ir)
 		}
 		return;
 	}
-	if (op2[0] != 'R' && is_power2(op2) < 30) {
+	if (op2[0] != 'R') {
 		int bitoff = is_power2(op2);
 		if (bitoff == -33 || bitoff == 0) {
 			OUTPUT("MOV " + target + "," + op1);
@@ -629,6 +632,9 @@ void _rem(CodeItem* ir)
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
 			OUTPUT("LDR LR,=" + to_string(m_high));
 			OUTPUT("SMMUL LR,LR," + op1);
+			if (m_high < 0) {
+				OUTPUT("ADD LR,LR," + op1);//试试
+			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB LR,LR," + op1 + ",ASR #31");
 			if (!sign) {
