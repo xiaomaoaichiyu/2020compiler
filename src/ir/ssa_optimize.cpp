@@ -415,6 +415,7 @@ void SSA::inline_function() {
 				string funName = ci.getResult();				// 函数名
 				int funNum = funName2Num[funName];	// 该函数对应的序号
 				symbolTable funSt;									// 函数对应的符号表结构
+				set<int> alreadyNeilian;				//丛睿轩添加的...	记录当前以内联的符号
 				if (step1) {	/* step1: 判断调用函数是否可以内联 */
 					for (int iter1 = 1; iter1 < total.size(); iter1++) {
 						if (total[iter1][0].getName().compare(funName) == 0) {
@@ -429,8 +430,8 @@ void SSA::inline_function() {
 					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
 						continue;
 					}
-					else if (total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
-						continue;
+					else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
+						continue;		//第一个条件说明当前函数没被内联过
 					}
 					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
 						continue;
@@ -439,6 +440,7 @@ void SSA::inline_function() {
 						if (debug) cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
 				}
+				alreadyNeilian.insert(funNum);		//丛睿轩添加的
 				if (debug) cout << "step1 done." << endl;
 				int paraNum = funSt.getparaLength();	// 参数个数
 				vector<string> paraTable;					// 参数列表
