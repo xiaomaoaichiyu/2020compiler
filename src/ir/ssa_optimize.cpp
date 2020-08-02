@@ -358,7 +358,7 @@ string SSA::getNewInsertAddr(int funNum) {
 	inlineArrayName[funNum].insert(ans);
 	addrIndex[funNum]++;
 	return ans;
-}
+} 
 
 string SSA::getNewInsertLabel(int funNum, string name) {
 	string ans = name + "." + to_string(labelIndex[funNum]);
@@ -461,6 +461,9 @@ void SSA::inline_function() {
 						cout << "函数内联不应该发生的情况：参数表和符号表中函数对应的参数数量不一致. " << endl;
 						break;
 					}
+					//cout << ci.getContent() << endl;
+					CodeItem nci(ci.getCodetype(), ci.getResult(), "inline", ci.getOperand2());
+					codetotal[i][j] = nci;
 					j++;	// 跳过note指令，后面应跟传参指令
 					for (int iter2 = paraNum; iter2 > 0; j++) {	// 中间代码倒序，而符号表顺序
 						ci = codetotal[i][j];
@@ -601,9 +604,18 @@ void SSA::inline_function() {
 						codetotal[i].erase(codetotal[i].begin() + j);
 						j--;
 					}
-					j++;	// 跳到note指令
 				}
 				if (debug) cout << "step5 done." << endl;
+				j++;
+				ci = codetotal[i][j];
+				if (ci.getCodetype() == NOTE && 
+					ci.getResult().compare(funName) == 0 && ci.getOperand1().compare("func") == 0) {
+					CodeItem nci(ci.getCodetype(),ci.getResult(), "inline", ci.getOperand2());
+					codetotal[i][j] = nci;
+				}
+				else {
+					cout << "函数内联不应该发生的情况：调用函数之后没有note结束标签. " << endl;
+				}
 			}
 		}
 		if (step6) {	/* step6.添加alloc指令到函数开始位置，更新符号表 */
