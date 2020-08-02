@@ -192,6 +192,7 @@ string CodeItem::getContent()
 		}
 		else {
 			content = "\t\t\t\t\t\t\t\t"+standardLength(result);
+			//content = "";
 		}
 		break;
 	}case LEA: {

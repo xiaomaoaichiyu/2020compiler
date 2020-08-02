@@ -190,4 +190,20 @@ extern ActiveAnalyse ly_act;
 string calculate(irCodeType op, string ope1, string ope2);
 void printCircleIr(vector<vector<basicBlock>>& v, ofstream& debug_ssa);
 
+//==============================
+// 循环
+//==============================
+
+class Circle {
+public:
+	set<int> cir_blks;	//循环的基本块结点
+	set<int> cir_outs;	//循环的退出结点
+	int cir_begin;
+	Circle() {}
+	Circle(set<int>& blks) : cir_blks(blks) {}
+};
+
+//记录每个函数的循环
+extern vector<vector<Circle>> func2circles;
+
 #endif //_SSA_H_

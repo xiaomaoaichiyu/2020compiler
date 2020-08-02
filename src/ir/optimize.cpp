@@ -278,7 +278,14 @@ void MIR2LIRpass() {
 						CodeItem loadTmp(LOAD, getVreg(), ope1, "");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
-						res = dealTmpOpe(res);
+						if (isNumber(res)) {
+							CodeItem movNumber(MOV, "", getVreg(), res);
+							dst.push_back(movNumber);
+							res = curVreg;
+						}
+						else {
+							res = dealTmpOpe(res);
+						}
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}
@@ -323,7 +330,14 @@ void MIR2LIRpass() {
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
 						ope2 = dealTmpOpe(ope2);
-						res = dealTmpOpe(res);
+						if (isNumber(res)) {
+							CodeItem movNumber(MOV, "", getVreg(), res);
+							dst.push_back(movNumber);
+							res = curVreg;
+						}
+						else {
+							res = dealTmpOpe(res);
+						}
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
 					}

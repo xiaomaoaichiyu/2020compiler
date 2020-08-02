@@ -903,14 +903,6 @@ string calculate(irCodeType op, string ope1, string ope2) {
 // 循环优化：不变式外提、强度削弱、归纳变量删除
 //============================================================
 
-class Circle {
-public:
-	set<int> cir_blks;	//循环的基本块结点
-	set<int> cir_outs;	//循环的退出结点
-	int cir_begin;
-	Circle() {}
-	Circle(set<int>& blks) : cir_blks(blks) {}
-};
 
 //每个函数的循环，已连续的基本块构成；
 vector<vector<Circle>> func2circles;
