@@ -876,11 +876,13 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 					instr.setInstr(resReg, ope1Reg, ope2Reg);
 				}
 				else if (op == PARA) {	//前四个参数立即分配寄存器，后面的在stack的用到的时候再分配
-					string regTmp = gRegpool.getReg(res);
-					if (regTmp != "memory") {
-						ope1Reg = regTmp;
-						instr.setInstr(resReg, ope1Reg, ope2Reg);
-						funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
+					if (isReg(ope1)) {
+						string regTmp = gRegpool.getReg(res);
+						if (regTmp != "memory") {
+							ope1Reg = regTmp;
+							instr.setInstr(resReg, ope1Reg, ope2Reg);
+							funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
+						}
 					}
 				}
 				else if (op == GETREG) {

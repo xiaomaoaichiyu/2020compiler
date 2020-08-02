@@ -7,7 +7,7 @@
 #include <sstream>
 #include <cstdio>
 
-#define TIJIAO 0
+#define TIJIAO 1
 
 #define isReg(x) ((x.size() > 1) && (x.at(0) == 'R'))
 
