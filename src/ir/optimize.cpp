@@ -546,10 +546,10 @@ void peepholeOptimization() {
 void irOptimize() {
 	
 	//运行优化
-	SSA ssa;
+	/*SSA ssa;
 	ssa.generate();
 	inlineArray = ssa.getInlineArrayName();
-	inlineFlag=1;
+	inlineFlag=1;*/
 	try {
 		//寄存器分配优化
 		
@@ -579,7 +579,7 @@ void irOptimize() {
 		printLIR("armIR_2.txt");
 	}
 	catch (exception e) {
-		exit(0);
+		WARN_MSG("IrOptimize wrong!");
 	}
 }
 
