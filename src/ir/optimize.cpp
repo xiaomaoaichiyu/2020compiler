@@ -483,7 +483,7 @@ void countVars() {
 		map<string, bool> arr;
 		for (int j = 1; j < func.size(); j++) {
 			auto instr = func.at(j);
-			if (instr.getCodetype() == PARA || instr.getCodetype() == ALLOC) {
+			if (instr.getCodetype() == ALLOC) {
 				vars.push_back(instr.getResult());
 				if (instr.getOperand2() != "1") {
 					arr[instr.getResult()] = true;
@@ -491,6 +491,10 @@ void countVars() {
 				else {
 					arr[instr.getResult()] = false;
 				}
+			}
+			else if (instr.getCodetype() == PARA) {
+				vars.push_back(instr.getResult());
+				arr[instr.getResult()] = false;
 			}
 		}
 		stackVars.push_back(vars);
@@ -556,10 +560,10 @@ void peepholeOptimization() {
 void irOptimize() {
 	
 	//运行优化
-	/*SSA ssa;
+	SSA ssa;
 	ssa.generate();
 	inlineArray = ssa.getInlineArrayName();
-	inlineFlag=1;*/
+	inlineFlag=1;
 	try {
 		//寄存器分配优化
 		
@@ -569,17 +573,17 @@ void irOptimize() {
 
 		
 		//计算活跃变量
-		codetotal = LIR;
+		/*codetotal = LIR;
 		TestIrCode("ly1.txt");
 		SSA ssa1;
 		ssa1.generate_activeAnalyse();
 		ssa1.get_avtiveAnalyse_result();
-		ly_act.print_ly_act();
+		ly_act.print_ly_act();*/
 
 		//寄存器直接指派
-		//registerAllocation();
+		registerAllocation();
 
-		registerAllocation2(ssa1.getblocks());
+		//registerAllocation2(ssa1.getblocks());
 
 		printLIR("armIR.txt");
 
