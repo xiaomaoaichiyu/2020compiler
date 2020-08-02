@@ -399,6 +399,7 @@ void SSA::inline_function() {
 	for (i = 1; i < size1; i++) {	// 遍历函数
 		vector<CodeItem> newInsertAllocIr;	// 要在该函数开始添加的alloc中间代码
 		set<string> newInsertAllocName;		// 要在该函数开始添加的alloc变量名
+		vector<symbolTable> newInsertSymbolTable;	// 要在该函数符号表中插入的
 		bool step1 = true, step2 = true, step3 = true, step4 = true, step5 = true, step6 = true, debug = false;	// debug
 		/*
 		 step1: 判断调用函数是否可以内联
@@ -406,7 +407,7 @@ void SSA::inline_function() {
 		 step3. 插入调用函数的除函数和参数声明之外的指令
 		 step4. 添加函数调用结束标签
 		 step5. 删除call指令
-		 step6. 添加alloc指令到函数开始位置
+		 step6. 添加alloc指令到函数开始位置，更新符号表
 		 */
 		for (j = 1; j < codetotal[i].size(); j++) {
 			CodeItem ci = codetotal[i][j];
@@ -444,8 +445,12 @@ void SSA::inline_function() {
 							string paraName = st.getDimension() == 0 ? st.getName() : getNewInsertAddr(i);
 							if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
 								newInsertAllocName.insert(paraName);
+								// 将要内联函数的形参全部转换成alloc指令
 								CodeItem nci(ALLOC, paraName, "", "1");
-								newInsertAllocIr.push_back(nci);	// 将要内联函数的形参全部转换成alloc指令
+								newInsertAllocIr.insert(newInsertAllocIr.begin(), nci);
+								// 插入到符号表
+								symbolTable nst(VARIABLE, INT, paraName, 0, 0);
+								newInsertSymbolTable.insert(newInsertSymbolTable.begin() ,nst);
 							}
 							paraTable.push_back(paraName);
 						}
@@ -483,6 +488,17 @@ void SSA::inline_function() {
 							if (newInsertAllocName.find(varName) == newInsertAllocName.end()) {
 								newInsertAllocName.insert(varName);
 								newInsertAllocIr.push_back(ci);
+								symbolTable nst;
+								for (vector<symbolTable>::iterator iter = total[funNum].begin(); iter != total[funNum].end(); iter++)
+									if (iter->getName().compare(varName) == 0) {
+										nst = *iter; break;
+									}
+								if (nst.getName().compare(varName) == 0) {	// 插入到符号表
+									newInsertSymbolTable.push_back(nst);
+								}
+								else {
+									cout << "函数内联不应该发生的情况：被内联函数的局部变量在符号表中没有找到. " << endl; break;
+								}
 							}
 						}
 						else if (ci.getCodetype() == BR) {
@@ -571,6 +587,8 @@ void SSA::inline_function() {
 							newInsertAllocName.insert(retValName);
 							CodeItem nci(ALLOC, retValName, "", "1");
 							newInsertAllocIr.push_back(nci);
+							symbolTable nst(VARIABLE, INT, retValName, 0, 0);
+							newInsertSymbolTable.push_back(nst);
 						}
 						if (ifTempVariable(ci.getResult())) {
 							CodeItem nci(LOAD, ci.getResult(), getRetValName(funName), "");
@@ -583,10 +601,11 @@ void SSA::inline_function() {
 				if (debug) cout << "step5 done." << endl;
 			}
 		}
-		if (step6) {	/* step6.添加alloc指令到函数开始位置 */
+		if (step6) {	/* step6.添加alloc指令到函数开始位置，更新符号表 */
 			for (j = 1; j < codetotal[i].size(); j++) 
-				if (codetotal[i][j].getCodetype() != PARAMETER) break;
+				if (codetotal[i][j].getCodetype() != PARA && codetotal[i][j].getCodetype() != ALLOC) break;
 			codetotal[i].insert(codetotal[i].begin() + j, newInsertAllocIr.begin(), newInsertAllocIr.end());
+			total[i].insert(total[i].end(), newInsertSymbolTable.begin(), newInsertSymbolTable.end());
 		}
 		if (debug) cout << "step6 done." << endl;
 	}
