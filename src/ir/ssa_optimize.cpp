@@ -596,6 +596,10 @@ void SSA::inline_function() {
 						}
 						else { cout << "函数内联不应该发生的情况：返回值定义和调用不统一. " << endl; break; }
 					}
+					else {
+						codetotal[i].erase(codetotal[i].begin() + j);
+						j--;
+					}
 					j++;	// 跳到note指令
 				}
 				if (debug) cout << "step5 done." << endl;
