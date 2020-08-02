@@ -442,7 +442,8 @@ void SSA::inline_function() {
 					for (int k = 1; k < total[funNum].size(); k++) {
 						symbolTable st = total[funNum][k];
 						if (st.getForm() == PARAMETER) {	// 从符号表中获得该函数下的所有参数名
-							string paraName = st.getDimension() == 0 ? st.getName() : getNewInsertAddr(i);
+							// string paraName = st.getDimension() == 0 ? st.getName() : getNewInsertAddr(i);
+							string paraName = st.getName();
 							if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
 								newInsertAllocName.insert(paraName);
 								// 将要内联函数的形参全部转换成alloc指令
