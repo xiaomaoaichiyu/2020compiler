@@ -524,7 +524,7 @@ void _div(CodeItem* ir)
 		}
 		return;
 	}
-	if (op2[0] != 'R') {
+	if (op2[0] != 'R' && is_power2(op2) != 30) {
 		int bitoff = is_power2(op2);
 		if (bitoff == -33) {
 			/*OUTPUT("MOV LR,#0");
@@ -618,7 +618,7 @@ void _rem(CodeItem* ir)
 		}
 		return;
 	}
-	if (op2[0] != 'R') {
+	if (op2[0] != 'R' && is_power2(op2) != 30) {
 		int bitoff = is_power2(op2);
 		if (bitoff == -33 || bitoff == 0) {
 			OUTPUT("MOV " + target + "," + op1);

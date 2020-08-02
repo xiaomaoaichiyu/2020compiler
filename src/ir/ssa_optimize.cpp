@@ -429,6 +429,9 @@ void SSA::inline_function() {
 					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
 						continue;
 					}
+					else if (codetotal[i].size() > 750) {
+						continue;
+					}
 					else {
 						if (debug) cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
