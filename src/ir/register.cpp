@@ -587,7 +587,7 @@ void GlobalRegPool::releaseReg(string var) {
 	}
 }
 
-void GlobalRegPool::releaseNorActRegs(set<string> inVars, set<string> outVars, vector<CodeItem>& func, int offset) {
+void GlobalRegPool::releaseNorActRegs(set<string> inVars, set<string> outVars) {
 	for (auto it = var2reg.begin(); it != var2reg.end();) {
 		//在in活跃，在out不活跃，可以释放寄存器
 		if (outVars.find(it->first) == outVars.end()) {
@@ -597,14 +597,6 @@ void GlobalRegPool::releaseNorActRegs(set<string> inVars, set<string> outVars, v
 			}
 			string reg = it->second;
 			reg2avail[reg] = true;
-			CodeItem tmp(STORE, reg, it->first, "");
-			//func.push_back(tmp);
-			if (offset == -1) {
-				func.insert(func.end() - 1, tmp);
-			}
-			else {
-				func.insert(func.end(), tmp);
-			}
 			it = var2reg.erase(it);
 			continue;
 		}
@@ -663,8 +655,7 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 
 		//变量一开始全局初始化为memory
 		for (int m = 0; m < vars.size(); m++) {	//数组变量不分配寄存器
-			var2reg[vars.at(m)] = "memory";
-			first[vars.at(m)] = true;
+			var2reg[vars.at(m)] = gRegpool.allocReg(vars.at(m));
 		}
 
 		string funcName = "";
@@ -970,6 +961,7 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 				}
 				funcTmp.push_back(instr);
 			}	//每个ir的结尾
+			gRegpool.noteRegRelations(funcTmp);
 			//进行不活跃变量的写回，然后释放寄存器
 			//if (!retFlag) {
 			//	if (brFlag) {
@@ -979,12 +971,11 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 			//		gRegpool.releaseNorActRegs(func.at(i).in, func.at(i).out, funcTmp, 0);
 			//	}
 			//}
-			set<string> inTmp;
+			/*set<string> inTmp;
 			if (i+1 < func.size()) {
 				inTmp = func.at(i + 1).in;
 			}
-			gRegpool.releaseNorActRegs(inTmp, func.at(i).out, funcTmp, 0);
-			gRegpool.noteRegRelations(funcTmp);
+			gRegpool.releaseNorActRegs(inTmp, func.at(i).out);*/
 		}
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);

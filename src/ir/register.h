@@ -55,7 +55,7 @@ public:
 	string getReg(string var);		//获取一个变量的寄存器，如果没有返回"memory"
 	string allocReg(string var);	//给一个变量申请全局寄存器，如果没有全局寄存器可用返回"memory"
 	void releaseReg(string var);	//释放这个变量的全局寄存器
-	void releaseNorActRegs(set<string> inVars, set<string> outVars, vector<CodeItem>& func, int offset);
+	void releaseNorActRegs(set<string> inVars, set<string> outVars);
 	vector<int> getUsedRegs();
 	void noteRegRelations(vector<CodeItem>& func);
 };
