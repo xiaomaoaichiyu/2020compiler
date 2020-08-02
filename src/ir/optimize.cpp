@@ -472,19 +472,29 @@ void printLIR(string outputFile) {
 }
 
 vector<vector<string>> stackVars;
+vector<map<string, bool>> var2Arr;
 
 void countVars() {
 	stackVars.push_back(vector<string>());
+	var2Arr.push_back(map<string, bool>());
 	for (int i = 1; i < codetotal.size(); i++) {
 		auto func = codetotal.at(i);
 		vector<string> vars;
+		map<string, bool> arr;
 		for (int j = 1; j < func.size(); j++) {
 			auto instr = func.at(j);
 			if (instr.getCodetype() == PARA || instr.getCodetype() == ALLOC) {
 				vars.push_back(instr.getResult());
+				if (instr.getOperand2() != "1") {
+					arr[instr.getResult()] = true;
+				}
+				else {
+					arr[instr.getResult()] = false;
+				}
 			}
 		}
 		stackVars.push_back(vars);
+		var2Arr.push_back(arr);
 	}
 }
 
@@ -546,8 +556,8 @@ void peepholeOptimization() {
 void irOptimize() {
 	
 	//运行优化
-	/*SSA ssa;
-	ssa.generate();*/
+	SSA ssa;
+	//ssa.generate();
 	//inlineArray = ssa.getInlineArrayName();
 	//inlineFlag=1;
 	try {
@@ -561,15 +571,14 @@ void irOptimize() {
 		//计算活跃变量
 		codetotal = LIR;
 		TestIrCode("ly1.txt");
-		SSA ssa1;
-		ssa1.generate_activeAnalyse();
-		ssa1.get_avtiveAnalyse_result();
+		ssa.generate_activeAnalyse();
+		ssa.get_avtiveAnalyse_result();
 		ly_act.print_ly_act();
 
 		//寄存器直接指派
 		//registerAllocation();
 
-		registerAllocation2(ssa1.getblocks());
+		registerAllocation2(ssa.getblocks());
 
 		printLIR("armIR.txt");
 

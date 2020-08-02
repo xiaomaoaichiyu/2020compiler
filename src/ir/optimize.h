@@ -15,6 +15,7 @@ using namespace std;
 extern vector<vector<CodeItem>> LIR;
 
 extern vector<vector<string>> stackVars;
+extern vector<map<string, bool>> var2Arr;
 
 //保存每个函数使用的全局寄存器，从1开始编号，和LIR一样
 extern vector<vector<string>> func2gReg;

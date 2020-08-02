@@ -188,7 +188,7 @@ string CodeItem::getContent()
 			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "--------";
 		}
 		else {
-			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+			content = "\t\t\t\t\t\t\t\t"+standardLength(result);
 		}
 		break;
 	}case LEA: {

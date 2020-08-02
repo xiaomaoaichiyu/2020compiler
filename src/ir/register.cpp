@@ -175,6 +175,7 @@ void registerAllocation() {
 	for (int k = 1; k < LIR.size(); k++) {
 		auto func = LIR.at(k);
 		auto vars = stackVars.at(k);
+		auto arr = var2Arr.at(k);
 		vector<CodeItem> funcTmp;
 
 		//初始化
@@ -200,11 +201,17 @@ void registerAllocation() {
 		//无脑指派局部变量
 		int i = 0;
 		for (; i < vars.size(); i++) {
-			var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
-			first[vars.at(i)] = true;
-			if (regBegin >= 12) {
-				i++;
-				break;
+			if (arr[vars.at(i)] != true) {
+				var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
+				first[vars.at(i)] = true;
+				if (regBegin >= 12) {
+					i++;
+					break;
+				}
+			}
+			else {	//数组不分配寄存器
+				var2reg[vars.at(i)] = "memory";
+				first[vars.at(i)] = true;
 			}
 		}
 		for (; i < vars.size(); i++) {
@@ -883,6 +890,9 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 							instr.setInstr(resReg, ope1Reg, ope2Reg);
 							funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
 						}
+					}
+					else if (ope1 == "stack" && gRegpool.getReg(res) != "memory") {
+						funcTmp.push_back(CodeItem(LOAD, gRegpool.getReg(res), res, ""));
 					}
 				}
 				else if (op == GETREG) {
