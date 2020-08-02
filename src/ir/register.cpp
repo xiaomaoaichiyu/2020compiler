@@ -201,17 +201,23 @@ void registerAllocation() {
 		//无脑指派局部变量
 		int i = 0;
 		for (; i < vars.size(); i++) {
-			if (arr[vars.at(i)] != true) {
-				var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
-				first[vars.at(i)] = true;
-				if (regBegin >= 12) {
-					i++;
-					break;
-				}
-			}
-			else {	//数组不分配寄存器
-				var2reg[vars.at(i)] = "memory";
-				first[vars.at(i)] = true;
+			//if (arr[vars.at(i)] != true) {
+			//	var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
+			//	first[vars.at(i)] = true;
+			//	if (regBegin >= 12) {
+			//		i++;
+			//		break;
+			//	}
+			//}
+			//else {	//数组不分配寄存器
+			//	var2reg[vars.at(i)] = "memory";
+			//	first[vars.at(i)] = true;
+			//}
+			var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
+			first[vars.at(i)] = true;
+			if (regBegin >= 12) {
+				i++;
+				break;
 			}
 		}
 		for (; i < vars.size(); i++) {
