@@ -1117,7 +1117,7 @@ void SSA::generate() {
 	TestIrCode("ir2.txt");
 
 	// 函数内联
-	inline_function();
+	//inline_function();
 
 	// 恢复为之前中间代码形式后再做一次无用代码删除
 	pre_optimize();
