@@ -188,7 +188,7 @@ string CodeItem::getContent()
 			content = "note       " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "--------";
 		}
 		else if (operand1 == "inline") {
-			content = standardLength(result) + "inline" + standardLength(operand2);
+			content = "note       " + standardLength(result) + "inline     " + standardLength(operand2);
 		}
 		else {
 			content = "\t\t\t\t\t\t\t\t"+standardLength(result);

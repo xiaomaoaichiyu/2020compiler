@@ -129,7 +129,7 @@ private:
 	void ssa_optimize();		// 优化函数入口
 	void delete_dead_codes();	// 删除死代码
 	void inline_function();	// 函数内联
-	std::string getNewInsertAddr(int funNum);
+	std::string getNewInsertAddr(int funNum, std::string name);
 	std::string getNewInsertLabel(int funNum, std::string name);
 	std::string getNewFunEndLabel(int funNum, std::string name);
 	std::string getFunEndLabel(int funNum, std::string name);
