@@ -4,7 +4,7 @@
 using namespace std;
 string standardLength(string a)
 {
-	while (a.size() < 10) {
+	while (a.size() < 15) {
 		a = a + " ";
 	}
 	return a;

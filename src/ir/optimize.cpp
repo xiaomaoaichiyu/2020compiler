@@ -173,7 +173,7 @@ void MIR2LIRpass() {
 			else if (op == LOADARR) {
 				if (isNumber(ope2)) {	//偏移是立即数
 					if (inlineArray.size() > i && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
-						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
 						res = dealTmpOpe(res);
@@ -203,9 +203,10 @@ void MIR2LIRpass() {
 				}
 				else {
 					if (inlineArray.size() > i && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
-						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
+						ope2 = dealTmpOpe(ope2);
 						res = dealTmpOpe(res);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
@@ -274,7 +275,7 @@ void MIR2LIRpass() {
 			else if (op == STOREARR) {
 				if (isNumber(ope2)) {	//偏移是立即数
 					if (inlineArray.size() > i && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
-						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
 						res = dealTmpOpe(res);
@@ -318,9 +319,10 @@ void MIR2LIRpass() {
 				}
 				else {		//偏移是寄存器
 					if (inlineArray.size() > i && inlineArray.at(i).find(ope1) != inlineArray.at(i).end()) {	//是inline的数组元素
-						CodeItem loadTmp(LOAD, getVreg(), ope1, "para");
+						CodeItem loadTmp(LOAD, getVreg(), ope1, "");
 						ope1 = curVreg;
 						dst.push_back(loadTmp);
+						ope2 = dealTmpOpe(ope2);
 						res = dealTmpOpe(res);
 						instr.setInstr(res, ope1, ope2);
 						dst.push_back(instr);
@@ -558,17 +560,17 @@ void irOptimize() {
 
 		
 		//计算活跃变量
-		codetotal = LIR;
+		/*codetotal = LIR;
 		TestIrCode("ly1.txt");
 		SSA ssa1;
 		ssa1.generate_activeAnalyse();
 		ssa1.get_avtiveAnalyse_result();
-		ly_act.print_ly_act();
+		ly_act.print_ly_act();*/
 
 		//寄存器直接指派
-		//registerAllocation();
+		registerAllocation();
 
-		registerAllocation2(ssa1.getblocks());
+		//registerAllocation2(ssa1.getblocks());
 
 		printLIR("armIR.txt");
 
