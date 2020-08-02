@@ -79,6 +79,8 @@ private:
 	std::vector<std::set<std::string>> inlineArrayName;// 内联函数数组传参新定义变量名
 	std::vector<int> funCallCount;									// 记录一个函数第几次被调用
 
+	std::vector<std::map<std::string, symbolTable>> varName2St;	// 变量名
+
 	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块
 	void simplify_basic_block();									// 消除无法到达基本块
@@ -158,6 +160,7 @@ private:
 	bool ifGlobalVariable(std::string name);		// 判断是否是全局变量
 	bool ifLocalVariable(std::string name);		// 判断是否是局部变量
 	bool ifVR(std::string name);						// 判断是否是虚拟寄存器
+	void init();													// 初始化varName2St结构体
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
@@ -165,7 +168,7 @@ public:
 	}*/
 	SSA() {}
 	void generate();		// 开始函数
-	void generate_activeAnalyse();
+	void registerAllocation();
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化
 	void get_avtiveAnalyse_result();

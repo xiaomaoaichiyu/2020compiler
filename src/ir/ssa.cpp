@@ -107,6 +107,7 @@ void SSA::find_primary_statement() {
 	int size1 = codetotal.size();
 	int i, j, k;
 	// 申请空间
+	blockOrigin.clear();
 	for (i = 0; i < size1; i++) {
 		vector<int> v; blockOrigin.push_back(v);
 	}
@@ -157,6 +158,7 @@ void SSA::divide_basic_block() {
 	int size1 = codetotal.size();
 	int i, j, k;
 	// 申请空间
+	blockCore.clear();
 	for (i = 0; i < size1; i++) {
 		vector<basicBlock> v; blockCore.push_back(v);
 	}
@@ -193,7 +195,9 @@ void SSA::divide_basic_block() {
 void SSA::build_pred_and_succeeds() {
 	int size1 = blockCore.size();
 	int i, j, k;
+	bool debug = false;
 	for (i = 1; i < size1; i++) {
+		if (debug) cout << "i=" << i << endl;
 		int size2 = blockCore[i].size();
 		vector<int> v = blockOrigin[i];
 		vector<basicBlock> tmp = blockCore[i];
@@ -207,51 +211,62 @@ void SSA::build_pred_and_succeeds() {
 				if (ci.getCodetype() == BR) {
 					// 跳转指令
 					if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1())) {
+						if (debug) cout << "BR1";
 						// step1: 找到跳转到标签所在的基本块序号
-						// cout << "step1";
+						if (debug) cout << "step1";
 						k = lookForLabel(codetotal[i], ci.getResult());
 						k = locBlockForLabel(v, k + 1);
 						// step2: 插入当前基本块的后序节点
-						// cout << "step2";
+						if (debug) cout << "step2";
 						tmp[j].succeeds.insert(k);
 						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
-						// cout << "step3";
+						if (debug) cout << "step3";
 						tmp[k].pred.insert(j);
 						// step1: 找到跳转到标签所在的基本块序号
-						// cout << "step4";
+						if (debug) cout << "step4";
 						k = lookForLabel(codetotal[i], ci.getOperand2());
 						k = locBlockForLabel(v, k + 1);
 						// step2: 插入当前基本块的后序节点
-						// cout << "step5";
+						if (debug) cout << "step5";
 						tmp[j].succeeds.insert(k);
 						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
-						// cout << "step6" << endl;
+						if (debug) cout << "step6";
 						tmp[k].pred.insert(j);
+						if (debug) cout << "step7" << endl;
 					}
 					else {
+						if (debug) cout << "BR2";
 						// step1: 找到跳转到标签所在的基本块序号
 						k = lookForLabel(codetotal[i], ci.getOperand1());
 						k = locBlockForLabel(v, k + 1);
+						if (debug) cout << "step1";
 						// step2: 插入当前基本块的后序节点
 						tmp[j].succeeds.insert(k);
+						if (debug) cout << "step2";
 						// step3: 为跳转到的基本块前序节点插入当前基本块的序号
 						tmp[k].pred.insert(j);
+						if (debug) cout << "step3" << endl;
 					}
 				}
 				else if (ci.getCodetype() == RET) {
+					if (debug) cout << "RET";
 					// 返回指令，该基本块跳转到exit块
 					k = size2 - 1;
 					tmp[j].succeeds.insert(k);
 					tmp[k].pred.insert(j);
+					if (debug) cout << "step1" << endl;
 				}
 				else {
+					if (debug) cout << "Normal";
 					// 该基本块正常结束，顺序执行到下一个基本块（即顺序执行下一条代码语句）
 					k = j + 1;
 					tmp[j].succeeds.insert(k);
 					tmp[k].pred.insert(j);
+					if (debug) cout << "step1" << endl;
 				}
 			}
 			else {
+				cout << "Empty Blk" << endl;
 				// 该基本块正常结束，顺序执行到下一个基本块（即顺序执行下一条代码语句）
 				k = j + 1;
 				tmp[j].succeeds.insert(k);
@@ -440,21 +455,27 @@ void SSA::build_dom_frontier() {
 void SSA::use_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	if (blockCore[funNum][blkNum].def.find(varName) != blockCore[funNum][blkNum].def.end()) return;	// use变量的定义为使用前未被定义的变量
-	if (ifLocalVariable(varName) || ifTempVariable(varName) || ifVR(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
+	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0) return;	// 数组
+	if (inlineArrayName.size() > funNum && inlineArrayName[funNum].find(varName) != inlineArrayName[funNum].end()) return;	// 代表形参地址的变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
 }
 
 // 在基本块的def链中插入变量名称
 void SSA::def_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
-	if (ifLocalVariable(varName) || ifTempVariable(varName) || ifVR(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
+	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0) return;	// 数组
+	if (inlineArrayName.size() > funNum && inlineArrayName[funNum].find(varName) != inlineArrayName[funNum].end()) return;	// 代表形参地址的变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
 }
 
 // 在基本块的def2链中插入变量名称
 void SSA::def2_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	// if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
-	if (ifLocalVariable(varName) || ifTempVariable(varName) || ifVR(varName)) blockCore[funNum][blkNum].def2.insert(varName);	// 不加入全局变量
+	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0) return;	// 数组
+	if (inlineArrayName.size() > funNum && inlineArrayName[funNum].find(varName) != inlineArrayName[funNum].end()) return;	// 代表形参地址的变量
+	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def2.insert(varName);	// 不加入全局变量
 }
 
 // 计算ud链，即分析每个基本块的use和def变量
@@ -1045,8 +1066,25 @@ void SSA::delete_Ir_phi() {
 	}
 }
 
+// 初始化varName2St结构体
+void SSA::init() {
+	int i, j;
+	int size1 = total.size();
+	varName2St.clear();
+	for (i = 0; i < size1; i++) {
+		int size2 = total[i].size();
+		map<string, symbolTable> tmp;
+		for (j = 1; j < size2; j++)
+			tmp[total[i][j].getName()] = total[i][j];
+		varName2St.push_back(tmp);
+	}
+}
+
 // 入口函数
 void SSA::generate() {
+
+	// 初始化varName2St结构体
+	init();
 
 	// 简化条件判断为常值的跳转指令
 	simplify_br();
@@ -1127,11 +1165,14 @@ void SSA::generate() {
 
 }
 
-void SSA::generate_activeAnalyse() {
+void SSA::registerAllocation() {
+
+	// 初始化varName2St结构体
+	init();
 
 	// 简化条件判断为常值的跳转指令
 	simplify_br();
-
+	
 	// 在睿轩生成的中间代码上做优化
 	pre_optimize();
 
@@ -1150,7 +1191,9 @@ void SSA::generate_activeAnalyse() {
 	// 活跃变量分析，生成in、out集合
 	active_var_analyse();
 
-	ofstream ly1("ssa1.txt");
-	printCircleIr(this->blockCore, ly1);
+	//ofstream ly1("ssa1.txt");
+	//printCircleIr(this->blockCore, ly1);
+
+
 }
 

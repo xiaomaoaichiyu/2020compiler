@@ -95,14 +95,14 @@ void ActiveAnalyse::print_ly_act() {
 				for (auto var : outTmp[j]) {
 					ly_out << var << " ";
 				}
-				/*ly_out << "}\n\tdef: {";
+				ly_out << "}\n\tdef: {";
 				for (auto var : defTmp[j]) {
 					ly_out << var << " ";
 				}
 				ly_out << "}\n\tuse: {";
 				for (auto var : useTmp[j]) {
 					ly_out << var << " ";
-				}*/
+				}
 				ly_out << "}\n";
 			}
 			ly_out << endl << endl;
