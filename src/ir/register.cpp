@@ -660,10 +660,9 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 
 		string funcName = "";
 		for (int i = 0; i < func.size(); i++) {
-			int paraNum = 0;
-			int retFlag = 0;
-			int brFlag = 0;
 			auto ir = func.at(i).Ir;
+			auto in = func.at(i).in;	//基本块活跃变量in
+			auto out = func.at(i).out;	//基本块活跃变量out
 			for (int j = 0; j < ir.size(); j++) {
 				CodeItem instr = ir.at(j);
 				irCodeType op = instr.getCodetype();
@@ -673,10 +672,6 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 				string resReg = res;
 				string ope1Reg = ope1;
 				string ope2Reg = ope2;
-
-				if (j == ir.size() - 1 && op == BR) {	//如果基本块的最后一条是br，那么释放全局寄存器的指令需要放在br的前面
-					brFlag = 1;
-				}
 
 				//res字段分配临时寄存器
 				if (op == DEFINE) {
@@ -951,9 +946,6 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 						regpool.releaseVreg(ope1);
 						instr.setInstr(resReg, ope1Reg, ope2Reg);
 					}
-				}
-				else if (op == RET) {
-					retFlag = 1;
 				}
 				else {
 					//do nothing!

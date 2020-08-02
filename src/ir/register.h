@@ -43,7 +43,8 @@ class GlobalRegPool {
 	vector<string> pool;			//全局寄存器池
 	map<string, bool> reg2avail;	//记录寄存器是否能够使用
 	map<string, string> var2reg;	//记录变量对应的寄存器
-
+	map<string, bool> var2NoAct;	//标记不活跃的变量
+	
 	map<string, bool> used;		//用来记录全局寄存器是否被使用过
 public:
 	GlobalRegPool(vector<string> regs) : pool(regs) {
@@ -58,8 +59,9 @@ public:
 	void releaseNorActRegs(set<string> inVars, set<string> outVars);
 	vector<int> getUsedRegs();
 	void noteRegRelations(vector<CodeItem>& func);
-};
 
+	string borrowReg(string var);	//和不活跃的变量借一个寄存器用
+};
 
 void registerAllocation();
 
