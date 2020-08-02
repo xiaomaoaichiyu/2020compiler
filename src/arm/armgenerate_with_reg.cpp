@@ -496,6 +496,30 @@ void _mul(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		//此处可以看一下能否使用移位实现乘法
+		if (op2 == "0" || op2 == "-0") {
+			OUTPUT("MOV " + target + ",#0");
+			return;
+		}
+		else {
+			int bitoff = is_power2(op2);
+			if (bitoff == -33) {
+				OUTPUT("RSB " + target + "," + op1 + ",#0");
+				return;
+			}
+			else if (bitoff == 0) {
+				OUTPUT("MOV " + target + "," + op1);
+				return;
+			}
+			else if (bitoff < 0){
+				OUTPUT("LSL " + target + "," + op1 + ",#" + to_string(-bitoff));
+				OUTPUT("RSB " + target + "," + target + ",#0");
+				return;
+			}
+			else if (bitoff > 0 && bitoff != 33) {
+				OUTPUT("LSL " + target + "," + op1 + ",#" + to_string(bitoff));
+				return;
+			}
+		}
 		OUTPUT("LDR LR,=" + op2);
 		op2 = "LR";
 	}
