@@ -429,7 +429,10 @@ void SSA::inline_function() {
 					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
 						continue;
 					}
-					else if (codetotal[i].size() > 750) {
+					else if (total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
+						continue;
+					}
+					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
 						continue;
 					}
 					else {
