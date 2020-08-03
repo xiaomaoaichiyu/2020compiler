@@ -635,10 +635,12 @@ void irOptimize() {
 		registerAllocation();
 
 
-		//计算活跃变量
+		//图着色分配寄存器
 		codetotal = LIR;
 		ssa.registerAllocation();
-		//registerAllocation2(ssa1.getblocks());
+		ly_act.print_ly_act();
+		// 各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
+		vector<map<string, string>> var2reg = ssa.getvar2reg();
 
 		printLIR("armIR.txt");
 		//窥孔优化

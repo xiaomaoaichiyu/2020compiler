@@ -48,6 +48,24 @@ void SSA::pre_optimize() {
 	simplify_br_label();
 	// 删除多余alloc指令
 	simplify_alloc();
+	simpify_duplicate_assign();
+}
+void SSA::simpify_duplicate_assign() {
+	int i, j, k;
+	int size1 = codetotal.size();
+	for (i = 1; i < size1; i++) {
+		for (j = 0; j < codetotal[i].size() - 1; j++) {
+			CodeItem ci1 = codetotal[i][j];
+			CodeItem ci2 = codetotal[i][j + 1];
+			if (ci1.getCodetype() == ci2.getCodetype()
+				&& ci1.getResult().compare(ci2.getResult()) == 0
+				&& ci1.getOperand1().compare(ci2.getOperand1()) == 0
+				&& ci1.getOperand2().compare(ci2.getOperand2()) == 0) {
+				codetotal[i].erase(codetotal[i].begin() + j);
+				j--;
+			}
+		}
+	}
 }
 
 ActiveAnalyse ly_act;
@@ -652,7 +670,7 @@ void SSA::delete_dead_codes() {
 					{
 					case ADD: case SUB: case MUL: case DIV: case REM:
 					case AND: case OR: case NOT: case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE:
-					case LOAD:
+					case LOAD: case LOADARR:
 						if (tmpout.find(ci.getResult()) == tmpout.end()) {
 							update = true;
 							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
@@ -674,7 +692,7 @@ void SSA::delete_dead_codes() {
 								tmpout.insert(ci.getResult());
 						}
 						break;
-					case STOREARR: case LOADARR:	// 数组不敢删除
+					case STOREARR:		// 数组不敢删除
 					case CALL: case RET: case PUSH: case PARA:	// 与函数相关，不能删除
 					case BR:	// 跳转指令不能删除
 						if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
