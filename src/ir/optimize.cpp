@@ -627,7 +627,7 @@ void irOptimize() {
 		
  		MIR2LIRpass();
 		printLIR("LIR.txt");
-		//convertCondition();		//优化条件跳转
+		convertCondition();		//优化条件跳转
 		countVars();
 		printLIR("LIR2.txt");
 		

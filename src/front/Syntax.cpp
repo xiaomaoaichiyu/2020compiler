@@ -1251,6 +1251,12 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			CodeItem citem1 = CodeItem(NOTE, "@"+Functionname, "func", "begin");          //call @foo %3 3
 			citem1.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem1);//函数开始注释
+			if (Functionname == "_sysy_starttime" || Functionname == "_sysy_stoptime") {
+				CodeItem citem = CodeItem(PUSH, "int", numToString(wordAnalysis.getlineNumber()), "1");  //传参
+				citem.setFatherBlock(fatherBlock);
+				citem.setFuncName("@"+Functionname);
+				codetotal[Funcindex].push_back(citem);
+			}
 			if (symbol != RPARENT) {
 				FuncRParams("@"+Functionname);
 			}
