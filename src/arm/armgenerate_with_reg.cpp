@@ -25,6 +25,29 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+bool is_nonsence(int index)
+{
+	string str = output_buffer[index];
+	smatch result;
+	regex pattern1("MOV\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
+	if (regex_match(str, result, pattern1)) {
+		if (result[1] == result[2]) {
+			return true;
+		}
+	}
+	regex pattern2("(ADD|SUB)\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*#-?0\\s*");
+	if (regex_match(str, result, pattern2)) {
+		if (result[2] == result[3]) {
+			return true;
+		}
+	}
+	string a = str.substr(0, 3);	//删除连续相同MOV
+	if (a == "MOV" && output_buffer[index] == output_buffer[index - 1]) {
+		return true;
+	}
+	return false;
+}
+/*
 bool is_nonsence(string str)
 {
 	smatch result;
@@ -42,7 +65,7 @@ bool is_nonsence(string str)
 	}
 	return false;
 }
-
+*/
 bool replace_div(int d, int* m_high, int* sh_post)
 {
 	bool sign = d >= 0;
@@ -1293,6 +1316,16 @@ void arm_generate(string sname)
 	arm << ".global __aeabi_idivmod\n";
 	//arm << "main:\nMOV PC,LR\n";
 	cout << "get rid of these:\n";
+	int jjj;
+	for (jjj = 0; jjj < output_buffer.size(); jjj++) {
+		if (is_nonsence(jjj)) {
+			cout << output_buffer[jjj] << "\n";
+		}
+		else {
+			arm << output_buffer[jjj] << "\n";
+		}
+	}
+	/*
 	for (auto s : output_buffer) {
 		if (is_nonsence(s)) {
 			cout << s << "\n";
@@ -1301,5 +1334,6 @@ void arm_generate(string sname)
 			arm << s << "\n";
 		}
 	}
+	*/
 }
 
