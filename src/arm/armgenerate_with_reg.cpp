@@ -780,12 +780,12 @@ void _and(CodeItem* ir)
 	if (op2[0] != 'R') {
 		int im = stoi(op2);
 		if (im == 0) {
-			OUTPUT("LDR " + target + ",=0");
+			OUTPUT("MOV " + target + ",#0");
 		}
 		else {
 			OUTPUT("CMP " + op1 + ",#0");
-			OUTPUT("LDREQ " + target + ",=0");
-			OUTPUT("LDRNE " + target + ",=1");
+			OUTPUT("MOV " + target + ",#0");
+			OUTPUT("MOVNE " + target + ",#1");
 		}
 	}
 	else {
@@ -795,10 +795,10 @@ void _and(CodeItem* ir)
 		OUTPUT("BEQ " + L1);
 		OUTPUT("CMP " + op2 + ",#0");
 		OUTPUT("BEQ " + L1);
-		OUTPUT("LDR " + target + ",=1");
+		OUTPUT("MOV " + target + ",#1");
 		OUTPUT("B " + L2);
 		OUTPUT(L1 + ":");
-		OUTPUT("LDR " + target + ",=0");
+		OUTPUT("MOV " + target + ",#0");
 		OUTPUT(L2 + ":");
 	}
 }
@@ -836,8 +836,8 @@ void _or(CodeItem* ir)
 		}
 		else {
 			OUTPUT("CMP " + op1 + ",#0");
-			OUTPUT("LDREQ " + target + ",=0");
-			OUTPUT("LDRNE " + target + ",=1");
+			OUTPUT("MOV " + target + ",#0");
+			OUTPUT("MOVNE " + target + ",#1");
 		}
 	}
 	else {
@@ -847,10 +847,10 @@ void _or(CodeItem* ir)
 		OUTPUT("BNE " + L1);
 		OUTPUT("CMP " + op2 + ",#0");
 		OUTPUT("BNE " + L1);
-		OUTPUT("LDR " + target + ",=0");
+		OUTPUT("MOV " + target + ",#0");
 		OUTPUT("B " + L2);
 		OUTPUT(L1 + ":");
-		OUTPUT("LDR " + target + ",=1");
+		OUTPUT("MOV " + target + ",#1");
 		OUTPUT(L2 + ":");
 	}
 }
@@ -861,8 +861,8 @@ void _not(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	OUTPUT("CMP " + op1 + ",#0");
-	OUTPUT("LDREQ " + target + ",=1");
-	OUTPUT("LDRNE " + target + ",=0");
+	OUTPUT("MOV " + target + ",#1");
+	OUTPUT("MOVNE " + target + ",#0");
 }
 
 void _eql(CodeItem* ir)
@@ -885,7 +885,7 @@ void _eql(CodeItem* ir)
 		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
-	OUTPUT("MOVEQ " + target + ",#1");
+	OUTPUT("MOV " + target + ",#1");
 	OUTPUT("MOVNE " + target + ",#0");
 }
 
@@ -909,7 +909,7 @@ void _neq(CodeItem* ir)
 		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
-	OUTPUT("MOVNE " + target + ",#1");
+	OUTPUT("MOV " + target + ",#1");
 	OUTPUT("MOVEQ " + target + ",#0");
 }
 
@@ -933,7 +933,7 @@ void _sgt(CodeItem* ir)
 		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
-	OUTPUT("MOVGT " + target + ",#1");
+	OUTPUT("MOV " + target + ",#1");
 	OUTPUT("MOVLE " + target + ",#0");
 }
 
@@ -957,7 +957,7 @@ void _sge(CodeItem* ir)
 		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
-	OUTPUT("MOVGE " + target + ",#1");
+	OUTPUT("MOV " + target + ",#1");
 	OUTPUT("MOVLT " + target + ",#0");
 }
 
@@ -981,7 +981,7 @@ void _slt(CodeItem* ir)
 		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
-	OUTPUT("MOVLT " + target + ",#1");
+	OUTPUT("MOV " + target + ",#1");
 	OUTPUT("MOVGE " + target + ",#0");
 }
 
@@ -1005,7 +1005,7 @@ void _sle(CodeItem* ir)
 		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
-	OUTPUT("MOVLE " + target + ",#1");
+	OUTPUT("MOV " + target + ",#1");
 	OUTPUT("MOVGT " + target + ",#0");
 }
 
