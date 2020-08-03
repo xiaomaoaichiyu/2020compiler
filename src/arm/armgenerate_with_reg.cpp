@@ -648,7 +648,7 @@ void _rem(CodeItem* ir)
 	if (op2[0] != 'R') {
 		int bitoff = is_power2(op2);
 		if (bitoff == -33 || bitoff == 0) {
-			OUTPUT("MOV " + target + "," + op1);
+			OUTPUT("MOV " + target + ",#0");
 		}
 		else if (bitoff == 33) {
 			int m_high;
@@ -734,6 +734,25 @@ void _and(CodeItem* ir)
 	string target = ir->getResult();
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
+	if (target[0] == '%') {
+		if (op2[0] != 'R') {
+			int im = stoi(op2);
+			if (im == 0) {
+				OUTPUT("B " + target.substr(1));
+			}
+			else {
+				OUTPUT("CMP " + op1 + ",#0");
+				OUTPUT("BEQ " + target.substr(1));
+			}
+		}
+		else {
+			OUTPUT("CMP " + op1 + ",#0");
+			OUTPUT("BEQ " + target.substr(1));
+			OUTPUT("CMP " + op2 + ",#0");
+			OUTPUT("BEQ " + target.substr(1));
+		}
+		return;
+	}
 	if (op2[0] != 'R') {
 		int im = stoi(op2);
 		if (im == 0) {
@@ -765,6 +784,27 @@ void _or(CodeItem* ir)
 	string target = ir->getResult();
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
+	if (target[0] == '%') {
+		if (op2[0] != 'R') {
+			int im = stoi(op2);
+			if (im == 0) {
+				OUTPUT("CMP " + op1 + ",#0");
+				OUTPUT("BEQ " + target.substr(1));
+			}
+			else {
+				//do nothing
+			}
+		}
+		else {
+			string label = get_cmp_label("OR");
+			OUTPUT("CMP " + op1 + ",#0");
+			OUTPUT("BNE " + label);
+			OUTPUT("CMP " + op2 + ",#0");
+			OUTPUT("BEQ " + target.substr(1));
+			OUTPUT(label + ":");
+		}
+		return;
+	}
 	if (op2[0] != 'R') {
 		int im = stoi(op2);
 		if (im != 0) {

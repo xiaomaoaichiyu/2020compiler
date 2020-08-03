@@ -58,6 +58,7 @@
 | 取返回值               | $\color{red}getRet$ |                                    | tmpReg              |                           |
 | 取返回值               | $\color{red}getReg$ |                                    |                     |                           |
 |                        |                     |                                    |                     |                           |
+| 局部数组初始化         | arrayinit           | 0                                  | name                | size                      |
 | 函数定义               | define              | name                               | funcType            |                           |
 | 函数形参               | para                | name                               | paraType(int\|int*) | dimension(维度)           |
 | 局部常量\|变量         | alloc               | variableName                       | value               | size                      |
