@@ -268,7 +268,7 @@ int frontExecute(string syname)
 	//检测中间代码正确性
 	//TestIrCode("irafterInline.txt");
 	//outfile.close();
-	//cout<<"yes"<<endl;
+	cout<<"yes"<<endl;
 	return 0;
 }
 
@@ -770,7 +770,11 @@ void VarDef(int index, int block)             //变量定义
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 
-
+		if (b == "%" && dimenson > 0) {		//局部数组调用初始化
+			CodeItem citem = CodeItem(ARRAYINIT, "0", b+name, numToString(totalSize));
+			citem.setFatherBlock(fatherBlock);
+			codetotal[index].push_back(citem);
+		}
 		//变量赋值前做好变量初始化相关工作
 		offset = 0;
 		matrixLength = length;
@@ -851,19 +855,7 @@ void InitVal(int index)
 				b = "%";
 			}
 			if (b == "%") {			//全局变量不用出现STOREARR 0,因为后端对于全局默认没有就是0
-				int zzzzz = offset + mod;
-				while (offset < zzzzz) {
-					offset++;
-					string offset_string = numToString((offset - 1) * 4);
-					string b = "@";
-					symbolTable item = checkItem(nodeName);
-					if (Range != 0) {
-						b = "%";
-					}
-					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
-					citem.setFatherBlock(fatherBlock);
-					codetotal[index].push_back(citem);
-				}
+				int zzzzz = offset + mod;		//局部变量也不会出现STOREARR0，因为ARRAYINIT存在
 			}
 			else {     //全局变量往符号表里赋值
 				offset += mod;
@@ -881,17 +873,8 @@ void InitVal(int index)
 				}
 			}
 			else {
-				while (offset % mod != 0) {
+				while (offset % mod != 0) {  //局部变量也不会出现STOREARR0，因为ARRAYINIT存在
 					offset++;
-					string offset_string = numToString((offset - 1) * 4);
-					string b = "@";
-					symbolTable item = checkItem(nodeName);
-					if (Range != 0) {
-						b = "%";
-					}
-					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
-					citem.setFatherBlock(fatherBlock);
-					codetotal[index].push_back(citem);
 				}
 			}
 		}
@@ -1251,6 +1234,12 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 			CodeItem citem1 = CodeItem(NOTE, "@"+Functionname, "func", "begin");          //call @foo %3 3
 			citem1.setFatherBlock(fatherBlock);
 			codetotal[Funcindex].push_back(citem1);//函数开始注释
+			if (Functionname == "_sysy_starttime" || Functionname == "_sysy_stoptime") {
+				CodeItem citem = CodeItem(PUSH, "int", numToString(wordAnalysis.getlineNumber()), "1");  //传参
+				citem.setFatherBlock(fatherBlock);
+				citem.setFuncName("@" + Functionname);
+				codetotal[Funcindex].push_back(citem);
+			}
 			if (symbol != RPARENT) {
 				FuncRParams("@"+Functionname);
 			}

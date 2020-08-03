@@ -209,6 +209,10 @@ string CodeItem::getContent()
 		content = "Phi        " + standardLength(result);
 		break;
 	}
+	case ARRAYINIT: {
+		content = "arrayinit  " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		break;
+	}
 	default:
 		break;
 	}

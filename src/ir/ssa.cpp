@@ -94,7 +94,7 @@ bool ifResultDef(irCodeType ct) {
 bool ifOp1Def(irCodeType ct) {
 	switch (ct)
 	{
-	case STORE: case STOREARR: case POP: 
+	case STORE: case STOREARR: case POP: case ARRAYINIT:
 	case GETREG: case LEA: case MOV:	// 新增对刘阳LIR中间代码支持
 		return true;
 	default:
