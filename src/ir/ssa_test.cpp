@@ -270,3 +270,36 @@ void SSA::Test_Build_Var_Chain() {
 		}
 	}
 }
+
+void SSA::Test_Build_Clash_Graph(ofstream& debug_reg) {
+	if (TIJIAO) {
+		debug_reg << "---------------- clash graph -----------------" << endl;
+		int size1 = clash_graph.size();
+		for (int i = 1; i < size1; i++) {
+			// 首先输出这是第几个函数
+			debug_reg << "function_" << i << endl;
+			for (map<string, set<string>>::iterator iter1 = clash_graph[i].begin(); iter1 != clash_graph[i].end(); iter1++) {
+				debug_reg << (iter1->first) << "\t";
+				debug_reg << "{ ";
+				for (set<string>::iterator iter2 = (iter1->second).begin(); iter2 != (iter1->second).end(); iter2++)
+					debug_reg << (*iter2) << " ";
+				debug_reg << "}" << endl;
+			}
+		}
+	}
+}
+
+void SSA::Test_Allocate_Global_Reg(ofstream& debug_reg) {
+	if (TIJIAO) {
+		debug_reg << "---------------- alloc global reg -----------------" << endl;
+		int size1 = var2reg.size();
+		for (int i = 1; i < size1; i++) {
+			// 首先输出这是第几个函数
+			debug_reg << "function_" << i << endl;
+			for (map<string, string>::iterator iter1 = var2reg[i].begin(); iter1 != var2reg[i].end(); iter1++) {
+				debug_reg << (iter1->first) << "\t";
+				debug_reg << (iter1->second) << endl;
+			}
+		}
+	}
+}

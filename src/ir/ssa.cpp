@@ -1196,5 +1196,116 @@ void SSA::registerAllocation() {
 	get_avtiveAnalyse_result();
 	ly_act.print_ly_act();
 
+	// 图着色算法分配寄存器
+	ofstream debug_reg;
+	debug_reg.open("debug_reg.txt");
+	build_clash_graph();
+	Test_Build_Clash_Graph(debug_reg);
+	allocate_global_reg();
+	Test_Allocate_Global_Reg(debug_reg);
+	debug_reg.close();
 }
 
+// 构建冲突图
+void SSA::build_clash_graph() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	bool debug = false;
+	for (i = 0; i < size1; i++) clash_graph.push_back(map<string, set<string>>());
+	for (i = 1; i < size1; i++) {
+		if (debug) cout << "i=" << i;
+		if (varName2St[i].empty()) continue;
+		// 加入需要考虑的变量
+		map<string, set<string>> tmpMap;
+		for (map<string, symbolTable>::iterator iter = varName2St[i].begin(); iter != varName2St[i].end(); iter++)
+			if ((iter->second).getDimension() > 0) continue;	// 数组不考虑
+			else if (inlineArrayName.size() > i && inlineArrayName[i].find(iter->first) != inlineArrayName[i].end()) continue;	// 参数数组地址不考虑
+			else tmpMap[iter->first] = set<string>();
+		if (debug) cout << "step1";
+		// 遍历基本块
+		int size2 = blockCore[i].size();
+		for (j = 1; j < size2; j++) {
+			if (debug) cout << "step2" << j;
+			set<string> clashSet;
+			set_union(blockCore[i][j].def.begin(), blockCore[i][j].def.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
+			set_union(blockCore[i][j].use.begin(), blockCore[i][j].use.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
+			set_union(blockCore[i][j].out.begin(), blockCore[i][j].out.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
+			set_union(blockCore[i][j].in.begin(), blockCore[i][j].in.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
+			if (clashSet.empty()) continue;
+			for (set<string>::iterator iter1 = clashSet.begin(); iter1 != clashSet.end(); iter1++)
+				for (set<string>::iterator iter2 = clashSet.begin(); iter2 != clashSet.end(); iter2++) {
+					if (tmpMap.find(*iter1) == tmpMap.end()) continue;
+					if (tmpMap.find(*iter2) == tmpMap.end()) continue;
+					if ((*iter1).compare(*iter2) == 0) continue;
+					tmpMap[*iter1].insert(*iter2);
+					tmpMap[*iter2].insert(*iter1);
+				}
+		}
+		clash_graph[i] = tmpMap;
+	}
+}
+
+// 分配全局寄存器
+void SSA::allocate_global_reg() {
+	int i, j, k;
+	int size1 = clash_graph.size();
+	bool debug = false;
+	for (i = 0; i < size1; i++) allocRegList.push_back(stack<string>());
+	// 图着色移走节点
+	for (i = 1; i < size1; i++) {
+		if (debug) cout << "i=" << i;
+		map<string, set<string>> clash_graphi_copy = clash_graph[i];
+		while (true) {
+			if (clash_graph[i].empty()) break;
+			if (debug) cout << "begin";
+			string varName = "";
+			for (map<string, set<string>>::iterator iter = clash_graph[i].begin(); iter != clash_graph[i].end(); iter++) {
+				if (iter->second.size() < MAX_ALLOC_GLOBAL_REG) {
+					allocRegList[i].push(iter->first);
+					varName = iter->first;
+					break;
+				}
+			}
+			if (varName.compare("") == 0) {	// 所有节点均大于K，无法分配
+				varName = clash_graph[i].begin()->first;
+			}
+			if (debug) cout << varName;
+			// 删除该节点
+			clash_graph[i].erase(varName);
+			if (clash_graph[i].empty()) break;
+			for (map<string, set<string>>::iterator iter = clash_graph[i].begin(); iter != clash_graph[i].end(); iter++)
+				iter->second.erase(varName);
+		}
+		clash_graph[i] = clash_graphi_copy;
+	}
+	// 按照逆序分配寄存器
+	for (i = 0; i < size1; i++) var2reg.push_back(map<string, string>());
+	for (i = 1; i < size1; i++) {
+		if (allocRegList[i].empty()) continue;
+		while (!allocRegList[i].empty()) {
+			string varName = allocRegList[i].top();
+			allocRegList[i].pop();
+			var2reg[i][varName] = get_new_global_reg(i, varName);
+		}
+	}
+}
+
+// 获得一个全局寄存器
+string SSA::get_new_global_reg(int funNum, string name) {
+	int reg = ALLOC_GLOBAL_REG_START - 1;
+	bool update = true;
+	while (update) {
+		reg++;
+		update = false;
+		for (auto i : clash_graph[funNum][name])
+			if (var2reg[funNum].find(i) != var2reg[funNum].end() && var2reg[funNum][i].compare(regNum2Name[reg]) == 0) {
+				update = true;
+				break;
+			}
+	}
+	return regNum2Name[reg];
+}
+
+vector<map<string, string>> SSA::getvar2reg() {
+	return var2reg;
+}

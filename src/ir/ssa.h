@@ -5,6 +5,8 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <stack>
+#include <string>
 #include "intermediatecode.h"
 #include "../front/syntax.h"
 
@@ -80,6 +82,13 @@ private:
 	std::vector<int> funCallCount;									// 记录一个函数第几次被调用
 
 	std::vector<std::map<std::string, symbolTable>> varName2St;	// 变量名
+	std::map<std::string, int> regName2Num{ {"R4", 4}, {"R5", 5}, {"R6", 6}, {"R7", 7}, {"R8", 8}, {"R9", 9}, {"R10", 10}, {"R11", 11} };
+	std::map<int, std::string> regNum2Name{ {4, "R4"}, {5, "R5"}, {6, "R6"}, {7, "R7"}, {8, "R8"}, {9, "R9"}, {10, "R10"}, {11, "R11"} };
+	const int MAX_ALLOC_GLOBAL_REG = 8;
+	const int ALLOC_GLOBAL_REG_START = 4;
+	std::vector<std::map<std::string, std::string>> var2reg;
+	std::vector<std::map<std::string, std::set<std::string>>> clash_graph;
+	std::vector<std::stack<std::string>> allocRegList;
 
 	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块
@@ -122,6 +131,8 @@ private:
 	void Test_Active_Var_Analyse();
 	void Test_Build_Var_Chain();
 	void Test_Add_Phi_Fun();
+	void Test_Build_Clash_Graph(ofstream& debug_reg);
+	void Test_Allocate_Global_Reg(ofstream& debug_reg);
 	// 优化函数
 	// void pre_optimize();	// 在睿轩生成的中间代码上做优化
 	void simplify_br();		// 简化条件判断为常值的跳转指令
@@ -137,6 +148,12 @@ private:
 	std::string getFunEndLabel(int funNum, std::string name);
 	std::string getRetValName(std::string name);
 	void simplify_alloc();// 删除多余alloc指令
+	void simpify_duplicate_assign();
+
+	// 图着色算法分配寄存器
+	void build_clash_graph();	// 构建冲突图
+	void allocate_global_reg();	// 分配全局寄存器
+	std::string get_new_global_reg(int funNum, std::string name);	// 获得一个全局寄存器
 	
 	//ly：循环优化：代码外提  待做：强度削弱、规约变量删除
 	void count_UDchains();	//计算使用-定义链 用来查找不变式代码
@@ -172,6 +189,7 @@ public:
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化
 	void get_avtiveAnalyse_result();
+	std::vector<std::map<std::string, std::string>> getvar2reg();
 	vector<vector<basicBlock>>& getblocks() {
 		return this->blockCore;
 	}
