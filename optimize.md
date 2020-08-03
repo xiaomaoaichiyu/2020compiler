@@ -166,3 +166,90 @@ r15：PC
 > 寄存器分配	
 
 
+
+
+
+
+
+*****
+
+#### 跳转优化
+
+> eql neq slt sle sge sgt，if和while的行为都一样
+
+原来是满足条件slt就跳转到body，相当于满足接着走，不满足**跳转**到末尾
+
+```assembly
+slt        VR7             VR5             VR6                           
+br         %while.end_1    VR7             %while.body_1                 
+
+label      %while.body_1  
+...
+...
+br		   %while.cond_1
+
+label      %while.end_1
+```
+
+修改后变为 `sge` ，这样的话，就是满足直接**跳转**到末尾，不满足接着走body
+
+```assembly
+sge        %while.end_1    VR5             VR6                           
+
+label      %while.body_1  
+...
+...
+br		   %while.cond_1
+
+label      %while.end_1
+```
+
+
+
+> and or，为了方便展示就用if结构，没有else
+
+原来是下面这样
+
+```assembly
+and        VR4             VR2             VR3                           
+br         %if.end_0       VR4             %if.then_0                    
+
+label      %if.then_0
+...
+
+label	   %if.end_0
+...
+```
+
+现在改成
+
+```assembly
+and        %if.end_0           VR2             VR3                                     
+
+label      %if.then_0
+....
+
+label	   %if.end_0
+...
+```
+
+对于and和or就是VR2和VR3 的结果是1就继续走，是0就**直接跳转**到 `res` 字段对应的标签
+
+- arm汇编可以改成
+
+and
+
+```assembly
+CMP	VR2, #0
+BEQ	res
+CMP VR3, #0
+BEQ	res
+...
+```
+
+or这个我就不知道怎么改了
+
+```assembly
+
+```
+

@@ -190,9 +190,11 @@ string CodeItem::getContent()
 		else if (operand1 == "inline") {
 			content = "note       " + standardLength(result) + "inline     " + standardLength(operand2);
 		}
-		else {
+		else if (operand1 == "note"){
 			content = "\t\t\t\t\t\t\t\t"+standardLength(result);
-			//content = "";
+		}
+		else {
+			content = "";
 		}
 		break;
 	}case LEA: {

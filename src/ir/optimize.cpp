@@ -554,6 +554,63 @@ void peepholeOptimization() {
 	}
 }
 
+bool isCondition(irCodeType op) {
+	if (op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+irCodeType converse(irCodeType op) {
+	if (op == EQL) {
+		return NEQ;
+	}
+	else if (op == NEQ) {
+		return EQL;
+	}
+	else if (op == SLT) {
+		return SGE;
+	}
+	else if (op == SLE) {
+		return SGT;
+	}
+	else if (op == SGT) {
+		return SLE;
+	}
+	else if (op == SGE) {
+		return SLT;
+	}
+	else {
+		return op;
+	}
+}
+
+//将beq、bne、slt、sle、sgt、sge转换为条件跳转
+void convertCondition() {
+	for (int i = 1; i < LIR.size(); i++) {
+		vector<CodeItem>& func = LIR.at(i);
+		for (int j = 0; j < func.size() - 1; j++) {
+			CodeItem& instr = func.at(j);
+			CodeItem& next = func.at(j + 1);
+			if (isCondition(instr.getCodetype()) && next.getCodetype() == BR) {
+				instr.setResult(next.getResult());
+				instr.setCodetype(converse(instr.getCodetype()));
+				func.erase(func.begin() + j + 1);
+			}
+			if (instr.getCodetype() == AND && next.getCodetype() == BR) {
+				instr.setResult(next.getResult());
+				func.erase(func.begin() + j + 1);
+			}
+			if (instr.getCodetype() == OR && next.getCodetype() == BR) {
+				instr.setResult(next.getResult());
+				func.erase(func.begin() + j + 1);
+			}
+		}
+	}
+}
+
 //=============================================================
 // 优化函数
 //=============================================================
@@ -570,8 +627,9 @@ void irOptimize() {
 		
  		MIR2LIRpass();
 		printLIR("LIR.txt");
+		convertCondition();		//优化条件跳转
 		countVars();
-
+		printLIR("LIR2.txt");
 		
 		//计算活跃变量
 		/*codetotal = LIR;

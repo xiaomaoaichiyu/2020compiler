@@ -95,14 +95,14 @@ void ActiveAnalyse::print_ly_act() {
 				for (auto var : outTmp[j]) {
 					ly_out << var << " ";
 				}
-				/*ly_out << "}\n\tdef: {";
+				ly_out << "}\n\tdef: {";
 				for (auto var : defTmp[j]) {
 					ly_out << var << " ";
 				}
 				ly_out << "}\n\tuse: {";
 				for (auto var : useTmp[j]) {
 					ly_out << var << " ";
-				}*/
+				}
 				ly_out << "}\n";
 			}
 			ly_out << endl << endl;
@@ -694,6 +694,12 @@ void SSA::delete_dead_codes() {
 
 map<string, string> var2value;
 
+//数组
+set<map<string, string>> arr2value;
+//array offset value
+
+//数组
+
 void SSA::const_propagation() {
 	for (int i = 1; i < blockCore.size(); i++) {	//遍历每个函数
 		auto& blocks = blockCore.at(i);
@@ -781,6 +787,10 @@ void SSA::const_propagation() {
 		}
 	}
 }
+
+
+
+///====================================================================
 
 //存放相等变量的对应关系
 map<string, string> var2copy;
