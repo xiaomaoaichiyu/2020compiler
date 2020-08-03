@@ -631,21 +631,18 @@ void irOptimize() {
 		countVars();
 		printLIR("LIR2.txt");
 		
-		//计算活跃变量
-		codetotal = LIR;
-		ssa.registerAllocation();
-		ly_act.print_ly_act();
-
 		//寄存器直接指派
 		registerAllocation();
 
+
+		//计算活跃变量
+		codetotal = LIR;
+		ssa.registerAllocation();
 		//registerAllocation2(ssa1.getblocks());
 
 		printLIR("armIR.txt");
-
 		//窥孔优化
 		peepholeOptimization();
-
 		printLIR("armIR_2.txt");
 	}
 	catch (exception e) {

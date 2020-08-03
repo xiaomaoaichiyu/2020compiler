@@ -703,17 +703,22 @@ void SSA::delete_dead_codes() {
 map<string, string> var2value;
 
 //数组
-set<map<string, string>> arr2value;
+map<string, map<string, string>> arr2value;
 //array offset value
 
 //数组
+
+//标记没有被定义过的全局变量，用于常量传播
+void markGloablVar() {
+
+}
 
 void SSA::const_propagation() {
 	for (int i = 1; i < blockCore.size(); i++) {	//遍历每个函数
 		auto& blocks = blockCore.at(i);
 		for (int j = 0; j < blocks.size(); j++) {	//遍历每个基本的ir
 			auto& ir = blocks.at(j).Ir;
-			var2value.clear();
+			var2value.clear(); arr2value.clear();	//初始化
 			//常量替换+常量折叠
 			for (int k = 0; k < ir.size(); k++) {
 				auto& instr = ir.at(k);
@@ -754,6 +759,19 @@ void SSA::const_propagation() {
 					if (var2value.find(ope2) != var2value.end()) {
 						instr.setOperand2(var2value[ope2]);
 					}
+					//局部数组赋值为常数，偏移为常数
+					if (isNumber(instr.getResult()) && isNumber(instr.getOperand2())) {
+						if (arr2value.find(ope1) != arr2value.end()) {	//已经有这个数组
+							arr2value[ope1].insert(pair<string, string>(instr.getOperand2(), instr.getResult()));
+						}
+						else {
+							arr2value[ope1] = map<string, string>();
+							arr2value[ope1].insert(pair<string, string>(instr.getOperand2(), instr.getResult()));
+						}
+					}
+					else {	//如果有一个不是常数，那么就释放全部存的常数值
+						arr2value.clear();
+					}
 					break;
 				}
 				case LOAD: {	//一开始的值是全局变量的初始值？怎么处理，标记一下，只能用一次？
@@ -768,6 +786,11 @@ void SSA::const_propagation() {
 					if (var2value.find(ope2) != var2value.end()) {
 						instr.setOperand2(var2value[ope2]);
 					}
+					if (isNumber(instr.getOperand2())) {
+						if (arr2value[ope1].find(instr.getOperand2()) != arr2value[ope1].end()) {
+							var2value[res] = arr2value[ope1].find(instr.getOperand2())->second;
+						}
+					}
 					break;
 				}
 				case RET: case PUSH: {
@@ -780,13 +803,15 @@ void SSA::const_propagation() {
 					if (var2value.find(ope1) != var2value.end()) {
 						instr.setOperand1(var2value[ope1]);
 						if (A2I(var2value[ope1]) == 0) {
-							instr.setInstr(res, instr.getResult(), "");	//如果结果==0，就直接跳转到res对应的标签
+							instr.setInstr("", instr.getResult(), "");	//如果结果==0，就直接跳转到res对应的标签
 						}
 						else {
-							instr.setInstr(res, instr.getOperand2(), "");	//如果结果!=0，直接跳转到ope2对应的标签
+							instr.setInstr("", instr.getOperand2(), "");	//如果结果!=0，直接跳转到ope2对应的标签
 						}
 					}
 					break;
+				}case CALL: {	//数组清空，数组作为地址其值可以被改变
+					arr2value.clear();
 				}
 				default:
 					break;
