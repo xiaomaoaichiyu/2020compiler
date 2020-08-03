@@ -762,11 +762,11 @@ void SSA::const_propagation() {
 					//局部数组赋值为常数，偏移为常数
 					if (isNumber(instr.getResult()) && isNumber(instr.getOperand2())) {
 						if (arr2value.find(ope1) != arr2value.end()) {	//已经有这个数组
-							arr2value[ope1].insert(pair<string, string>(instr.getOperand2(), instr.getResult()));
+							arr2value[ope1][instr.getOperand2()] = instr.getResult();
 						}
 						else {
 							arr2value[ope1] = map<string, string>();
-							arr2value[ope1].insert(pair<string, string>(instr.getOperand2(), instr.getResult()));
+							arr2value[ope1][instr.getOperand2()] = instr.getResult();
 						}
 					}
 					else {	//如果有一个不是常数，那么就释放全部存的常数值
