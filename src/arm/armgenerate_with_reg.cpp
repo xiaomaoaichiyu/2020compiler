@@ -13,12 +13,12 @@ using namespace std;
 vector<string> output_buffer;
 int symbol_pointer;
 map<string, int> var2addr;
-int sp; 
+int sp;
 int sp_without_para;
 int pushNum = 0;
 string global_var_name;
 int global_var_size = 0;
-vector<pair<string,int>> ini_value;
+vector<pair<string, int>> ini_value;
 bool is_global = true;
 string reglist = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR,R0";
 string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
@@ -66,6 +66,7 @@ bool is_nonsence(string str)
 	return false;
 }
 */
+
 bool replace_div(int d, int* m_high, int* sh_post)
 {
 	bool sign = d >= 0;
@@ -95,12 +96,12 @@ bool replace_div(int d, int* m_high, int* sh_post)
 int is_power2(string im) {
 	unsigned int n = stoi(im);
 	if (n == -1) {
-		return -33; //表示是-1
+		return -33; //琛ㄧず鏄?1
 	}
 	int flag = n >= 0 ? 1 : -1;
 	n *= flag;
 	if ((n & (n - 1)) != 0) {
-		return 33; //表示非二的幂次方
+		return 33; //琛ㄧず闈炰簩鐨勫箓娆℃柟
 	}
 	int cnt = 0;
 	if (n >> 16) { n >>= 16; cnt |= 16; }
@@ -108,10 +109,10 @@ int is_power2(string im) {
 	if (n >> 4) { n >>= 4; cnt |= 4; }
 	if (n >> 2) { n >>= 2; cnt |= 2; }
 	if (n >> 1) { n >>= 1; cnt |= 1; }
-	return flag * cnt; //0表示1
+	return flag * cnt; //0琛ㄧず1
 }
 
-bool check_format(CodeItem * ir) {
+bool check_format(CodeItem* ir) {
 	string ops[3] = { ir->getResult(),ir->getOperand1(),ir->getOperand2() };
 	for (auto s : ops) {
 		if (s[0] == '%' && isdigit(s[1])) {
@@ -156,7 +157,7 @@ void global_flush()
 		}
 		pre = off + 4;
 	}
-	if (pre/4 != global_var_size) {
+	if (pre / 4 != global_var_size) {
 		OUTPUT(".zero " + to_string((long long)global_var_size * 4 - pre));
 	}
 
@@ -199,7 +200,7 @@ pair<string, int> get_location(string name)
 		return { getname(name),-1 };
 	}
 	else if (isdigit(name[1]) && name[0] == '%') {
-		return { "R" + to_string(stoi(name.substr(1)) % 7 + 4),-2 }; //�˴�Ӧ��ģ8,����r11����ʱ�Ĵ���
+		return { "R" + to_string(stoi(name.substr(1)) % 7 + 4),-2 }; //锟剿达拷应锟斤拷模8,锟斤拷锟斤拷r11锟斤拷锟斤拷时锟侥达拷锟斤拷
 	}
 	else if (var2addr.find(name) != var2addr.end()) {
 		if (var2addr[name] > 0) {
@@ -302,7 +303,7 @@ void _define(CodeItem* ir)
 		global_reg_list += "," + reg;
 		regN++;
 	}
-	if (sp - sp_without_para < -127 || sp-sp_without_para > 127) {
+	if (sp - sp_without_para < -127 || sp - sp_without_para > 127) {
 		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
 		OUTPUT("ADD SP,SP,R12");
 	}
@@ -518,7 +519,7 @@ void _mul(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
-		//此处可以看一下能否使用移位实现乘法
+		//姝ゅ鍙互鐪嬩竴涓嬭兘鍚︿娇鐢ㄧЩ浣嶅疄鐜颁箻娉?
 		if (op2 == "0" || op2 == "-0") {
 			OUTPUT("MOV " + target + ",#0");
 			return;
@@ -533,7 +534,7 @@ void _mul(CodeItem* ir)
 				OUTPUT("MOV " + target + "," + op1);
 				return;
 			}
-			else if (bitoff < 0){
+			else if (bitoff < 0) {
 				OUTPUT("LSL " + target + "," + op1 + ",#" + to_string(-bitoff));
 				OUTPUT("RSB " + target + "," + target + ",#0");
 				return;
@@ -586,7 +587,7 @@ void _div(CodeItem* ir)
 			OUTPUT("LDR LR,=" + to_string(m_high));
 			OUTPUT("SMMUL LR,LR," + op1);
 			if (m_high < 0) {
-				OUTPUT("ADD LR,LR," + op1);//试试
+				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
 			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB " + target + ",LR," + op1 + ",ASR #31");
@@ -680,7 +681,7 @@ void _rem(CodeItem* ir)
 			OUTPUT("LDR LR,=" + to_string(m_high));
 			OUTPUT("SMMUL LR,LR," + op1);
 			if (m_high < 0) {
-				OUTPUT("ADD LR,LR," + op1);//试试
+				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
 			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB LR,LR," + op1 + ",ASR #31");
@@ -1021,7 +1022,7 @@ void _br(CodeItem* ir)
 		string label2 = ir->getResult().substr(1);
 		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
-		//OUTPUT("BNE " + label1); //有问题可以回复这里试试
+		//OUTPUT("BNE " + label1); //鏈夐棶棰樺彲浠ュ洖澶嶈繖閲岃瘯璇?
 	}
 	else {
 		OUTPUT("B " + res.substr(1));
@@ -1090,12 +1091,12 @@ void _ret(CodeItem* ir)
 		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
 		fake_sp += func2gReg[symbol_pointer].size() * 4;
 	}
-	if (sp_without_para-fake_sp > 127) {
-		OUTPUT("LDR R12,=" + to_string(sp_without_para-fake_sp));
+	if (sp_without_para - fake_sp > 127) {
+		OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(sp_without_para-fake_sp));
+		OUTPUT("ADD SP,SP,#" + to_string(sp_without_para - fake_sp));
 	}
 	OUTPUT("MOV PC,LR");
 }
@@ -1177,7 +1178,7 @@ void _note(CodeItem* ir) {
 	string name = ir->getResult();
 	string type = ir->getOperand1();
 	string status = ir->getOperand2();
-	if (type == "func" && status.substr(0,3) == "end") {
+	if (type == "func" && status.substr(0, 3) == "end") {
 		//int paraN = func2para[name.substr(1)];
 		int paraN = stoi(status.substr(3));
 		if (paraN > 4) {
@@ -1192,6 +1193,25 @@ void _note(CodeItem* ir) {
 			}
 		}
 	}
+}
+
+void _arrayinit(CodeItem* ir)
+{
+	string iniv = ir->getResult();
+	string name = ir->getOperand1();
+	string size = ir->getOperand2();
+	auto p = get_location(name);
+	//绗竴绉嶆柟寮忥紝鐢╩emset
+	if (!is_illegal(to_string(p.second - sp))) {
+		OUTPUT("LDR LR,=" + to_string(p.second - sp));
+		OUTPUT("ADD R0,SP,LR");
+	}
+	else {
+		OUTPUT("ADD R0,SP,#" + to_string(p.second - sp));
+	}
+	OUTPUT("LDR R1,=" + iniv);
+	OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
+	OUTPUT("BL memset");
 }
 
 void arm_generate(string sname)
@@ -1212,13 +1232,13 @@ void arm_generate(string sname)
 				_sub(ir_now);
 				break;
 			case DIV:
-				_div(ir_now); //����
+				_div(ir_now); //锟斤拷锟斤拷
 				break;
 			case MUL:
 				_mul(ir_now);
 				break;
 			case REM:
-				_rem(ir_now); //����
+				_rem(ir_now); //锟斤拷锟斤拷
 				break;
 			case AND:
 				_and(ir_now);
@@ -1248,10 +1268,10 @@ void arm_generate(string sname)
 				_sle(ir_now);
 				break;
 			case ALLOC:
-				//_alloc(ir_now); //ɶ�����øɣ�
+				//_alloc(ir_now); //啥锟斤拷锟斤拷锟矫干ｏ拷
 				break;
 			case STORE:
-				_store(ir_now); //ȫ����ô�㣿
+				_store(ir_now); //全锟斤拷锟斤拷么锟姐？
 				break;
 			case STOREARR:
 				_storearr(ir_now);
@@ -1265,16 +1285,16 @@ void arm_generate(string sname)
 			case INDEX:
 				break;
 			case CALL:
-				_call(ir_now); //R0���ǣ�
+				_call(ir_now); //R0锟斤拷锟角ｏ拷
 				break;
 			case RET:
-				_ret(ir_now); //RET��ô��
+				_ret(ir_now); //RET锟斤拷么锟斤拷
 				break;
 			case PUSH:
-				_push(ir_now); //ǰ�ĸ����⣬����˳�����⡣
+				_push(ir_now); //前锟侥革拷锟斤拷锟解，锟斤拷锟斤拷顺锟斤拷锟斤拷锟解。
 				break;
 			case POP:
-				break;//����POP���׸���
+				break;//锟斤拷锟斤拷POP锟斤拷锟阶革拷锟斤拷
 			case LABEL:
 				_label(ir_now);
 				break;
@@ -1306,13 +1326,17 @@ void arm_generate(string sname)
 				break;
 			case NOTE:
 				_note(ir_now);
+				break;
+			case ARRAYINIT:
+				_arrayinit(ir_now);
+				break;
 			default:
 				break;
 			}
 		}
 	}
 	arm << ".global main\n";
-	arm << ".global __aeabi_idiv\n"; 
+	arm << ".global __aeabi_idiv\n";
 	arm << ".global __aeabi_idivmod\n";
 	//arm << "main:\nMOV PC,LR\n";
 	cout << "get rid of these:\n";
@@ -1336,4 +1360,3 @@ void arm_generate(string sname)
 	}
 	*/
 }
-
