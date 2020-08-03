@@ -235,9 +235,11 @@ label	   %if.end_0
 
 对于and和or就是VR2和VR3 的结果是1就继续走，是0就**直接跳转**到 `res` 字段对应的标签
 
-- arm汇编可以改成
 
-and
+
+#### arm汇编可以改成
+
+- $AND, res, VR2, VR3$
 
 ```assembly
 CMP	VR2, #0
@@ -249,9 +251,15 @@ BEQ	res
 
 ```
 
-or这个我就不知道怎么改了
+- $OR, res, VR2, VR3​$
 
 ```assembly
-
+CMP VR2, #1
+BEQ L1
+CMP	VR3, #2
+BEQ L1
+B res
+L1:
+...
 ```
 
