@@ -1201,17 +1201,30 @@ void _arrayinit(CodeItem* ir)
 	string name = ir->getOperand1();
 	string size = ir->getOperand2();
 	auto p = get_location(name);
-	//绗竴绉嶆柟寮忥紝鐢╩emset
-	if (!is_illegal(to_string(p.second - sp))) {
-		OUTPUT("LDR LR,=" + to_string(p.second - sp));
-		OUTPUT("ADD R0,SP,LR");
+	////第一种，使用memset
+	//if (!is_illegal(to_string(p.second - sp))) {
+	//	OUTPUT("LDR LR,=" + to_string(p.second - sp));
+	//	OUTPUT("ADD R0,SP,LR");
+	//}
+	//else {
+	//	OUTPUT("ADD R0,SP,#" + to_string(p.second - sp));
+	//}
+	//OUTPUT("LDR R1,=" + iniv);
+	//OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
+	//OUTPUT("BL memset");
+	//第二种，连续存
+	int length = stoi(size)*4;
+	OUTPUT("LDR LR,=" + iniv);
+	for (int i = 0; i < length; i += 4) {
+		int off = p.second - sp + i;
+		if (!is_illegal(to_string(off))) {
+			OUTPUT("LDR R12,=" + to_string(off));
+			OUTPUT("STR LR,[SP,R12]");
+		}
+		else {
+			OUTPUT("STR LR,[SP,#" + to_string(off) + "]");
+		}
 	}
-	else {
-		OUTPUT("ADD R0,SP,#" + to_string(p.second - sp));
-	}
-	OUTPUT("LDR R1,=" + iniv);
-	OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
-	OUTPUT("BL memset");
 }
 
 void arm_generate(string sname)
