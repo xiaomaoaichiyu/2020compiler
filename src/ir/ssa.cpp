@@ -455,7 +455,7 @@ void SSA::build_dom_frontier() {
 void SSA::use_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	if (blockCore[funNum][blkNum].def.find(varName) != blockCore[funNum][blkNum].def.end()) return;	// use变量的定义为使用前未被定义的变量
-	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0) return;	// 数组
+	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0 && varName2St[funNum][varName].getForm() != PARAMETER) return;	// 数组
 	// if (inlineArrayName.size() > funNum && inlineArrayName[funNum].find(varName) != inlineArrayName[funNum].end()) return;	// 代表形参地址的变量
 	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].use.insert(varName);	// 不加入全局变量
 }
@@ -464,7 +464,7 @@ void SSA::use_insert(int funNum, int blkNum, string varName) {
 void SSA::def_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
-	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0) return;	// 数组
+	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0 && varName2St[funNum][varName].getForm() != PARAMETER) return;	// 数组
 	// if (inlineArrayName.size() > funNum && inlineArrayName[funNum].find(varName) != inlineArrayName[funNum].end()) return;	// 代表形参地址的变量
 	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def.insert(varName);	// 不加入全局变量
 }
@@ -473,7 +473,7 @@ void SSA::def_insert(int funNum, int blkNum, string varName) {
 void SSA::def2_insert(int funNum, int blkNum, string varName) {
 	if (varName == "") return;
 	// if (blockCore[funNum][blkNum].use.find(varName) != blockCore[funNum][blkNum].use.end()) return;
-	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0) return;	// 数组
+	if (varName2St.size() > funNum && varName2St[funNum].find(varName) != varName2St[funNum].end() && varName2St[funNum][varName].getDimension() > 0 && varName2St[funNum][varName].getForm() != PARAMETER) return;	// 数组
 	// if (inlineArrayName.size() > funNum && inlineArrayName[funNum].find(varName) != inlineArrayName[funNum].end()) return;	// 代表形参地址的变量
 	if (ifLocalVariable(varName) || ifTempVariable(varName)) blockCore[funNum][blkNum].def2.insert(varName);	// 不加入全局变量
 }
@@ -1218,7 +1218,7 @@ void SSA::build_clash_graph() {
 		// 加入需要考虑的变量
 		map<string, set<string>> tmpMap;
 		for (map<string, symbolTable>::iterator iter = varName2St[i].begin(); iter != varName2St[i].end(); iter++)
-			if ((iter->second).getDimension() > 0) continue;	// 数组不考虑
+			if ((iter->second).getDimension() > 0 && (iter->second).getForm() != PARAMETER) continue;	// 局部数组不考虑
 			// else if (inlineArrayName.size() > i && inlineArrayName[i].find(iter->first) != inlineArrayName[i].end()) continue;	// 参数数组地址不考虑
 			else tmpMap[iter->first] = set<string>();
 		if (debug) cout << "step1";
