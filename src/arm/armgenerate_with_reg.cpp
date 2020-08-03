@@ -832,7 +832,7 @@ void _or(CodeItem* ir)
 	if (op2[0] != 'R') {
 		int im = stoi(op2);
 		if (im != 0) {
-			OUTPUT("LDR " + target + ",=1");
+			OUTPUT("MOV " + target + ",#1");
 		}
 		else {
 			OUTPUT("CMP " + op1 + ",#0");
@@ -1213,7 +1213,7 @@ void _arrayinit(CodeItem* ir)
 	//OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
 	//OUTPUT("BL memset");
 	//第二种，连续存
-	int length = stoi(size)*4;
+	int length = stoi(size) * 4;
 	OUTPUT("LDR LR,=" + iniv);
 	for (int i = 0; i < length; i += 4) {
 		int off = p.second - sp + i;
