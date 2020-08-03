@@ -285,6 +285,7 @@ void SSA::Test_Build_Clash_Graph(ofstream& debug_reg) {
 					debug_reg << (*iter2) << " ";
 				debug_reg << "}" << endl;
 			}
+			debug_reg << endl;
 		}
 	}
 }
@@ -300,6 +301,7 @@ void SSA::Test_Allocate_Global_Reg(ofstream& debug_reg) {
 				debug_reg << (iter1->first) << "\t";
 				debug_reg << (iter1->second) << endl;
 			}
+			debug_reg << endl;
 		}
 	}
 }
