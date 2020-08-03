@@ -243,7 +243,9 @@ void registerAllocation() {
 			}else if (op == NOT) {
 				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
 				regpool.releaseVreg(ope1);
-				resReg = allocTmpReg(regpool, res, funcTmp);
+				if (isVreg(res)) {
+					resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
+				}
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else if (op == ADD || op == MUL) {	//先申请两个后释放

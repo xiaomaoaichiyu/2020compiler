@@ -177,7 +177,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case MOV: {
-		content = "mov                   " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "mov                        " + standardLength(operand1) + " " + standardLength(operand2);
 		break;
 	}
 	case NOTE: {
