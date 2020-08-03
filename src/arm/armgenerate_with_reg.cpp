@@ -496,6 +496,30 @@ void _mul(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		//此处可以看一下能否使用移位实现乘法
+		if (op2 == "0" || op2 == "-0") {
+			OUTPUT("MOV " + target + ",#0");
+			return;
+		}
+		else {
+			int bitoff = is_power2(op2);
+			if (bitoff == -33) {
+				OUTPUT("RSB " + target + "," + op1 + ",#0");
+				return;
+			}
+			else if (bitoff == 0) {
+				OUTPUT("MOV " + target + "," + op1);
+				return;
+			}
+			else if (bitoff < 0){
+				OUTPUT("LSL " + target + "," + op1 + ",#" + to_string(-bitoff));
+				OUTPUT("RSB " + target + "," + target + ",#0");
+				return;
+			}
+			else if (bitoff > 0 && bitoff != 33) {
+				OUTPUT("LSL " + target + "," + op1 + ",#" + to_string(bitoff));
+				return;
+			}
+		}
 		OUTPUT("LDR LR,=" + op2);
 		op2 = "LR";
 	}
@@ -538,6 +562,9 @@ void _div(CodeItem* ir)
 			bool pop = false;
 			OUTPUT("LDR LR,=" + to_string(m_high));
 			OUTPUT("SMMUL LR,LR," + op1);
+			if (m_high < 0) {
+				OUTPUT("ADD LR,LR," + op1);//试试
+			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB " + target + ",LR," + op1 + ",ASR #31");
 			if (!sign) {
@@ -629,6 +656,9 @@ void _rem(CodeItem* ir)
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
 			OUTPUT("LDR LR,=" + to_string(m_high));
 			OUTPUT("SMMUL LR,LR," + op1);
+			if (m_high < 0) {
+				OUTPUT("ADD LR,LR," + op1);//试试
+			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB LR,LR," + op1 + ",ASR #31");
 			if (!sign) {
@@ -785,6 +815,11 @@ void _eql(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BEQ " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVEQ " + target + ",#1");
 	OUTPUT("MOVNE " + target + ",#0");
@@ -803,6 +838,11 @@ void _neq(CodeItem* ir)
 		else {
 			op2 = "#" + op2;
 		}
+	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BNE " + target.substr(1));
+		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVNE " + target + ",#1");
@@ -823,6 +863,11 @@ void _sgt(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BGT " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVGT " + target + ",#1");
 	OUTPUT("MOVLE " + target + ",#0");
@@ -841,6 +886,11 @@ void _sge(CodeItem* ir)
 		else {
 			op2 = "#" + op2;
 		}
+	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BGE " + target.substr(1));
+		return;
 	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVGE " + target + ",#1");
@@ -861,6 +911,11 @@ void _slt(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BLT " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVLT " + target + ",#1");
 	OUTPUT("MOVGE " + target + ",#0");
@@ -880,6 +935,11 @@ void _sle(CodeItem* ir)
 			op2 = "#" + op2;
 		}
 	}
+	if (target[0] == '%') {
+		OUTPUT("CMP " + op1 + "," + op2);
+		OUTPUT("BLE " + target.substr(1));
+		return;
+	}
 	OUTPUT("CMP " + op1 + "," + op2);
 	OUTPUT("MOVLE " + target + ",#1");
 	OUTPUT("MOVGT " + target + ",#0");
@@ -898,7 +958,7 @@ void _br(CodeItem* ir)
 		string label2 = ir->getResult().substr(1);
 		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
-		OUTPUT("BNE " + label1);
+		//OUTPUT("BNE " + label1); //有问题可以回复这里试试
 	}
 	else {
 		OUTPUT("B " + res.substr(1));

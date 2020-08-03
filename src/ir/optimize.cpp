@@ -632,12 +632,9 @@ void irOptimize() {
 		printLIR("LIR2.txt");
 		
 		//计算活跃变量
-		/*codetotal = LIR;
-		TestIrCode("ly1.txt");
-		SSA ssa1;
-		ssa1.generate_activeAnalyse();
-		ssa1.get_avtiveAnalyse_result();
-		ly_act.print_ly_act();*/
+		codetotal = LIR;
+		ssa.registerAllocation();
+		ly_act.print_ly_act();
 
 		//寄存器直接指派
 		registerAllocation();
