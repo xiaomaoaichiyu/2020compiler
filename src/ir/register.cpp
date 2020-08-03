@@ -246,9 +246,7 @@ void registerAllocation() {
 				resReg = allocTmpReg(regpool, res, funcTmp);
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
-			else if (op == ADD || op == MUL ||
-					 op == AND || op == OR ||
-					 op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {	//先申请两个后释放
+			else if (op == ADD || op == MUL) {	//先申请两个后释放
 				if (!isNumber(ope2)) {	//不是立即数
 					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 				}
@@ -256,6 +254,19 @@ void registerAllocation() {
 				regpool.releaseVreg(ope1);
 				regpool.releaseVreg(ope2);
 				resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == AND || op == OR ||
+					 op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
+				if (!isNumber(ope2)) {	//不是立即数
+					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+				}
+				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+				regpool.releaseVreg(ope1);
+				regpool.releaseVreg(ope2);
+				if (isVreg(res)) {
+					resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
+				}
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else if (op == SUB || op == DIV || op == REM) {	//先申请两个后释放
