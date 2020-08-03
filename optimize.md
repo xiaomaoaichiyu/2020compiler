@@ -263,3 +263,11 @@ L1:
 ...
 ```
 
+- $NOT, res, VR2​$
+
+```assembly
+CMP VR2, #0
+BNE res
+...
+```
+
