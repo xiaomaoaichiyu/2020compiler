@@ -1213,9 +1213,15 @@ void _arrayinit(CodeItem* ir)
 	//OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
 	//OUTPUT("BL memset");
 	//第二种，连续存
+<<<<<<< HEAD
 	int length = stoi(size) * 4;
 	OUTPUT("LDR LR,=" + iniv);
+=======
+	int length = stoi(size)*4;
+	//OUTPUT("LDR LR,=" + iniv);
+>>>>>>> cf68813ae82715c89d14e9a04429006c1dcd1d24
 	for (int i = 0; i < length; i += 4) {
+		OUTPUT("LDR LR,=" + iniv);
 		int off = p.second - sp + i;
 		if (!is_illegal(to_string(off))) {
 			OUTPUT("LDR R12,=" + to_string(off));
