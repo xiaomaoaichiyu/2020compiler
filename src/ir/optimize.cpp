@@ -463,7 +463,9 @@ void printLIR(string outputFile) {
 			vector<CodeItem> item = LIR[i];
 			for (int j = 0; j < item.size(); j++) {
 				//cout << item[j].getContent() << endl;
-				irtxt << item[j].getContent() << endl;
+				if (item[j].getContent() != "") {
+					irtxt << item[j].getContent() << endl;
+				}
 			}
 			//cout << "\n";
 			irtxt << "\n";
@@ -591,9 +593,47 @@ irCodeType converse(irCodeType op) {
 void convertCondition() {
 	for (int i = 1; i < LIR.size(); i++) {
 		vector<CodeItem>& func = LIR.at(i);
-		for (int j = 0; j < func.size() - 1; j++) {
+		for (int j = 0; j < func.size(); j++) {
 			CodeItem& instr = func.at(j);
-			CodeItem& next = func.at(j + 1);
+			if (instr.getCodetype() == BR && isVreg(instr.getOperand1())) {
+				int k = j - 1;
+				while (k > 0) {	//找到对应的条件
+					if (func.at(k).getResult() == instr.getOperand1()) {
+						break;
+					}
+					k--;
+				}
+				auto& prev = func.at(k);
+				if (isCondition(prev.getCodetype())) {
+					instr.setOperand1(prev.getOperand1());
+					instr.setOperand2(prev.getOperand2());
+					instr.setCodetype(converse(prev.getCodetype()));
+					prev.setCodetype(NOTE);
+					prev.setInstr("", "", "");
+				}
+				if (prev.getCodetype() == AND) {	//and
+					instr.setOperand1(prev.getOperand1());
+					instr.setOperand2(prev.getOperand2());
+					instr.setCodetype(prev.getCodetype());
+					prev.setCodetype(NOTE);
+					prev.setInstr("", "", "");
+				}
+				if (prev.getCodetype() == OR) {	//or
+					instr.setOperand1(prev.getOperand1());
+					instr.setOperand2(prev.getOperand2());
+					instr.setCodetype(prev.getCodetype());
+					prev.setCodetype(NOTE);
+					prev.setInstr("", "", "");
+				}
+				if (prev.getCodetype() == NOT) {	//not
+					instr.setOperand1(prev.getOperand1());
+					instr.setOperand2(prev.getOperand2());
+					instr.setCodetype(prev.getCodetype());
+					prev.setCodetype(NOTE);
+					prev.setInstr("", "", "");
+				}
+			}
+			/*CodeItem& next = func.at(j + 1);
 			if (isCondition(instr.getCodetype()) && next.getCodetype() == BR) {
 				instr.setResult(next.getResult());
 				instr.setCodetype(converse(instr.getCodetype()));
@@ -606,7 +646,7 @@ void convertCondition() {
 			if (instr.getCodetype() == OR && next.getCodetype() == BR) {
 				instr.setResult(next.getResult());
 				func.erase(func.begin() + j + 1);
-			}
+			}*/
 		}
 	}
 }
@@ -634,13 +674,13 @@ void irOptimize() {
 		//寄存器直接指派
 		registerAllocation();
 
-		/*
+		
 		//图着色分配寄存器
 		codetotal = LIR;
 		ssa.registerAllocation();
 		ly_act.print_ly_act();
-		// 各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
-		vector<map<string, string>> var2reg = ssa.getvar2reg();*/
+		//各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
+		vector<map<string, string>> var2reg = ssa.getvar2reg();
 
 		printLIR("armIR.txt");
 		//窥孔优化
