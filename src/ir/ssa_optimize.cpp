@@ -130,7 +130,6 @@ void ActiveAnalyse::print_ly_act() {
 
 //ssa形式上的优化
 void SSA::ssa_optimize() {
-	
 	// 常量传播
 	if (1) {
 		// 重新计算use-def关系
@@ -140,7 +139,6 @@ void SSA::ssa_optimize() {
 		//常量传播
 		const_propagation();
 	}
-
 	// 死代码删除
 	if (1) {
 		// 重新计算use-def关系
