@@ -1389,28 +1389,21 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 			}
 			funcTmp.push_back(instr);
 		}
-		//处理中间变量的offset
-		//for (int j = 0; j < funcTmp.size(); j++) {
-		//	CodeItem& instr = funcTmp.at(j);
-		//	auto op = instr.getCodetype();
-		//	auto ope1 = instr.getOperand1();
-		//	if (op == LOAD && isVreg(ope1)) {
-		//		instr.setOperand2(getVrOffset(ope1));
-		//	}
-		//	else if (op == STORE && isVreg(ope1)){
-		//		instr.setOperand2(getVrOffset(ope1));
-		//	}
-		//	else {
-		//		//nothing
-		//	}
-		//}
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);
-		vector<string> globalReg;
-		for (int l = 4; l < regBegin; l++) {
-			globalReg.push_back(FORMAT("R{}", l));
+		
+		vector<int> useRegs;
+		for (auto one : var2reg) {
+			if (one.second != "memory") {
+				useRegs.push_back(A2I(one.second.substr(1)));
+			}
 		}
-		func2gReg.push_back(globalReg);
+		sort(useRegs.begin(), useRegs.end());
+		vector<string> useRegsTmp;
+		for (auto one : useRegs) {
+			useRegsTmp.push_back(FORMAT("R{}", one));
+		}
+		func2gReg.push_back(useRegsTmp);
 	}
 	LIR = LIRTmp;
 }

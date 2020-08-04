@@ -1155,7 +1155,7 @@ void SSA::generate() {
 	rename_back();
 
 	//复写传播
-	// copy_propagation();
+	//copy_propagation();
 
 	//将SSA格式代码转换到codetotal格式
 	turn_back_codetotal();

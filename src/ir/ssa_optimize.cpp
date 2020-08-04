@@ -900,7 +900,7 @@ void SSA::copy_propagation() {
 				switch (op)
 				{
 				case STORE: {
-					if (isTmp(res)) {	//变量赋值，非立即数赋值
+					if (isTmp(res) && !isGlobal(ope1)) {	//变量赋值，非立即数赋值
 						if (var2copy.find(res) != var2copy.end()) {	//如果赋值的中间变量对应某个变量，那么被赋值的变量也对应那个变量
 							var2copy[ope1] = var2copy[res];
 						}
@@ -909,7 +909,7 @@ void SSA::copy_propagation() {
 					break;
 				}
 				case LOAD: {
-					if (ope2 != "para" && ope2 != "array") {	//加载变量的值
+					if (ope2 != "para" && ope2 != "array" && !isGlobal(ope1)) {	//加载变量的值
 						if (var2copy.find(ope1) != var2copy.end()) {	//变量ope1已经有了对应关系
 							var2copy[res] = var2copy[ope1];
 							instr.setOperand1(var2copy[ope1]);	//将ope1设置为ope1对应的变量
