@@ -1474,7 +1474,7 @@ void arm_generate(string sname)
 				_note(ir_now);
 				break;
 			case ARRAYINIT:
-				_arrayinit(ir_now);
+				//_arrayinit(ir_now);
 				break;
 			default:
 				break;
