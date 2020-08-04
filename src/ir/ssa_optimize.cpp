@@ -446,7 +446,8 @@ void SSA::inline_function() {
 					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
 						continue;
 					}
-					else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
+					//else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
+					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && codetotal[funNum].size()>200) {
 						continue;		//第一个条件说明当前函数没被内联过
 					}
 					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
