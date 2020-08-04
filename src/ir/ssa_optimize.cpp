@@ -447,13 +447,16 @@ void SSA::inline_function() {
 						continue;
 					}
 					//else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
-					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && codetotal[funNum].size()>200) {
+					/*else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && codetotal[funNum].size()>200) {
 						continue;		//第一个条件说明当前函数没被内联过
 					}
 					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
 						continue;
+					}*/
+					else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
+						continue;
 					}
-					else if (varName2St[i].size() + varName2St[funNum].size() > 10) {
+					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
 						continue;
 					}
 					else {
