@@ -453,6 +453,9 @@ void SSA::inline_function() {
 					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
 						continue;
 					}
+					else if (varName2St[i].size() + varName2St[funNum].size() > 10) {
+						continue;
+					}
 					else {
 						if (debug) cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
