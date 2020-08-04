@@ -133,7 +133,7 @@ bool is_nonsence(int index)
 			string next_num1 = strNext.substr(4, 2);
 			string next_num2 = strNext.substr(7, 2);
 			string num1 = str.substr(4, 2);
-			if (num1 == next_num2 && next_num2 == "R0" ) {
+			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3") ) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -145,7 +145,7 @@ bool is_nonsence(int index)
 			next_num1 = strNext.substr(4, 3);
 			next_num2 = strNext.substr(8, 2);
 			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
-			if (num1 == next_num2 && next_num2 == "R0" ) {
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3")) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
