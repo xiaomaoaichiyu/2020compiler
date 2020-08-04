@@ -25,6 +25,20 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+bool judgetemp(string a)		//丛加的
+{
+	if (a == "R0" || a == "R1" || a == "R2" || a == "R3" || a == "R12") {
+		return true;
+	}
+	return false;
+}
+bool judgeglobal(string a)		//丛加的
+{
+	if (a == "R4" || a == "R5" || a == "R6" || a == "R7" || a == "R8"||a=="R9"||a=="R10"||a=="R11") {
+		return true;
+	}
+	return false;
+}
 bool is_nonsence(int index)
 {
 	string str = output_buffer[index];
@@ -41,9 +55,29 @@ bool is_nonsence(int index)
 			return true;
 		}
 	}
-	string a = str.substr(0, 3);	//删除连续相同MOV
+	string a = str.substr(0, 3);	//删除连续相同MOV,丛加的
 	if (a == "MOV" && output_buffer[index] == output_buffer[index - 1]) {
 		return true;
+	}
+	//数组做参数取值或存值时，基址是全局寄存器，会先将其放到临时寄存器产生冗余
+	//例：MOV R2,R7   STR R1,[R2,R0]   ——>  STR R1,[R7,R0]		丛加的
+	if (index + 1 < output_buffer.size()) {
+		string strNext = output_buffer[index + 1];
+		string nextOp = strNext.substr(0, 3);
+		if (a == "MOV" && (nextOp == "STR" || nextOp == "LDR")) {
+			string str_num1 = str.substr(4, 2);
+			string str_num2 = str.substr(7, 2);
+			string next_num1 = strNext.substr(8, 2);
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//可以把两条变一条
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				return false;
+			}
+		}
 	}
 	return false;
 }
@@ -364,10 +398,17 @@ void _loadarr(CodeItem* ir)
 			OUTPUT("LDR " + target + ",[" + var + "," + offset + "]");
 		}
 		else {
-			auto p = get_location(var);
-			OUTPUT("LDR LR,=" + to_string(p.second - sp));
-			OUTPUT("ADD LR,LR," + offset);
-			OUTPUT("LDR " + target + ",[SP,LR]");
+			auto p = get_location(var);			
+			//丛改的
+			if (p.second - sp > 127 || p.second - sp < -127) {
+				OUTPUT("LDR LR,=" + to_string(p.second - sp));
+				OUTPUT("ADD LR,LR," + offset);
+				OUTPUT("LDR " + target + ",[SP,LR]");
+			}
+			else {			//如果立即数合法，可以少一条LDR立即数指令
+				OUTPUT("ADD LR," + offset+",#"+ to_string(p.second - sp));
+				OUTPUT("LDR " + target + ",[SP,LR]");
+			}
 			/*
 			OUTPUT("ADD " + offset + "," + offset + ",SP");
 			OUTPUT("ADD " + offset + "," + offset + ",#" + to_string(p.second - sp));
@@ -435,9 +476,16 @@ void _storearr(CodeItem* ir)
 		}
 		else {
 			auto p = get_location(var);
-			OUTPUT("LDR LR,=" + to_string(p.second - sp));
-			OUTPUT("ADD LR,LR," + offset);
-			OUTPUT("STR " + value + ",[SP,LR]");
+			//丛改的
+			if (p.second - sp > 127 || p.second - sp < -127) {
+				OUTPUT("LDR LR,=" + to_string(p.second - sp));
+				OUTPUT("ADD LR,LR," + offset);
+				OUTPUT("STR " + value + ",[SP,LR]");
+			}
+			else {			//如果立即数合法，可以少一条LDR立即数指令
+				OUTPUT("ADD LR," + offset + ",#" + to_string(p.second - sp));
+				OUTPUT("STR " + value + ",[SP,LR]");
+			}
 			/*
 			OUTPUT("ADD " + offset + ",SP," + offset);
 			OUTPUT("ADD " + offset + "," + offset + ",#" + to_string(p.second - sp));

@@ -39,6 +39,12 @@ bool SSA::ifVR(string name) {
 	return regex_match(name, r);
 }
 
+// 判断是否是寄存器
+bool SSA::ifRegister(string name) {
+	regex r("R\\d+");
+	return regex_match(name, r);
+}
+
 // 在一个函数的所有中间代码中找到某个标签的位置，即它是第几条中间代码
 // @result: 0, 1, 2, ..., size-1(size代表该函数总的中间代码条数)
 // @exception: -1(表示没有找到，lzh在调用该函数时正常情况下不应出现该情况)
@@ -122,7 +128,7 @@ void SSA::find_primary_statement() {
 		for (j = 0; j < size2; j++) {
 			CodeItem c = v[j];
 			if (c.getCodetype() == BR) {			// 跳转指令
-				if (ifTempVariable(c.getOperand1()) || ifVR(c.getOperand1())) {
+				if (ifTempVariable(c.getOperand1()) || ifVR(c.getOperand1()) || ifRegister(c.getOperand1())) {
 					k = lookForLabel(v, c.getResult());
 					if (find(tmp.begin(), tmp.end(), k + 1) == tmp.end()) tmp.push_back(k + 1);
 					k = lookForLabel(v, c.getOperand2());
@@ -210,7 +216,7 @@ void SSA::build_pred_and_succeeds() {
 				CodeItem ci = tmp[j].Ir.back();
 				if (ci.getCodetype() == BR) {
 					// 跳转指令
-					if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1())) {
+					if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1()) || ifRegister(ci.getOperand1())) {
 						if (debug) cout << "BR1";
 						// step1: 找到跳转到标签所在的基本块序号
 						if (debug) cout << "step1";
@@ -1099,7 +1105,7 @@ void SSA::generate() {
 	// 建立基本块间的前序和后序关系
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
-	simplify_basic_block();
+	//simplify_basic_block();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
