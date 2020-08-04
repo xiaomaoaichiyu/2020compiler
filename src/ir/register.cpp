@@ -1392,13 +1392,14 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		LIRTmp.push_back(funcTmp);
 		func2Vr.push_back(vr2index);
 		
-		vector<int> useRegs;
+		set<int> useRegs;
 		for (auto one : var2reg) {
 			if (one.second != "memory") {
-				useRegs.push_back(A2I(one.second.substr(1)));
+				useRegs.insert(A2I(one.second.substr(1)));
 			}
 		}
-		sort(useRegs.begin(), useRegs.end());
+		vector<int> tmp(useRegs.begin(), useRegs.end());
+		sort(tmp.begin(), tmp.end());
 		vector<string> useRegsTmp;
 		for (auto one : useRegs) {
 			useRegsTmp.push_back(FORMAT("R{}", one));
