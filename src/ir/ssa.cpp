@@ -41,9 +41,8 @@ bool SSA::ifVR(string name) {
 
 // 判断是否是寄存器
 bool SSA::ifRegister(string name) {
-	return false;
-	/*regex r("R\\d+");
-	return regex_match(name, r);*/
+	regex r("R\\d+");
+	return regex_match(name, r);
 }
 
 // 在一个函数的所有中间代码中找到某个标签的位置，即它是第几条中间代码
