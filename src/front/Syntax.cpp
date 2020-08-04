@@ -2446,9 +2446,6 @@ string getValue(string var, string offset)	//var是变量，offset是偏移量
 }
 void changeForInline(int index)
 {
-	if (isinlineFunc == 0) {	//不是内联不用动
-		return;
-	}
 	int i;
 	string Funcname = total[index][0].getName(); //函数名
 	//先修改中间代码中局部变量、参数名
