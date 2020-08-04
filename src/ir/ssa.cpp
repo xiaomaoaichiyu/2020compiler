@@ -1237,8 +1237,8 @@ void SSA::build_clash_graph() {
 			if (debug) cout << "step2" << j;
 			set<string> clashSet;
 			set_union(blockCore[i][j].def.begin(), blockCore[i][j].def.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
-			set_union(blockCore[i][j].use.begin(), blockCore[i][j].use.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
-			set_union(blockCore[i][j].out.begin(), blockCore[i][j].out.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
+			//set_union(blockCore[i][j].use.begin(), blockCore[i][j].use.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
+			//set_union(blockCore[i][j].out.begin(), blockCore[i][j].out.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
 			set_union(blockCore[i][j].in.begin(), blockCore[i][j].in.end(), clashSet.begin(), clashSet.end(), inserter(clashSet, clashSet.begin()));
 			if (clashSet.empty()) continue;
 			for (set<string>::iterator iter1 = clashSet.begin(); iter1 != clashSet.end(); iter1++)
