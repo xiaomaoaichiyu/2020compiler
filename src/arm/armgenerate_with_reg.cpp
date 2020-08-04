@@ -185,16 +185,17 @@ bool check_format(CodeItem* ir) {
 
 bool is_illegal(string im) {
 	int i = stoi(im);
-	if (i <= 127 && i >= -128) {
+	if (i <= 1023 && i >= -1024) {
 		return true;
 	}
+	/*
 	unsigned int mask = 0xff;
 	while (mask != 0xfe000000) {
 		if ((i & (~mask)) == 0) {
 			return true;
 		}
 		mask <<= 1;
-	}
+	}*/
 	return false;
 }
 
@@ -364,7 +365,7 @@ void _define(CodeItem* ir)
 		global_reg_list += "," + reg;
 		regN++;
 	}
-	if (sp - sp_without_para < -127 || sp - sp_without_para > 127) {
+	if (!is_illegal(to_string(sp - sp_without_para))) {
 		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
 		OUTPUT("ADD SP,SP,R12");
 	}
@@ -386,7 +387,7 @@ void _alloc(CodeItem* ir)
 	if (ini_value != "") {
 		OUTPUT("LDR R12,=" + ini_value);
 		int im = get_location(name).second - sp;
-		if (im < -127 || im > 127) {
+		if (!is_illegal(to_string(im))) {
 			OUTPUT("LDR LR,=" + to_string(im));
 			OUTPUT("STR R12,[SP,LR]");
 		}
@@ -405,7 +406,7 @@ void _load(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(var);
-		if (p.second - sp > 127) {
+		if (!is_illegal(to_string(p.second - sp))) {
 			OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			OUTPUT("LDR " + target + ",[SP,LR]");
 		}
@@ -427,7 +428,7 @@ void _loadarr(CodeItem* ir)
 		else {
 			auto p = get_location(var);			
 			//丛改的
-			if (p.second - sp > 127 || p.second - sp < -127) {
+			if (!is_illegal(to_string(p.second - sp))) {
 				OUTPUT("LDR LR,=" + to_string(p.second - sp));
 				OUTPUT("ADD LR,LR," + offset);
 				OUTPUT("LDR " + target + ",[SP,LR]");
@@ -445,7 +446,7 @@ void _loadarr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (stoi(offset) > 127 || stoi(offset) < -127) {
+			if (!is_illegal(offset)) {
 				OUTPUT("LDR LR,=" + offset);
 				OUTPUT("LDR " + target + ",[" + var + ",LR]");
 			}
@@ -456,7 +457,7 @@ void _loadarr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (im > 127 || im < -127) {
+			if (!is_illegal(to_string(im))) {
 				OUTPUT("LDR LR,=" + to_string(im));
 				OUTPUT("LDR " + target + ",[SP,LR]");
 			}
@@ -476,7 +477,7 @@ void _store(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(loca);
-		if (p.second - sp > 127 || p.second - sp < -127) {
+		if (!is_illegal(to_string(p.second - sp))) {
 			OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			OUTPUT("STR " + value + ",[SP,LR]");
 		}
@@ -504,7 +505,7 @@ void _storearr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			//丛改的
-			if (p.second - sp > 127 || p.second - sp < -127) {
+			if (!is_illegal(to_string(p.second - sp))) {
 				OUTPUT("LDR LR,=" + to_string(p.second - sp));
 				OUTPUT("ADD LR,LR," + offset);
 				OUTPUT("STR " + value + ",[SP,LR]");
@@ -522,7 +523,7 @@ void _storearr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (stoi(offset) > 127 || stoi(offset) < -127) {
+			if (!is_illegal(offset)) {
 				OUTPUT("LDR LR,=" + offset);
 				OUTPUT("STR " + value + ",[" + var + ",LR]");
 			}
@@ -533,7 +534,7 @@ void _storearr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (im > 127 || im < -127) {
+			if (!is_illegal(to_string(im))) {
 				OUTPUT("LDR LR,=" + to_string(im));
 				OUTPUT("STR " + value + ",[SP,LR]");
 			}
@@ -1171,7 +1172,7 @@ void _ret(CodeItem* ir)
 		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
 		fake_sp += func2gReg[symbol_pointer].size() * 4;
 	}
-	if (sp_without_para - fake_sp > 127) {
+	if (!is_illegal(to_string(sp_without_para-fake_sp))) {
 		OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
 		OUTPUT("ADD SP,SP,R12");
 	}
@@ -1196,7 +1197,7 @@ void _mov(CodeItem* ir) {
 	}
 	else {
 		int im = stoi(src);
-		if (im < -127 || im > 127) {
+		if (!is_illegal(to_string(im))) {
 			OUTPUT("LDR " + dst + ",=" + src);
 		}
 		else {
@@ -1213,7 +1214,7 @@ void _lea(CodeItem* ir) {
 		OUTPUT("LDR " + reg + ",=" + p.first);
 	}
 	else {
-		if (p.second - sp < -127 || p.second - sp > 127) {
+		if (!is_illegal(to_string(p.second - sp))) {
 			OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			OUTPUT("ADD " + reg + ",SP,LR");
 		}
@@ -1264,7 +1265,7 @@ void _note(CodeItem* ir) {
 		if (paraN > 4) {
 			int off = (paraN - 4) * 4;
 			sp += off;
-			if (off > 127 || off < -127) {
+			if (!is_illegal(to_string(off))) {
 				OUTPUT("LDR LR,=" + to_string(off));
 				OUTPUT("ADD SP,SP,LR");
 			}
