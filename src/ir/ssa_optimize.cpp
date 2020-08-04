@@ -157,12 +157,12 @@ void SSA::ssa_optimize() {
 		count_UDchains();		//计算使用-定义链
 		back_edge();			//找循环
 		mark_invariant();		//确定不变式
-		ofstream ly1("lyceshi1.txt");
+		ofstream ly1("xunhuan1.txt");
 		printCircleIr(this->blockCore, ly1);
 
 		code_outside();			//不变式外提
 
-		ofstream ly2("lyceshi2.txt");
+		ofstream ly2("xunhuan2.txt");
 		printCircleIr(this->blockCore, ly2);
 
 		// 删除中间代码中的phi
@@ -721,15 +721,34 @@ map<string, string> var2value;
 //数组
 map<string, map<string, string>> arr2value;
 //array offset value
-
 //数组
 
-//标记没有被定义过的全局变量，用于常量传播
-void markGloablVar() {
+//记录被赋值的全局数组
+set<string> globalChanged;
 
+//标记没有被定义过的全局变量，用于常量传播
+void markGloablVar(vector<vector<basicBlock>>& funcs) {
+	for (int i = 1; i < funcs.size(); i++) {
+		for (int j = 0; j < funcs.at(i).size(); j++) {
+			for (int k = 0; k < funcs.at(i).at(j).Ir.size(); k++) {
+				auto instr = funcs.at(i).at(j).Ir.at(k);
+				//全局数组被赋值，就不能被常量传播
+				if (instr.getCodetype() == STOREARR && isGlobal(instr.getOperand1())) {
+					globalChanged.insert(instr.getOperand1());
+				}
+				if (instr.getCodetype() == LOAD && instr.getOperand2() == "array" && isGlobal(instr.getOperand1())) {
+					globalChanged.insert(instr.getOperand1());
+				}
+				if (instr.getCodetype() == STORE && isGlobal(instr.getOperand1())) {
+					globalChanged.insert(instr.getOperand1());
+				}
+			}
+		}
+	}
 }
 
 void SSA::const_propagation() {
+	markGloablVar(blockCore);
 	for (int i = 1; i < blockCore.size(); i++) {	//遍历每个函数
 		auto& blocks = blockCore.at(i);
 		for (int j = 0; j < blocks.size(); j++) {	//遍历每个基本的ir
@@ -805,6 +824,16 @@ void SSA::const_propagation() {
 					if (isNumber(instr.getOperand2())) {
 						if (arr2value[ope1].find(instr.getOperand2()) != arr2value[ope1].end()) {
 							var2value[res] = arr2value[ope1].find(instr.getOperand2())->second;
+						}
+					}
+					//没有改赋值过的全局数组
+					if (isGlobal(ope1) && globalChanged.find(ope1) == globalChanged.end()) {
+						if (isNumber(instr.getOperand2())) {
+							for (int k = 0; k < total.at(0).size(); k++) {
+								if (total.at(0).at(k).getName() == ope1) {
+									var2value[res] = I2A(total.at(0).at(k).getIntValue()[A2I(instr.getOperand2()) / 4]);
+								}
+							}
 						}
 					}
 					break;
