@@ -669,20 +669,25 @@ void irOptimize() {
 		printLIR("LIR.txt");
 		countVars();
 		
-		//图着色分配寄存器
-		codetotal = LIR;
-		ssa.registerAllocation();
-		//各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
-		vector<map<string, string>> var2reg = ssa.getvar2reg();		
-		convertCondition();		//优化条件跳转
-		printLIR("LIR2.txt");
+		//2. 图着色分配寄存器
+		if (1) {
+			codetotal = LIR;
+			ssa.registerAllocation();
+			//各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
+			vector<map<string, string>> var2reg = ssa.getvar2reg();
+			convertCondition();		//优化条件跳转
+			printLIR("LIR2.txt");
+			//图着色寄存器分配
+			registerAllocation3(var2reg);
 
+		}
 
-		//寄存器直接指派
-		//registerAllocation();
-
-		registerAllocation3(var2reg);
-
+		//1. 寄存器直接指派
+		if (0) {
+			convertCondition();		//优化条件跳转
+			printLIR("LIR2.txt");
+			registerAllocation();
+		}
 
 		printLIR("armIR.txt");
 		//窥孔优化
