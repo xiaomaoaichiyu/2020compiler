@@ -39,6 +39,13 @@ bool judgeglobal(string a)		//丛加的
 	}
 	return false;
 }
+bool judgeLoadOp(string a)		//丛加的
+{
+	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL") {
+		return true;
+	}
+	return false;
+}
 bool is_nonsence(int index)
 {
 	string str = output_buffer[index];
@@ -74,6 +81,26 @@ bool is_nonsence(int index)
 				cout << str << endl;
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				return false;
+			}
+		}
+	}
+	//传参优化	上一条是指令运算结果，比如LDR、ADD、SUB、ASR、LSL、MUL为上一条指令可求出结果的指令，只能以R0为相同寄存器
+	//例：LDR R0,=C  MOV R3,R0  ——> LDR R3,=C		丛加的
+	if (index + 1 < output_buffer.size()) {
+		string strNext = output_buffer[index + 1];
+		string nextOp = strNext.substr(0, 3);
+		if (nextOp == "MOV" && judgeLoadOp(a)) {
+			string next_num1 = strNext.substr(4, 2);
+			string next_num2 = strNext.substr(7, 2);
+			string num1 = str.substr(4, 2);
+			if (num1 == next_num2 && next_num2 == "R0" && (next_num1 == "R1" || next_num1 == "R2" || next_num1 == "R3")) {
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = str.substr(0, 4) + next_num1 + str.substr(6, str.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				return false;
 			}
