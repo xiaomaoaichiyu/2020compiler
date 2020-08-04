@@ -1031,7 +1031,8 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 	for (int k = 1; k < LIR.size(); k++) {
 		auto func = LIR.at(k);
 		auto vars = stackVars.at(k);
-		auto arr = var2Arr.at(k);
+		auto regAlloc = var2gReg.at(k);
+		
 		vector<CodeItem> funcTmp;
 
 		//初始化
@@ -1043,6 +1044,7 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		regBegin = 4;
 		vr2index.clear();
 		vrNum = 0;
+		int paraNum = 0;
 
 		//多层函数调用参数寄存器保存工作
 		int vrNumber = func2vrIndex.at(k);
@@ -1050,35 +1052,16 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		callRegs.clear();		//存储 r[0-3] <-> VR[0-9]
 		paraReg2push.clear();	//参数寄存器被压栈保存的（其实是str保存）
 
-		//这个地方可以优化，
-		//1. 局部数组实际上并不需要寄存器
-		//2. 活跃变量分析动态释放不再使用的变量占用的寄存器
-
-		//无脑指派局部变量
-		int i = 0;
-		for (; i < vars.size(); i++) {
-			//if (arr[vars.at(i)] != true) {
-			//	var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
-			//	first[vars.at(i)] = true;
-			//	if (regBegin >= 12) {
-			//		i++;
-			//		break;
-			//	}
-			//}
-			//else {	//数组不分配寄存器
-			//	var2reg[vars.at(i)] = "memory";
-			//	first[vars.at(i)] = true;
-			//}
-			var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
-			first[vars.at(i)] = true;
-			if (regBegin >= 12) {
-				i++;
-				break;
+		//根据图着色信息分配寄存器
+		for (int i = 0; i < vars.size(); i++) {
+			if (regAlloc.find(vars.at(i)) != regAlloc.end()) {
+				var2reg[vars.at(i)] = regAlloc[vars.at(i)];
+				first[vars.at(i)] = true;
 			}
-		}
-		for (; i < vars.size(); i++) {
-			var2reg[vars.at(i)] = "memory";
-			first[vars.at(i)] = true;
+			else {
+				var2reg[vars.at(i)] = "memory";
+				first[vars.at(i)] = true;
+			}
 		}
 		//全局变量使用临时变量来加载和使用
 
@@ -1169,6 +1152,7 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 				else if (ope2 == "array") {	//加载局部数组的地址
 					if (var2reg[ope1] != "memory") {	//有寄存器
 						resReg = var2reg[ope1];
+						WARN_MSG("array have no reg! wrong!");	//理论上不会出现这个分支
 					}
 					else {
 						resReg = allocTmpReg(regpool, res, funcTmp);
@@ -1195,7 +1179,7 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 								instr.setCodetype(MOV);
 								instr.setInstr("", ope1Reg, ope1Reg);
 							}
-							else {
+							else {//在栈里的参数如果没有寄存器，可能需要load，或者有寄存器，但是存在栈里的，需要第一次加载出来
 								first[ope1] = false;
 								resReg = var2reg[ope1];
 								vreg2varReg[res] = resReg;		//vreg <-> varReg
@@ -1312,14 +1296,16 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 			else if (op == PARA) {
 				ope1Reg = var2reg[res];
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
-
-				if (isReg(ope1)) {
-					funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
-					first[res] = false;
-				}
-				else if (ope1 == "stack" && var2reg[res] != "memory") {	//????
-					funcTmp.push_back(CodeItem(LOAD, var2reg[res], res, "para"));
-					first[res] = false;
+				paraNum++;
+				//图着色如果分配了寄存器就mov，如果没有并且使前四个参数，需要store到栈
+				if (paraNum <= 4) {
+					if (var2reg[res] != "memory") {	//分配了寄存器，直接MOV
+						funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
+						first[res] = false;
+					}
+					else {
+						funcTmp.push_back(CodeItem(STORE, ope1, res, ""));
+					}
 				}
 			}
 			else if (op == GETREG) {
