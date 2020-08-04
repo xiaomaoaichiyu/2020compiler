@@ -1089,132 +1089,6 @@ void SSA::init() {
 	}
 }
 
-// 入口函数
-void SSA::generate() {
-
-	// 初始化varName2St结构体
-	init();
-
-	// 简化条件判断为常值的跳转指令
-	simplify_br();
-
-	// 在睿轩生成的中间代码上做优化
-	pre_optimize();
-
-	// 计算每个基本块的起始语句
-	find_primary_statement();
-	// 为每个函数划分基本块
-	divide_basic_block();
-	// 建立基本块间的前序和后序关系
-	build_pred_and_succeeds();
-	// 消除无法到达基本块
-	simplify_basic_block();
-
-	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
-	build_dom_tree();
-
-	// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
-	build_idom_tree();
-
-	// 根据直接必经节点找到必经节点树中每个节点的后序节点
-	build_reverse_idom_tree();
-
-	// 后序遍历必经节点树
-	build_post_order();
-
-	// 前序遍历必经节点树
-	build_pre_order();
-
-	// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
-	build_dom_frontier();
-
-	// 计算ud链，即分析每个基本块的use和def变量
-	build_def_use_chain();
-
-	// 活跃变量分析，生成in、out集合
-	active_var_analyse();
-
-	// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
-	build_var_chain();
-
-	// 在需要添加基本块的开始添加\phi函数
-	add_phi_function();
-	// 变量重命名
-	renameVar();
-	
-	// 处理\phi函数
-	deal_phi_function();
-
-	// 优化
-	ssa_optimize();
-
-	// 测试输出上面各个函数
-	Test_SSA();
-
-	// 恢复变量命名
-	rename_back();
-
-	//复写传播
-	//copy_propagation();
-
-	//将SSA格式代码转换到codetotal格式
-	turn_back_codetotal();
-
-	// 输出中间代码
-	TestIrCode("ir2.txt");
-
-	// 函数内联
-	inline_function();
-
-	// 恢复为之前中间代码形式后再做一次无用代码删除
-	pre_optimize();
-
-	// 输出中间代码
-	TestIrCode("ir3.txt");
-
-}
-
-void SSA::registerAllocation() {
-
-	// 初始化varName2St结构体
-	init();
-
-	// 简化条件判断为常值的跳转指令
-	simplify_br();
-	
-	// 在睿轩生成的中间代码上做优化
-	pre_optimize();
-
-	// 计算每个基本块的起始语句
-	find_primary_statement();
-	// 为每个函数划分基本块
-	divide_basic_block();
-	// 建立基本块间的前序和后序关系
-	build_pred_and_succeeds();
-	// 消除无法到达基本块
-	simplify_basic_block();
-
-	// 计算ud链，即分析每个基本块的use和def变量
-	build_def_use_chain();
-
-	// 活跃变量分析，生成in、out集合
-	active_var_analyse();
-
-	ofstream ly1("ssa1.txt");
-	printCircleIr(this->blockCore, ly1);
-	get_avtiveAnalyse_result();
-	ly_act.print_ly_act();
-
-	// 图着色算法分配寄存器
-	ofstream debug_reg;
-	debug_reg.open("debug_reg.txt");
-	build_clash_graph();
-	Test_Build_Clash_Graph(debug_reg);
-	allocate_global_reg();
-	Test_Allocate_Global_Reg(debug_reg);
-	debug_reg.close();
-}
-
 // 构建冲突图
 void SSA::build_clash_graph() {
 	int i, j, k;
@@ -1317,4 +1191,138 @@ string SSA::get_new_global_reg(int funNum, string name) {
 
 vector<map<string, string>> SSA::getvar2reg() {
 	return var2reg;
+}
+
+// 入口函数
+void SSA::generate() {
+
+	// 初始化varName2St结构体
+	init();
+
+	// 简化条件判断为常值的跳转指令
+	simplify_br();
+
+	// 在睿轩生成的中间代码上做优化
+	pre_optimize();
+
+	// 计算每个基本块的起始语句
+	find_primary_statement();
+	// 为每个函数划分基本块
+	divide_basic_block();
+	// 建立基本块间的前序和后序关系
+	build_pred_and_succeeds();
+	// 消除无法到达基本块
+	simplify_basic_block();
+
+	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
+	build_dom_tree();
+
+	// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
+	build_idom_tree();
+
+	// 根据直接必经节点找到必经节点树中每个节点的后序节点
+	build_reverse_idom_tree();
+
+	// 后序遍历必经节点树
+	build_post_order();
+
+	// 前序遍历必经节点树
+	build_pre_order();
+
+	// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
+	build_dom_frontier();
+
+	// 计算ud链，即分析每个基本块的use和def变量
+	build_def_use_chain();
+
+	// 活跃变量分析，生成in、out集合
+	active_var_analyse();
+
+	// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
+	build_var_chain();
+
+	// 在需要添加基本块的开始添加\phi函数
+	add_phi_function();
+	// 变量重命名
+	renameVar();
+	
+	// 处理\phi函数
+	deal_phi_function();
+
+	// 优化
+	ssa_optimize();
+
+	// 测试输出上面各个函数
+	Test_SSA();
+
+	// 恢复变量命名
+	rename_back();
+
+	//复写传播
+	//copy_propagation();
+
+	//将SSA格式代码转换到codetotal格式
+	turn_back_codetotal();
+
+	// 输出中间代码
+	TestIrCode("ir2.txt");
+
+	// 函数内联
+	inline_function();
+
+	// 恢复为之前中间代码形式后再做一次无用代码删除
+	pre_optimize();
+
+	// 输出中间代码
+	TestIrCode("ir3.txt");
+
+}
+
+// 仅进行活跃变量分析
+void SSA::generate_active_var_analyse() {
+
+	// 初始化varName2St结构体
+	init();
+
+	// 简化条件判断为常值的跳转指令
+	simplify_br();
+
+	// 在睿轩生成的中间代码上做优化
+	pre_optimize();
+
+	// 计算每个基本块的起始语句
+	find_primary_statement();
+	// 为每个函数划分基本块
+	divide_basic_block();
+	// 建立基本块间的前序和后序关系
+	build_pred_and_succeeds();
+	// 消除无法到达基本块
+	simplify_basic_block();
+
+	// 计算ud链，即分析每个基本块的use和def变量
+	build_def_use_chain();
+
+	// 活跃变量分析，生成in、out集合
+	active_var_analyse();
+
+}
+
+void SSA::registerAllocation() {
+
+	// 活跃变量分析
+	generate_active_var_analyse();
+
+	ofstream ly1("ssa1.txt");
+	printCircleIr(this->blockCore, ly1);
+	get_avtiveAnalyse_result();
+	ly_act.print_ly_act();
+
+	// 图着色算法分配寄存器
+	ofstream debug_reg;
+	debug_reg.open("debug_reg.txt");
+	build_clash_graph();
+	Test_Build_Clash_Graph(debug_reg);
+	allocate_global_reg();
+	Test_Allocate_Global_Reg(debug_reg);
+	debug_reg.close();
 }

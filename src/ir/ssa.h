@@ -10,6 +10,16 @@
 #include "intermediatecode.h"
 #include "../front/syntax.h"
 
+// dag
+class TreeNode {
+public:
+	irCodeType op;
+	std::set<std::string> nameset;
+	int leftchild, rightchild, father;
+	int nodeid;
+	TreeNode();
+};
+
 class phiFun {
 	// phi函数的例子：y^3 = \phi(y^1, y^2)
 public:
@@ -179,6 +189,12 @@ private:
 	bool ifVR(std::string name);						// 判断是否是虚拟寄存器
 	bool ifRegister(std::string name);				// 判断是否是寄存器
 	void init();													// 初始化varName2St结构体
+
+
+	// dag
+	void build_dag();	// 构建dag图
+
+
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
@@ -186,6 +202,7 @@ public:
 	}*/
 	SSA() {}
 	void generate();		// 开始函数
+	void generate_active_var_analyse();	// 仅进行活跃变量分析
 	void registerAllocation();
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化
