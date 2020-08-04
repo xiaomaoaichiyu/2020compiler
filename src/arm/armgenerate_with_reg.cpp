@@ -132,8 +132,9 @@ bool is_nonsence(int index)
 		if (nextOp == "MOV" && judgeLoadOp(a)) {
 			string next_num1 = strNext.substr(4, 2);
 			string next_num2 = strNext.substr(7, 2);
+			string next_num3 = strNext.substr(7, 3);		//防止next_num2实际是R11、R12只是因为取两位才为R1
 			string num1 = str.substr(4, 2);
-			if (num1 == next_num2 && next_num2 == "R0" ) {
+			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")&&next_num2==next_num3) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -144,8 +145,9 @@ bool is_nonsence(int index)
 			}
 			next_num1 = strNext.substr(4, 3);
 			next_num2 = strNext.substr(8, 2);
+			next_num3 = strNext.substr(8, 3);				//防止next_num2实际是R11、R12只是因为取两位才为R1
 			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
-			if (num1 == next_num2 && next_num2 == "R0" ) {
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") && next_num2 == next_num3) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
