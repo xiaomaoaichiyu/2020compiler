@@ -374,8 +374,11 @@ void SSA::build_idom_tree() {
 		for (j = 1; j < size2; j++)
 			if (blockCore[i][j].tmpIdom.empty())
 				continue;
-			else if (blockCore[i][j].tmpIdom.size() > 1)
-				cout << i << " " << j << " " << "idom > 1" << endl;
+			else if (blockCore[i][j].tmpIdom.size() > 1) {
+				cout << i << " " << j << " " << "idom > 1";
+				for (set<int>::iterator it = blockCore[i][j].tmpIdom.begin(); it != blockCore[i][j].tmpIdom.end(); it++) cout << *it << " ";
+				cout << endl;
+			}
 			else
 				blockCore[i][j].idom.insert(*(blockCore[i][j].tmpIdom.begin()));
 	}
@@ -1105,7 +1108,7 @@ void SSA::generate() {
 	// 建立基本块间的前序和后序关系
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
-	//simplify_basic_block();
+	simplify_basic_block();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
