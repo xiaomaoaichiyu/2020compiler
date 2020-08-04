@@ -1017,3 +1017,414 @@ void registerAllocation2(vector<vector<basicBlock>>& lir) {
 	}
 	LIR = LIRTmp;
 }
+
+//======================================================================
+// 寄存器分配3 —— 图着色分配
+//=======================================================================
+
+void registerAllocation3(vector<map<string, string>>& var2gReg) {
+	vector<vector<CodeItem>> LIRTmp;
+	func2gReg.push_back(vector<string>());
+	func2Vr.push_back(map<string, int>());
+	LIRTmp.push_back(LIR.at(0));
+
+	for (int k = 1; k < LIR.size(); k++) {
+		auto func = LIR.at(k);
+		auto vars = stackVars.at(k);
+		auto arr = var2Arr.at(k);
+		vector<CodeItem> funcTmp;
+
+		//初始化
+		vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };	//临时寄存器池
+		RegPool regpool(tmpRegs);
+		vreg2varReg.clear();
+		first.clear();
+		var2reg.clear();
+		regBegin = 4;
+		vr2index.clear();
+		vrNum = 0;
+
+		//多层函数调用参数寄存器保存工作
+		int vrNumber = func2vrIndex.at(k);
+		callLayer = -1;
+		callRegs.clear();		//存储 r[0-3] <-> VR[0-9]
+		paraReg2push.clear();	//参数寄存器被压栈保存的（其实是str保存）
+
+		//这个地方可以优化，
+		//1. 局部数组实际上并不需要寄存器
+		//2. 活跃变量分析动态释放不再使用的变量占用的寄存器
+
+		//无脑指派局部变量
+		int i = 0;
+		for (; i < vars.size(); i++) {
+			//if (arr[vars.at(i)] != true) {
+			//	var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
+			//	first[vars.at(i)] = true;
+			//	if (regBegin >= 12) {
+			//		i++;
+			//		break;
+			//	}
+			//}
+			//else {	//数组不分配寄存器
+			//	var2reg[vars.at(i)] = "memory";
+			//	first[vars.at(i)] = true;
+			//}
+			var2reg[vars.at(i)] = FORMAT("R{}", regBegin++);
+			first[vars.at(i)] = true;
+			if (regBegin >= 12) {
+				i++;
+				break;
+			}
+		}
+		for (; i < vars.size(); i++) {
+			var2reg[vars.at(i)] = "memory";
+			first[vars.at(i)] = true;
+		}
+		//全局变量使用临时变量来加载和使用
+
+		string funcName = "";
+		for (int i = 0; i < func.size(); i++) {
+			CodeItem instr = func.at(i);
+			irCodeType op = instr.getCodetype();
+			string res = instr.getResult();
+			string ope1 = instr.getOperand1();
+			string ope2 = instr.getOperand2();
+			string resReg = res;
+			string ope1Reg = ope1;
+			string ope2Reg = ope2;
+
+			//res字段分配临时寄存器
+			if (op == DEFINE) {
+				funcName = res;
+			}
+			else if (op == NOT) {
+				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+				regpool.releaseVreg(ope1);
+				if (isVreg(res)) {
+					resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
+				}
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == ADD || op == MUL) {	//先申请两个后释放
+				if (!isNumber(ope2)) {	//不是立即数
+					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+				}
+				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+				regpool.releaseVreg(ope1);
+				regpool.releaseVreg(ope2);
+				resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == AND || op == OR ||
+				op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op == SLE) {
+				if (!isNumber(ope2)) {	//不是立即数
+					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+				}
+				ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+				regpool.releaseVreg(ope1);
+				regpool.releaseVreg(ope2);
+				if (isVreg(res)) {
+					resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
+				}
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == SUB || op == DIV || op == REM) {	//先申请两个后释放
+				if (!isNumber(ope2)) {	//不是立即数
+					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+				}
+				if (!isNumber(ope1)) {	//不是立即数
+					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+				}
+				regpool.releaseVreg(ope1);
+				regpool.releaseVreg(ope2);
+				resReg = allocTmpReg(regpool, res, funcTmp);	//如果寄存器不够就溢出一个
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == LEA) {
+				ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == MOV) {	//分配临时寄存器
+				if (isVreg(ope2)) {
+					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+					regpool.releaseVreg(ope2);
+				}
+				if (isVreg(ope1)) {
+					ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
+				}
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == LOAD) {
+				if (ope2 == "para") {	//加载数组参数的地址
+					if (var2reg[ope1] != "memory") {	//有寄存器
+						instr.setCodetype(MOV);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr("", resReg, var2reg[ope1]);
+					}
+					else {
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+				}
+				else if (ope2 == "array") {	//加载局部数组的地址
+					if (var2reg[ope1] != "memory") {	//有寄存器
+						resReg = var2reg[ope1];
+					}
+					else {
+						resReg = allocTmpReg(regpool, res, funcTmp);
+					}
+					instr.setCodetype(LEA);
+					instr.setInstr("", resReg, ope1Reg);
+				}
+				else {	//非数组地址加载
+					if (isVreg(ope1)) {		//全局变量
+						ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+						regpool.releaseVreg(ope1);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {					//栈变量
+						if (var2reg[ope1] == "memory") {	//分配临时寄存器
+							resReg = allocTmpReg(regpool, res, funcTmp);
+							instr.setInstr(resReg, ope1Reg, ope2Reg);
+						}
+						else {								//指派的全局寄存器
+							if (first[ope1] == false) {
+								ope1Reg = var2reg[ope1];
+								vreg2varReg[res] = ope1Reg;		//vreg <-> varReg
+								instr.setCodetype(MOV);
+								instr.setInstr("", ope1Reg, ope1Reg);
+							}
+							else {
+								first[ope1] = false;
+								resReg = var2reg[ope1];
+								vreg2varReg[res] = resReg;		//vreg <-> varReg
+								instr.setInstr(resReg, ope1Reg, ope2Reg);
+							}
+						}
+					}
+				}
+			}
+			else if (op == LOADARR) {
+				if (isNumber(ope2)) {	//偏移是立即数
+					if (isVreg(ope1)) {		//全局数组
+						ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+						regpool.releaseVreg(ope1);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {					//栈数组
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+				}
+				else {					//偏移是寄存器
+					if (isVreg(ope1)) {		//全局数组
+						ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+						ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+						regpool.releaseVreg(ope1);
+						regpool.releaseVreg(ope2);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {					//栈数组
+						ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+						regpool.releaseVreg(ope2);
+						resReg = allocTmpReg(regpool, res, funcTmp);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+				}
+			}
+			else if (op == STORE) {
+				if (isVreg(ope1)) {		//全局变量
+					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+					resReg = getTmpReg(regpool, res, funcTmp);
+					regpool.releaseVreg(ope1);
+					regpool.releaseVreg(res);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+				else {					//栈变量
+					if (var2reg[ope1] == "memory") {
+						resReg = getTmpReg(regpool, res, funcTmp);
+						regpool.releaseVreg(res);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {
+						resReg = getTmpReg(regpool, res, funcTmp);
+						regpool.releaseVreg(res);
+						ope1Reg = var2reg[ope1];
+						first[ope1] = false;
+						instr.setCodetype(MOV);
+						instr.setInstr("", ope1Reg, resReg);
+					}
+				}
+			}
+			else if (op == STOREARR) {
+				if (isNumber(ope2)) {	//偏移是立即数
+					if (isVreg(ope1)) {		//全局数组
+						ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+						resReg = getTmpReg(regpool, res, funcTmp);
+						regpool.releaseVreg(ope1);
+						regpool.releaseVreg(res);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {					//栈数组
+						//因为是数组，分配的寄存器没有意义，不考虑 “memory”
+						resReg = getTmpReg(regpool, res, funcTmp);
+						regpool.releaseVreg(res);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+				}
+				else {					//偏移是寄存器
+					if (isVreg(ope1)) {		//全局数组
+						ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+						ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+						resReg = getTmpReg(regpool, res, funcTmp);
+						regpool.releaseVreg(ope1);
+						regpool.releaseVreg(ope2);
+						regpool.releaseVreg(res);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+					else {					//栈数组
+						//因为是数组，分配的寄存器没有意义，不考虑 “memory”
+						resReg = getTmpReg(regpool, res, funcTmp);
+						ope2Reg = getTmpReg(regpool, ope2, funcTmp);
+						regpool.releaseVreg(ope2);
+						regpool.releaseVreg(res);
+						instr.setInstr(resReg, ope1Reg, ope2Reg);
+					}
+				}
+			}
+			else if (op == POP) {	//貌似用不到
+				WARN_MSG("will use this Pop??");
+			}
+			else if (op == BR) {
+				if (isVreg(ope1)) {
+					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+					regpool.releaseVreg(ope1);
+				}
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == ALLOC) {
+				ope1Reg = var2reg[res];
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == PARA) {
+				ope1Reg = var2reg[res];
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+
+				if (isReg(ope1)) {
+					funcTmp.push_back(CodeItem(MOV, "", ope1Reg, ope1));
+					first[res] = false;
+				}
+				else if (ope1 == "stack" && var2reg[res] != "memory") {	//????
+					funcTmp.push_back(CodeItem(LOAD, var2reg[res], res, "para"));
+					first[res] = false;
+				}
+			}
+			else if (op == GETREG) {
+				if (isVreg(ope1)) {
+					ope1Reg = allocTmpReg(regpool, ope1, funcTmp);
+				}
+				instr.setInstr(resReg, ope1Reg, ope2Reg);
+			}
+			else if (op == NOTE && ope1 == "func" && ope2 == "begin") {
+				//记录函数的参数寄存器的情况	
+				callLayer++;
+				callRegs.push_back(map<string, string>());
+				paraReg2push.push_back(map<string, bool>());
+				//表达式计算的中间变量的保存！
+				auto save = regpool.spillAllRegs();
+				funcTmp.push_back(instr);
+				for (auto one : save) {		//函数调用的时候临时寄存器的值需要保存
+					setVrIndex(one.first);
+					//如果溢出的寄存器是push参数寄存器
+					if (callLayer > 0) {
+						if (callRegs.at(callLayer - 1).find(one.second) != callRegs.at(callLayer - 1).end()) {
+							paraReg2push.at(callLayer - 1)[one.second] = true;
+						}
+					}
+					CodeItem pushTmp(STORE, one.second, one.first, "");
+					funcTmp.push_back(pushTmp);
+				}
+				continue;
+			}
+			else if (op == NOTE && ope1 == "func" && ope2 == "end") {
+				//nothing
+			}
+			else if (op == CALL) {
+				//如果函数嵌套导致r0-r3被spill，在函数调用前重取r0-r3
+				if (callLayer >= 0) {
+					//如果是中间变量把参数寄存器溢出了，怎么标记
+					for (auto para : paraReg2push.at(callLayer)) {
+						//??????
+						if (para.second == true) {		//如果参数寄存器被溢出了，需要load回来
+							string vRegTmp = callRegs.at(callLayer)[para.first];
+							CodeItem loadTmp(LOAD, para.first, vRegTmp, "para");
+							funcTmp.push_back(loadTmp);
+						}
+					}
+				}
+				for (auto para : callRegs.at(callLayer)) {		//释放参数寄存器 R0-R3
+					regpool.releaseVreg(para.second);
+				}
+				callLayer--;			//函数层级降低
+				callRegs.pop_back();	//函数调用寄存器删除
+				paraReg2push.pop_back();
+				//int paraNum = A2I(ope2);
+				//for (int i = 0; i < paraNum; i++) {
+				//	regpool.releaseReg(FORMAT("R{}", i));		//释放参数寄存器 R0-R3
+				//}
+			}
+			else if (op == PUSH) {	//参数压栈 4是分界点
+				if (A2I(ope2) <= 4) {	//前4个此参数
+					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+					regpool.releaseVreg(ope1);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+
+					int num = A2I(ope2);
+					string paraReg = FORMAT("R{}", num - 1);
+					//push参数后标记对应的参数寄存器r0-3为占用状态！
+					//这里r0还可能被占用吗？？？
+					//理论上不存在，因为中间变量不会夸参数出现，要是被使用了，也一定被释放了
+					string curVreg = FORMAT("VR{}", vrNumber++);	//这个虚拟寄存器不会在其他地方出现，除了load
+					regpool.markParaReg(paraReg, curVreg);		//标记参数寄存器被占用
+					callRegs.at(callLayer)[paraReg] = curVreg;	//push一个意味着这个参数寄存器被占用了
+					//后续可能需要压栈保存值！
+				}
+				else {					//栈参数
+					ope1Reg = getTmpReg(regpool, ope1, funcTmp);
+					regpool.releaseVreg(ope1);
+					instr.setInstr(resReg, ope1Reg, ope2Reg);
+				}
+			}
+			else {
+				//do nothing!
+			}
+			funcTmp.push_back(instr);
+		}
+		//处理中间变量的offset
+		//for (int j = 0; j < funcTmp.size(); j++) {
+		//	CodeItem& instr = funcTmp.at(j);
+		//	auto op = instr.getCodetype();
+		//	auto ope1 = instr.getOperand1();
+		//	if (op == LOAD && isVreg(ope1)) {
+		//		instr.setOperand2(getVrOffset(ope1));
+		//	}
+		//	else if (op == STORE && isVreg(ope1)){
+		//		instr.setOperand2(getVrOffset(ope1));
+		//	}
+		//	else {
+		//		//nothing
+		//	}
+		//}
+		LIRTmp.push_back(funcTmp);
+		func2Vr.push_back(vr2index);
+		vector<string> globalReg;
+		for (int l = 4; l < regBegin; l++) {
+			globalReg.push_back(FORMAT("R{}", l));
+		}
+		func2gReg.push_back(globalReg);
+	}
+	LIR = LIRTmp;
+}

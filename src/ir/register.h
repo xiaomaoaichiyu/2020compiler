@@ -67,4 +67,6 @@ void registerAllocation();
 
 void registerAllocation2(vector<vector<basicBlock>>& lir);
 
+void registerAllocation3(vector<map<string, string>>& var2gReg);
+
 #endif // _REGISTER_H_
