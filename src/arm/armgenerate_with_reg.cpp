@@ -1232,6 +1232,8 @@ void _arrayinit(CodeItem* ir)
 	}
 }
 
+
+
 void arm_generate(string sname)
 {
 	ofstream arm(sname);
