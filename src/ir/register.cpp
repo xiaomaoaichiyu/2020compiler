@@ -1307,6 +1307,10 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 						funcTmp.push_back(CodeItem(STORE, ope1, res, ""));
 					}
 				}
+				if (ope1 == "stack" && var2reg[res] != "memory") {
+					funcTmp.push_back(CodeItem(LOAD, var2reg[res], res, "para"));
+					first[res] = false;
+				}
 			}
 			else if (op == GETREG) {
 				if (isVreg(ope1)) {
