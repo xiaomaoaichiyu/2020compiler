@@ -177,6 +177,7 @@ private:
 	bool ifGlobalVariable(std::string name);		// 判断是否是全局变量
 	bool ifLocalVariable(std::string name);		// 判断是否是局部变量
 	bool ifVR(std::string name);						// 判断是否是虚拟寄存器
+	bool ifRegister(std::string name);				// 判断是否是寄存器
 	void init();													// 初始化varName2St结构体
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
