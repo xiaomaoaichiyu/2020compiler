@@ -14,7 +14,6 @@
 class TreeNode {
 public:
 	irCodeType op;
-	std::set<std::string> nameset;
 	int leftchild, rightchild, father;
 	int nodeid;
 	TreeNode();
@@ -193,6 +192,8 @@ private:
 
 	// dag
 	void build_dag();	// 构建dag图
+	bool ifCalIr(irCodeType ict);	// 是否是运算型指令
+	void delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd);
 
 
 public:
