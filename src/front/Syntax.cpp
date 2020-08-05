@@ -219,7 +219,7 @@ int frontExecute(string syname)
 		}
 	}
 	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
-	//youhuaDivCompare();				//除法比较进行优化
+	youhuaDivCompare();				//除法比较进行优化
 	//检测符号表内容
 	/*
 	cout << "名字 " << "Block下标 " << "种类 0Con 1Var 2Para 3Func " << "维度 " << endl;
@@ -2529,8 +2529,6 @@ void youhuaDivCompare()
 						string num1 = c1.getOperand1();		//DIV中的被除数
 						string num2 = c1.getOperand2();		//DIV中的除数
 						if (num2[0] == '%') {			//div中除数是临时变量
-							continue;
-							/*
 							codetotal[i].erase(codetotal[i].begin() + j);
 							codetotal[i].erase(codetotal[i].begin() + j);
 							if (c2.getCodetype() == SLT) {		//div %2  %1  %0；slt %3 %2 10000    小于                
@@ -2556,7 +2554,7 @@ void youhuaDivCompare()
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
 								codetotal[i].insert(codetotal[i].begin() + j, citem2);
-							}*/
+							}
 						}
 						else {
 							int value2 = stringToNum(num2);
@@ -2588,10 +2586,7 @@ void youhuaDivCompare()
 					if (value >= 0) {
 						string num1 = c1.getOperand1();		//DIV中的被除数
 						string num2 = c1.getOperand2();		//DIV中的除数
-						
 						if (num2[0] == '%') {			//div中除数是临时变量
-							continue;
-							/*
 							codetotal[i].erase(codetotal[i].begin() + j);
 							codetotal[i].erase(codetotal[i].begin() + j);
 							if (c2.getCodetype() == SLT) {		//div %2  %1  %0；slt %3 10000 %2   小于                
@@ -2618,7 +2613,6 @@ void youhuaDivCompare()
 								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
 								codetotal[i].insert(codetotal[i].begin() + j, citem2);
 							}
-							*/
 						}
 						else {
 							int value2 = stringToNum(num2);
