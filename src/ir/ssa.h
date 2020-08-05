@@ -16,6 +16,8 @@ public:
 	irCodeType op;
 	int leftchild, rightchild, father;
 	int nodeid;
+	bool ifIn;
+	std::set<std::string> nameset;
 	TreeNode();
 };
 
@@ -194,6 +196,7 @@ private:
 	void build_dag();	// 构建dag图
 	bool ifCalIr(irCodeType ict);	// 是否是运算型指令
 	void delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd);
+	std::string getNewTempVariable();
 
 
 public:

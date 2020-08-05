@@ -1,21 +1,34 @@
 #include "ssa.h"
+#include "../front/syntax.h"
 
 TreeNode::TreeNode() {
     this->op = ADD;
     this->leftchild = this->rightchild = this->father = -1;
     this->nodeid = -1;
+    this->ifIn = false;
+    this->nameset = set<string>();
+}
+
+map<irCodeType, string> irCodeType2Output = { {ADD, "ADD"}, {SUB, "SUB"}, {MUL, "MUL"}, {DIV, "DIV"}, {REM, "REM"},
+    {LOAD, "LOAD"}, {LOADARR, "LOADARR"}, {STORE, "STORE"}, {STOREARR, "STOREARR"} };
+
+string SSA::getNewTempVariable() {
+    string temp = "%" + to_string(func2tmpIndex[codetotal.size() - 1]);
+    func2tmpIndex[codetotal.size() - 1]++;
+    return temp;
 }
 
 // 是否是运算型指令
 bool SSA::ifCalIr(irCodeType ict) {
-    return ict == ADD || ict == SUB || ict == DIV || ict == MUL || ict == REM ||
-        ict == LOAD || ict == LOADARR || ict == STORE || ict == STOREARR;
+    return ict == ADD || ict == SUB || ict == DIV || ict == MUL || ict == REM || ict == LOAD || ict == STORE;
+        // || ict == LOADARR || ict == STOREARR;
 }
 
 void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) {
     map<string, int> node2id;	    // 节点编号
     vector<TreeNode> dagtree;	// dag图
-    bool debug = true;             // debug
+    map<string, int> var2Count; // 变量第几次出现
+    bool debug = true;              // debug
     for (int i = IrStart; i < IrEnd; i++) {
         CodeItem ci = blockCore[funNum][blkNum].Ir[i];
         TreeNode op1node, op2node, opnode;
@@ -315,10 +328,47 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
     for (map<string, int>::iterator iter = node2id.begin(); iter != node2id.end(); iter++)
         cout << iter->first << " " << iter->second << endl;
     for (int i = 0; i < dagtree.size(); i++)
-        cout << dagtree[i].nodeid << " " << dagtree[i].leftchild << " " << dagtree[i].rightchild << " " << dagtree[i].father << " " << dagtree[i].op << " " << endl;
+        cout << dagtree[i].nodeid << " " << dagtree[i].leftchild << " " << dagtree[i].rightchild << " " << dagtree[i].father << " " << irCodeType2Output[dagtree[i].op] << " " << endl;
     vector<CodeItem> irQueue;
     vector<int> opNodeQueue;
-
+    stack<int> opNodeStack;
+    for (auto i : dagtree) {
+        if (i.leftchild != -1 && i.rightchild != -1) opNodeQueue.push_back(i.nodeid);
+    }
+    bool update = true;
+    while (update) {
+        update = false;
+        for (int i = 0; i < opNodeQueue.size(); i++) {
+            int nodeid = opNodeQueue[i];
+            if (!dagtree[nodeid].ifIn) {
+                update = true;  // 仍然有未加入到stack的中间节点
+                if (dagtree[nodeid].father == -1 || dagtree[dagtree[nodeid].father].ifIn) {
+                    opNodeStack.push(nodeid);
+                    dagtree[nodeid].ifIn = true;
+                    while (dagtree[nodeid].leftchild != -1) {
+                        nodeid = dagtree[nodeid].leftchild;
+                        if (dagtree[nodeid].leftchild == -1 || dagtree[nodeid].rightchild == -1) break; // 不是中间节点
+                        if (dagtree[nodeid].father == -1 || dagtree[dagtree[nodeid].father].ifIn) {
+                            opNodeStack.push(nodeid);
+                            dagtree[nodeid].ifIn = true;
+                        }
+                        else break;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    if (debug) {
+        while (!opNodeStack.empty()) { cout << "stack"; cout << opNodeStack.top() << " "; opNodeStack.pop(); }
+        cout << endl;
+    }
+    while (!opNodeStack.empty()) {
+        int nodeid = opNodeStack.top();
+        opNodeStack.pop();
+        TreeNode tn = dagtree[nodeid];
+        
+    }
 }
 
 void SSA::build_dag() {
