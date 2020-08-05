@@ -1,4 +1,4 @@
-#include "ssa.h"
+ï»¿#include "ssa.h"
 #include "../front/syntax.h"
 
 TreeNode::TreeNode() {
@@ -18,16 +18,16 @@ string SSA::getNewTempVariable() {
     return temp;
 }
 
-// ÊÇ·ñÊÇÔËËãĞÍÖ¸Áî
+// æ˜¯å¦æ˜¯è¿ç®—å‹æŒ‡ä»¤
 bool SSA::ifCalIr(irCodeType ict) {
     return ict == ADD || ict == SUB || ict == DIV || ict == MUL || ict == REM || ict == LOAD || ict == STORE;
         // || ict == LOADARR || ict == STOREARR;
 }
 
 void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) {
-    map<string, int> node2id;	    // ½Úµã±àºÅ
-    vector<TreeNode> dagtree;	// dagÍ¼
-    map<string, int> var2Count; // ±äÁ¿µÚ¼¸´Î³öÏÖ
+    map<string, int> node2id;	    // èŠ‚ç‚¹ç¼–å·
+    vector<TreeNode> dagtree;	// dagå›¾
+    map<string, int> var2Count; // å˜é‡ç¬¬å‡ æ¬¡å‡ºç°
     bool debug = true;              // debug
     for (int i = IrStart; i < IrEnd; i++) {
         CodeItem ci = blockCore[funNum][blkNum].Ir[i];
@@ -44,7 +44,7 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
             {   // Operand1
                 if (ifTempVariable(ci.getOperand1()) || ifDigit(ci.getOperand1())) {
                     string op1Name = ci.getOperand1();
-                    if (node2id.find(op1Name) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(op1Name) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op1nodeid = dagtree.size();
                         op1node.nodeid = op1nodeid;
                         dagtree.push_back(op1node);
@@ -56,13 +56,13 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼op1 error£ºÔËËãĞÍÖ¸ÁîÔËËãÊı²»ÊÇÁÙÊ±±äÁ¿»ò³£Êı" << endl;
+                    cout << "dagå›¾op1 errorï¼šè¿ç®—å‹æŒ‡ä»¤è¿ç®—æ•°ä¸æ˜¯ä¸´æ—¶å˜é‡æˆ–å¸¸æ•°" << endl;
                 }
             }
             {   // Operand2
                 if (ifTempVariable(ci.getOperand2()) || ifDigit(ci.getOperand2())) {
                     string op2Name = ci.getOperand2();
-                    if (node2id.find(op2Name) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(op2Name) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op2nodeid = dagtree.size();
                         op2node.nodeid = op2nodeid;
                         dagtree.push_back(op2node);
@@ -74,10 +74,10 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼op2 error£ºÔËËãĞÍÖ¸ÁîÔËËãÊı²»ÊÇÁÙÊ±±äÁ¿»ò³£Êı" << endl;
+                    cout << "dagå›¾op2 errorï¼šè¿ç®—å‹æŒ‡ä»¤è¿ç®—æ•°ä¸æ˜¯ä¸´æ—¶å˜é‡æˆ–å¸¸æ•°" << endl;
                 }
             }
-            {   // ÖĞ¼ä½Úµã
+            {   // ä¸­é—´èŠ‚ç‚¹
                 for (int m = 0; m < dagtree.size(); m++) {
                     if (dagtree[m].op == ci.getCodetype()) {
                         if ((dagtree[m].leftchild == op1nodeid && dagtree[m].rightchild == op2nodeid) ||
@@ -101,7 +101,7 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
             }
             {   // Result     
                 if (opnodeid == -1) {
-                    cout << "dag error: ÔËËãĞÍÖ¸Áî½á¹ûÃ»ÓĞ¶ÔÓ¦½Úµã." << endl;
+                    cout << "dag error: è¿ç®—å‹æŒ‡ä»¤ç»“æœæ²¡æœ‰å¯¹åº”èŠ‚ç‚¹." << endl;
                 }
                 node2id[ci.getResult()] = opnodeid;
             }
@@ -111,7 +111,7 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
             {   // Result
                 if (ifTempVariable(ci.getResult()) || ifDigit(ci.getResult())) {
                     string resultName = ci.getResult();
-                    if (node2id.find(resultName) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(resultName) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op1nodeid = dagtree.size();
                         op1node.nodeid = op1nodeid;
                         dagtree.push_back(op1node);
@@ -123,22 +123,22 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼result error£ºstoreÖ¸Áî¸³ÖµÖµ²»ÊÇÁÙÊ±±äÁ¿»ò³£Êı." << endl;
+                    cout << "dagå›¾result errorï¼šstoreæŒ‡ä»¤èµ‹å€¼å€¼ä¸æ˜¯ä¸´æ—¶å˜é‡æˆ–å¸¸æ•°." << endl;
                 }
             }
             {   // Operand1
                 if (op1nodeid == -1) {
-                    cout << "dag error: storeÖ¸Áîop1Ã»ÓĞ¶ÔÓ¦½Úµã." << endl;
+                    cout << "dag error: storeæŒ‡ä»¤op1æ²¡æœ‰å¯¹åº”èŠ‚ç‚¹." << endl;
                 }
                 node2id[ci.getOperand1()] = op1nodeid;
             }
             break;
-        case STOREARR:  // result op2 ×÷ÎªÁ½¸ö²Ù×÷Êı
+        case STOREARR:  // result op2 ä½œä¸ºä¸¤ä¸ªæ“ä½œæ•°
             if (debug) cout << ci.getContent() << endl;
             {   // Result
                 if (ifTempVariable(ci.getResult()) || ifDigit(ci.getResult())) {
                     string resultName = ci.getResult();
-                    if (node2id.find(resultName) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(resultName) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op1nodeid = dagtree.size();
                         op1node.nodeid = op1nodeid;
                         dagtree.push_back(op1node);
@@ -150,13 +150,13 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼result error£ºstorearrÖ¸Áî¸³ÖµÖµ²»ÊÇÁÙÊ±±äÁ¿»ò³£Êı." << endl;
+                    cout << "dagå›¾result errorï¼šstorearræŒ‡ä»¤èµ‹å€¼å€¼ä¸æ˜¯ä¸´æ—¶å˜é‡æˆ–å¸¸æ•°." << endl;
                 }
             }
             {   // Operand2
                 if (ifTempVariable(ci.getOperand2()) || ifDigit(ci.getOperand2())) {
                     string op2Name = ci.getOperand2();
-                    if (node2id.find(op2Name) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(op2Name) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op2nodeid = dagtree.size();
                         op2node.nodeid = op2nodeid;
                         dagtree.push_back(op2node);
@@ -168,10 +168,10 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼op2 error£ºstorearrÖ¸ÁîÔËËãÊı²»ÊÇÁÙÊ±±äÁ¿»ò³£Êı" << endl;
+                    cout << "dagå›¾op2 errorï¼šstorearræŒ‡ä»¤è¿ç®—æ•°ä¸æ˜¯ä¸´æ—¶å˜é‡æˆ–å¸¸æ•°" << endl;
                 }
             }
-            {   // ÖĞ¼ä½Úµã
+            {   // ä¸­é—´èŠ‚ç‚¹
                 for (int m = 0; m < dagtree.size(); m++) {
                     if (dagtree[m].op == ci.getCodetype()) {
                         if (dagtree[m].leftchild == op1nodeid && dagtree[m].rightchild == op2nodeid) {
@@ -194,7 +194,7 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
             }
             {   // Operand1     
                 if (opnodeid == -1) {
-                    cout << "dag error: storearrÖ¸Áîop1Ã»ÓĞ¶ÔÓ¦½Úµã." << endl;
+                    cout << "dag error: storearræŒ‡ä»¤op1æ²¡æœ‰å¯¹åº”èŠ‚ç‚¹." << endl;
                 }
                 node2id[ci.getOperand1()] = opnodeid;
             }
@@ -204,7 +204,7 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
             {   // Operand1
                 if (ifLocalVariable(ci.getOperand1()) || ifDigit(ci.getOperand1())) {
                     string op1Name = ci.getOperand1();
-                    if (node2id.find(op1Name) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(op1Name) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op1nodeid = dagtree.size();
                         op1node.nodeid = op1nodeid;
                         dagtree.push_back(op1node);
@@ -216,22 +216,22 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼op1 error£ºloadĞÍÖ¸ÁîÔËËãÊı²»ÊÇ¾Ö²¿±äÁ¿»ò³£Êı" << endl;
+                    cout << "dagå›¾op1 errorï¼šloadå‹æŒ‡ä»¤è¿ç®—æ•°ä¸æ˜¯å±€éƒ¨å˜é‡æˆ–å¸¸æ•°" << endl;
                 }
             }
             {   // Result
                 if (op1nodeid == -1) {
-                    cout << "dag error: loadÖ¸ÁîresultÃ»ÓĞ¶ÔÓ¦½Úµã." << endl;
+                    cout << "dag error: loadæŒ‡ä»¤resultæ²¡æœ‰å¯¹åº”èŠ‚ç‚¹." << endl;
                 }
                 node2id[ci.getResult()] = op1nodeid;
             }
             break;
-        case LOADARR:   // ÓëADDĞÍÔËËãÖ¸Áî´¦ÀíÂß¼­ÏàÍ¬
+        case LOADARR:   // ä¸ADDå‹è¿ç®—æŒ‡ä»¤å¤„ç†é€»è¾‘ç›¸åŒ
             if (debug) cout << ci.getContent() << endl;
             {   // Operand1
                 if (ifLocalVariable(ci.getOperand1()) || ifGlobalVariable(ci.getOperand1())) {
                     string op1Name = ci.getOperand1();
-                    if (node2id.find(op1Name) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(op1Name) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op1nodeid = dagtree.size();
                         op1node.nodeid = op1nodeid;
                         dagtree.push_back(op1node);
@@ -243,13 +243,13 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼op1 error£ºloadarrÔËËãÊı²»ÊÇ¾Ö²¿±äÁ¿»òÈ«¾Ö±äÁ¿." << endl;
+                    cout << "dagå›¾op1 errorï¼šloadarrè¿ç®—æ•°ä¸æ˜¯å±€éƒ¨å˜é‡æˆ–å…¨å±€å˜é‡." << endl;
                 }
             }
             {   // Operand2
                 if (ifTempVariable(ci.getOperand2()) || ifDigit(ci.getOperand2())) {
                     string op2Name = ci.getOperand2();
-                    if (node2id.find(op2Name) == node2id.end()) {   // ´´½¨Ò¶×Ó½Úµã
+                    if (node2id.find(op2Name) == node2id.end()) {   // åˆ›å»ºå¶å­èŠ‚ç‚¹
                         op2nodeid = dagtree.size();
                         op2node.nodeid = op2nodeid;
                         dagtree.push_back(op2node);
@@ -261,10 +261,10 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
                     }
                 }
                 else {
-                    cout << "dagÍ¼op2 error£ºloadarrÔËËãÊı²»ÊÇÁÙÊ±±äÁ¿»ò³£Êı" << endl;
+                    cout << "dagå›¾op2 errorï¼šloadarrè¿ç®—æ•°ä¸æ˜¯ä¸´æ—¶å˜é‡æˆ–å¸¸æ•°" << endl;
                 }
             }
-            {   // ÖĞ¼ä½Úµã
+            {   // ä¸­é—´èŠ‚ç‚¹
                 for (int m = 0; m < dagtree.size(); m++) {
                     if (dagtree[m].op == ci.getCodetype()) {
                         if ((dagtree[m].leftchild == op1nodeid && dagtree[m].rightchild == op2nodeid) ||
@@ -288,7 +288,7 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
             }
             {   // Result     
                 if (opnodeid == -1) {
-                    cout << "dag error: loadarr½á¹ûÃ»ÓĞ¶ÔÓ¦½Úµã." << endl;
+                    cout << "dag error: loadarrç»“æœæ²¡æœ‰å¯¹åº”èŠ‚ç‚¹." << endl;
                 }
                 node2id[ci.getResult()] = opnodeid;
             }
@@ -319,7 +319,7 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
         case GETREG:
         case PHI:
         case ARRAYINIT:
-            cout << "dag error£ºÉ¾³ı¹«¹²×Ó±í´ïÊ½²»Ó¦³öÏÖµÄÖ¸Áî." << endl;
+            cout << "dag errorï¼šåˆ é™¤å…¬å…±å­è¡¨è¾¾å¼ä¸åº”å‡ºç°çš„æŒ‡ä»¤." << endl;
             break;
         default:
             break;
@@ -341,13 +341,13 @@ void SSA::delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd) 
         for (int i = 0; i < opNodeQueue.size(); i++) {
             int nodeid = opNodeQueue[i];
             if (!dagtree[nodeid].ifIn) {
-                update = true;  // ÈÔÈ»ÓĞÎ´¼ÓÈëµ½stackµÄÖĞ¼ä½Úµã
+                update = true;  // ä»ç„¶æœ‰æœªåŠ å…¥åˆ°stackçš„ä¸­é—´èŠ‚ç‚¹
                 if (dagtree[nodeid].father == -1 || dagtree[dagtree[nodeid].father].ifIn) {
                     opNodeStack.push(nodeid);
                     dagtree[nodeid].ifIn = true;
                     while (dagtree[nodeid].leftchild != -1) {
                         nodeid = dagtree[nodeid].leftchild;
-                        if (dagtree[nodeid].leftchild == -1 || dagtree[nodeid].rightchild == -1) break; // ²»ÊÇÖĞ¼ä½Úµã
+                        if (dagtree[nodeid].leftchild == -1 || dagtree[nodeid].rightchild == -1) break; // ä¸æ˜¯ä¸­é—´èŠ‚ç‚¹
                         if (dagtree[nodeid].father == -1 || dagtree[dagtree[nodeid].father].ifIn) {
                             opNodeStack.push(nodeid);
                             dagtree[nodeid].ifIn = true;
@@ -375,9 +375,9 @@ void SSA::build_dag() {
 	int i, j, k1, k2;
 	int size1 = blockCore.size();
     bool debug = false; // debug
-	for (i = 1; i < size1; i++) {	// ±éÀúº¯Êı
+	for (i = 1; i < size1; i++) {	// éå†å‡½æ•°
 		int size2 = blockCore[i].size();
-		for (j = 0; j < size2; j++) {	// ±éÀú»ù±¾¿é
+		for (j = 0; j < size2; j++) {	// éå†åŸºæœ¬å—
 			if (blockCore[i][j].Ir.empty()) continue;
             k1 = k2 = -1;
             while (true) {
