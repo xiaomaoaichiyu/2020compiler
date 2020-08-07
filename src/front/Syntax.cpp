@@ -165,9 +165,18 @@ symbolTable checkTable(string checkname, int function_number, vector<int> father
 void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 void changeForInline(int index);		//如果为内联函数修改符号表和中间代码的名字
+
 void youhuaDivCompare();		//将涉及到除法比较优化成乘法比较
 bool isCompare(irCodeType type);
 
+//相同表达式删除
+int noWhileLabel;
+map<string, int>  record;		//记录load或loadarr型变量出现次数
+map<string, string> newVarName;	//记录新的变量名
+map<string, int> maxLine;		//记录变量最先出现store对应行数
+void deleteSameExp(int index);
+bool isTemp(string a);
+bool isNoChangeFunc(string a);		//跳转到该函数不会修改任何内容
 //=============================================================================================================
 //        以上为全局变量定义以及函数定义
 //=============================================================================================================
@@ -267,7 +276,7 @@ int frontExecute(string syname)
 	//检测中间代码正确性
 	//TestIrCode("irafterInline.txt");
 	//outfile.close();
-	//cout<<"yes"<<endl;
+	cout<<"yes"<<endl;
 	return 0;
 }
 
@@ -327,6 +336,7 @@ void CompUnit()
 					change(Funcindex);		//修改中间代码、符号表
 					changeForInline(Funcindex);
 					total[Funcindex][0].setisinlineFunc(isinlineFunc);
+					deleteSameExp(Funcindex);
 				}
 				else {
 					symbol = sym_tag;
@@ -347,6 +357,7 @@ void CompUnit()
 				change(Funcindex);			//修改中间代码、符号表
 				changeForInline(Funcindex);
 				total[Funcindex][0].setisinlineFunc(isinlineFunc);
+				deleteSameExp(Funcindex);
 			}
 		}
 	}
@@ -2450,7 +2461,7 @@ void changeForInline(int index)
 	//先修改中间代码中局部变量、参数名
 	vector<CodeItem> b = codetotal[index];
 	codetotal.pop_back();
-	for (i = 0; i < b.size(); i++) {
+	for (i = 0,noWhileLabel=0; i < b.size(); i++) {
 		irCodeType codetype = b[i].getCodetype();
 		string res = b[i].getResult();
 		string ope1 = b[i].getOperand1();
@@ -2467,6 +2478,9 @@ void changeForInline(int index)
 			if (aa != "%while." && bb != "%if.") {
 				res = newinlineName(res, Funcname);
 			}
+			if (aa == "%while.") {
+				noWhileLabel = i;
+			}
 		}
 		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res必须是变量
 			string aa = ope1;
@@ -2480,6 +2494,9 @@ void changeForInline(int index)
 			if (aa != "%while." && bb != "%if.") {
 				ope1 = newinlineName(ope1, Funcname);
 			}
+			if (aa == "%while.") {
+				noWhileLabel = i;
+			}
 		}
 		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res必须是变量
 			string aa = ope2;
@@ -2492,6 +2509,9 @@ void changeForInline(int index)
 			}
 			if (aa != "%while." && bb != "%if.") {
 				ope2 = newinlineName(ope2, Funcname);
+			}
+			if (aa == "%while.") {
+				noWhileLabel = i;
 			}
 		}
 		b[i].changeContent(res, ope1, ope2);
@@ -2646,6 +2666,170 @@ void youhuaDivCompare()
 bool isCompare(irCodeType type)
 {
 	if (type == SLT || type == SGT || type == SGE || type == SLE) {
+		return true;
+	}
+	return false;
+}
+void deleteSameExp(int index)
+{
+	int i;
+	for (i = noWhileLabel + 1; i < codetotal[index].size(); i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+		if (codetotal[index][i].getCodetype() == CALL && isNoChangeFunc(codetotal[index][i].getFuncName()) == false ) {
+			return;		//如果还会跳到别的函数，直接不做了
+		}
+	}
+	//从此开始找相同表达式
+	set<string> varName;
+	record.clear();
+	maxLine.clear();
+	newVarName.clear();
+	for (i = noWhileLabel + 1; i < codetotal[index].size(); i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+		if (codetotal[index][i].getCodetype() == STORE || codetotal[index][i].getCodetype()==STOREARR) {	
+			if (!maxLine.count(codetotal[index][i].getOperand1()) > 0) {
+				maxLine[codetotal[index][i].getOperand1()] = i; //涉及此类变量求出下限
+			}		
+		}
+		if (codetotal[index][i].getCodetype() == LOAD || codetotal[index][i].getCodetype() == LOADARR) {
+			varName.insert(codetotal[index][i].getOperand1());				//涉及此类变量先记录下来，存在表达式相同的可能
+			record[codetotal[index][i].getOperand1()] = record[codetotal[index][i].getOperand1()] + 1;
+		}
+	}
+	while (true) {
+		int flag = 0;
+		for (string str : varName) {		//该变量至少load3次
+			if (record[str] <= 2) {
+				varName.erase(str);
+				flag = 1;
+				break;
+			}
+		}
+		if (flag ==0) {
+			break;
+		}
+	}
+	if (varName.size() == 0) {
+		return;			//没有变量符合公共表达式删除，直接退出
+	}
+	int j,i1,j1,i2,j2;
+	newVarName.clear();
+	for (string str : varName) {
+		if (!maxLine.count(str)>0) {
+			maxLine[str] = codetotal[index].size();
+		}
+		for (i = noWhileLabel + 1; i < maxLine[str]; i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+			if (codetotal[index][i].getCodetype() == LOAD || codetotal[index][i].getCodetype() == LOADARR) {
+				if (str == codetotal[index][i].getOperand1()) {		//找到该变量第一次出现的位置
+					j = i;
+					break;
+				}
+			}
+		}
+		for ( i =i +1; i < maxLine[str]; i++) {
+			if (codetotal[index][i].getCodetype() == LOAD || codetotal[index][i].getCodetype() == LOADARR) {
+				if (str == codetotal[index][i].getOperand1()) {		//找到该变量第二次出现的位置
+					j1 = j; i1 = i; j2 = j; i2 = i;
+					while (j1 > noWhileLabel && codetotal[index][j1].isequal(codetotal[index][i1]) && j < i1) {
+						j1--;		i1--;
+					}
+					while (j2 < i && codetotal[index][j2].isequal(codetotal[index][i2])  && j2<i1) {
+						j2++;		i2++;
+					}		//上下搜索公共子表达式
+					j2 = j2 - 1; i2 = i2 - 1; j1 = j1 + 1; i1 = i1 + 1;
+					if (j2 - j1 < 6 || isTemp(codetotal[index][i2].getResult())==false || isTemp(codetotal[index][j2].getResult()) == false) {
+						continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量
+					}
+					else {		//可以删除了
+						string xiabiao = numToString(j1) + "-" + numToString(j2);
+						if (!(newVarName.count(xiabiao) > 0)) {		//第一次找到公共子表达式
+							string replace = "%Rep" + numToString(j1) + "-" + numToString(j2) + "+" + total[index][0].getName();
+							newVarName[xiabiao] = replace;
+							string newTemp;
+							int i4 = i1;
+							while (i1 < i2) {		//找一个可用的临时变量
+								if (isTemp(codetotal[index][i1].getResult())) {
+									newTemp = codetotal[index][i1].getResult(); break;
+								}
+								if (isTemp(codetotal[index][i1].getOperand1())) {
+									newTemp = codetotal[index][i1].getOperand1(); break;
+								}
+								if (isTemp(codetotal[index][i1].getOperand2())) {
+									newTemp = codetotal[index][i1].getOperand2(); break;
+								}
+								i1++;
+							}
+							i1 = i4;
+							//同时往j2处插入新的中间代码
+							string oldTemp = codetotal[index][j2].getResult();
+							codetotal[index][j2].setResult(newTemp);	//改成新的
+							CodeItem citem1 = CodeItem(STORE, newTemp, newVarName[xiabiao], "");	//赋值单值
+							CodeItem citem2 = CodeItem(LOAD, oldTemp, newVarName[xiabiao], "");
+							codetotal[index].insert(codetotal[index].begin() + j2 + 1, citem1);
+							codetotal[index].insert(codetotal[index].begin() + j2 + 2, citem2);
+							i2 = i2 + 2; i1 = i1 + 2; maxLine[str] = maxLine[str] + 2;
+						}
+						CodeItem citem = CodeItem(LOAD, codetotal[index][i2].getResult(), newVarName[xiabiao], "");
+						int i3 = i1;
+						while (i1 <= i2) {		//删除公共子表达式
+							codetotal[index].erase(codetotal[index].begin() + i3);
+							i1++;
+						}
+						codetotal[index].insert(codetotal[index].begin() + i3, citem);	//生成新的子表达式
+						maxLine[str] = maxLine[str] - (i2 - i3);
+						for (; i < maxLine[str]; i++) {	//找到一个基础上继续找相同的
+							if (codetotal[index][i].isequal(codetotal[index][j1])) {
+								int i5 = i; int j5 = j1;
+								while (j5 <= j2) {
+									if (!codetotal[index][i5].isequal(codetotal[index][j5])) {
+										break;
+									}
+									j5++;  i5++;
+								}
+								j5 = j5 - 1; i5 = i5 - 1;
+								if (j5 == j2) {	//找到相同的
+									CodeItem citem = CodeItem(LOAD, codetotal[index][i5].getResult(), newVarName[xiabiao], "");
+									int i6 = i5 - (j2 -j1);
+									int i7 = i6;
+									while (i6 <= i5) {		//删除公共子表达式
+										codetotal[index].erase(codetotal[index].begin() + i7);
+										i6++;
+									}
+									codetotal[index].insert(codetotal[index].begin() + i7, citem);	//生成新的子表达式
+									maxLine[str] = maxLine[str] - (j2 - j1);
+									i = i6;
+								}
+								else {
+									continue;
+								}
+							}
+						}
+						i = i3;		//恢复循环变量值
+					}
+				}
+			}
+		}
+	}
+	//最后插入符号表同时生成ALLOC代码
+	map <  string, string>::iterator iter;
+	for (iter = newVarName.begin(); iter != newVarName.end(); iter++)
+	{
+		string ppp = iter->second.substr(1, iter->second.size());
+		symbolTable item = symbolTable(VARIABLE, INT, ppp, 0, 0);
+		total[index].push_back(item);
+		CodeItem citem = CodeItem(ALLOC,iter->second, "0", "1");
+		codetotal[index].insert(codetotal[index].begin() + codetotal[index].size()-2, citem);
+	}
+}
+bool isNoChangeFunc(string a)
+{
+	if (a == "@printf" || a == "@_sysy_starttime" || a == "@_sysy_stoptime" || a == "@putarray"
+		|| a == "@putch" || a == "@putint") {
+		return true;
+	}
+	return false;
+}
+bool isTemp(string a)
+{
+	if (a[0] == '%' && isdigit(a[1])) {
 		return true;
 	}
 	return false;
