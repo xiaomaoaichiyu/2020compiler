@@ -1,6 +1,6 @@
 ﻿#ifndef _SSA_H_
 #define _SSA_H_
-
+      
 #include <iostream>
 #include <vector>
 #include <set>
