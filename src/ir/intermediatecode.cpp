@@ -320,3 +320,26 @@ void CodeItem::changeContent(string res, string ope1, string ope2)
 	this->operand1 = ope1;
 	this->operand2 = ope2;
 }
+bool isTemp(string a)
+{
+	if (a[0] == '%' && isdigit(a[1])) {
+		return true;
+	}
+	return false;
+}
+bool CodeItem::isequal(CodeItem a)
+{
+	if (a.getCodetype() != this->codetype) {
+		return false;
+	}
+	if ( (a.getResult() != this->result) && (isTemp(a.getResult())==false||isTemp(this->result)==false) ) {
+		return false;			//不相等而且必须有一个不是临时变量
+	}
+	if ((a.getOperand1() != this->operand1) && (isTemp(a.getOperand1()) == false || isTemp(this->operand1) == false)) {
+		return false;			//不相等而且必须有一个不是临时变量
+	}
+	if ((a.getOperand2() != this->operand2) && (isTemp(a.getOperand2()) == false || isTemp(this->operand2) == false)) {
+		return false;			//不相等而且必须有一个不是临时变量
+	}
+	return true;
+}

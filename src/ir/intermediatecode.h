@@ -59,6 +59,7 @@ public:
 	void setFuncName(string name);
 	string getFuncName();
 	string getContent();
+	bool isequal(CodeItem a);
 private:
 	int id;					//索引
 	string invariant;			//标明指令结果是一个不变式
