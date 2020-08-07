@@ -208,6 +208,7 @@ private:
 
 	void optimize_delete_same_exp();
 
+	void optimize_br_label();
 
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
