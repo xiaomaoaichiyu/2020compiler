@@ -3,7 +3,7 @@
 #include "../front/syntax.h"
 #include "../util/meow.h"
 #include "../ir/dataAnalyse.h"
-   
+
 #include <queue>
 #include <unordered_map>
 #include <algorithm>
@@ -1760,8 +1760,7 @@ void SSA::optimize_delete_same_exp()
 				map <  string, string>::iterator iter;
 				for (iter = newVarName.begin(); iter != newVarName.end(); iter++)
 				{
-					string ppp = iter->second.substr(1, iter->second.size());
-					symbolTable item = symbolTable(VARIABLE, INT, ppp, 0, 0);
+					symbolTable item = symbolTable(VARIABLE, INT, iter->second, 0, 0);		//此时插入符号表要带@
 					total[o].push_back(item);
 					CodeItem citem = CodeItem(ALLOC, iter->second, "0", "1");
 					for (k = 1; k < blockCore[o][1].Ir.size(); k++) {   //define 、 para 、alloc在第一个基本块

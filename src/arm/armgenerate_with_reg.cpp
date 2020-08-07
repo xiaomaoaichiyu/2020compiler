@@ -84,7 +84,7 @@ bool is_nonsence(int index)
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
 				cout << strNext << endl;
-				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
@@ -97,7 +97,7 @@ bool is_nonsence(int index)
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
 				cout << strNext << endl;
-				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
@@ -110,7 +110,7 @@ bool is_nonsence(int index)
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
 				cout << strNext << endl;
-				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, 4);
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
@@ -123,7 +123,7 @@ bool is_nonsence(int index)
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
 				cout << strNext << endl;
-				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, 4);
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
