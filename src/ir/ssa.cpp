@@ -70,7 +70,7 @@ int locBlockForLabel(vector<int> v, int key) {
 
 // 判断标签类型
 // 无需处理
-bool ifNotToDeal(irCodeType ct) {
+bool SSA::ifNotToDeal(irCodeType ct) {
 	switch (ct)
 	{
 	case ALLOC: case GLOBAL: case LABEL: case DEFINE: case NOTE:
@@ -80,7 +80,7 @@ bool ifNotToDeal(irCodeType ct) {
 	}
 }
 // result为定义变量
-bool ifResultDef(irCodeType ct) {
+bool SSA::ifResultDef(irCodeType ct) {
 	switch (ct)
 	{
 	case ADD: case SUB: case MUL: case DIV: case REM:
@@ -97,7 +97,7 @@ bool ifResultDef(irCodeType ct) {
 	}
 }
 // op1为定义变量
-bool ifOp1Def(irCodeType ct) {
+bool SSA::ifOp1Def(irCodeType ct) {
 	switch (ct)
 	{
 	case STORE: case STOREARR: case POP: case ARRAYINIT:
@@ -1225,6 +1225,10 @@ void SSA::generate() {
 
 	// 睿轩做的基本块内公共表达式删除
 	optimize_delete_common_sub_exp();
+
+	build_def_use_chain();
+	active_var_analyse();
+	delete_dead_codes_2();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();

@@ -191,6 +191,9 @@ private:
 	bool ifRegister(std::string name);				// 判断是否是寄存器
 	void init();													// 初始化varName2St结构体
 	int str2int(std::string name);						// 字符串转int
+	bool ifNotToDeal(irCodeType ct);
+	bool ifResultDef(irCodeType ct);
+	bool ifOp1Def(irCodeType ct);
 
 
 	// dag
@@ -201,6 +204,7 @@ private:
 
 	void optimize_arrayinit();
 	void optimize_delete_common_sub_exp();
+	void delete_dead_codes_2();
 
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {

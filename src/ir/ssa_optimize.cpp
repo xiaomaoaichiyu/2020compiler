@@ -7,6 +7,8 @@
 #include <queue>
 #include <unordered_map>
 #include <algorithm>
+#include <regex>
+#include <iterator>
 
 //==========================================================
 
@@ -1549,6 +1551,85 @@ void SSA::optimize_delete_common_sub_exp() {
 		for (int j = 1; j < blockCore[i].size() - 1; j++) { // 遍历该函数的基本块，跳过entry和exit块
 			for (int k = 0; k < blockCore[i][j].Ir.size(); k++) { // 遍历基本块中的中间代码
 				CodeItem ci = blockCore[i][j].Ir[k];
+			}
+		}
+	}
+}
+
+void SSA::delete_dead_codes_2() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		for (j = 2; j < blockCore[i].size() - 1; j++) {
+			if (blockCore[i][j].pred.size() > 1 ||
+				blockCore[i][j].succeeds.size() > 1 ||
+				blockCore[i][j].succeeds.find(blockCore[i].size() - 1) != blockCore[i][j].succeeds.end()) continue;
+			bool res = true;
+			int size3 = blockCore[i][j].Ir.size();
+			for (k = 0; k < size3; k++) {
+				CodeItem ci = blockCore[i][j].Ir[k];
+				if (ci.getCodetype() == STOREARR) {
+					res = false; break;
+				}
+				if (ci.getCodetype() == CALL) {
+					res = false; break;
+				}
+				if (ifOp1Def(ci.getCodetype())) {
+					if (ifGlobalVariable(ci.getOperand1())) {
+						res = false; break;
+					}
+				}
+				if (ifResultDef(ci.getCodetype())) {
+					if (ifGlobalVariable(ci.getResult())) {
+						res = false; break;
+					}
+				}
+			}
+			if (!res) continue;
+			set<string> tmpDef, tmpDef2, tmpUse, tmpIn, tmpOut;
+			for (set<string>::iterator iter = blockCore[i][j].def.begin(); iter != blockCore[i][j].def.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpDef.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].def2.begin(); iter != blockCore[i][j].def2.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpDef2.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].use.begin(); iter != blockCore[i][j].use.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpUse.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].in.begin(); iter != blockCore[i][j].in.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpIn.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].out.begin(); iter != blockCore[i][j].out.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpOut.insert(*iter);
+			set<string> tmp1;
+			set_intersection(tmpDef.begin(), tmpDef.end(), tmpOut.begin(), tmpOut.end(), inserter(tmp1, tmp1.begin()));
+			if (!tmp1.empty()) continue;
+			// if (tmpUse.empty()) {
+			if (tmpDef2.empty()) {
+				CodeItem ci1 = blockCore[i][j].Ir[0];
+				CodeItem ci2 = blockCore[i][j].Ir[blockCore[i][j].Ir.size() - 1];
+				blockCore[i][j].Ir.clear();
+				if (ci1.getCodetype() == LABEL) blockCore[i][j].Ir.push_back(ci1);
+				if (ci2.getCodetype() == BR) blockCore[i][j].Ir.push_back(ci2);
+				build_def_use_chain();
+				active_var_analyse();
+				continue;
+			}
+			//for (set<string>::iterator iter = tmpUse.begin(); iter != tmpUse.end(); iter++) {
+			for (set<string>::iterator iter = tmpDef2.begin(); iter != tmpDef2.end(); iter++) {
+				for (k = 1; k < blockCore[i].size() - 1; k++)
+					if (j == k) continue;
+					else if (blockCore[i][k].use.find(*iter) != blockCore[i][k].use.end()) {
+						// cout << *iter << i << " " << j << " " << k << endl;
+						res = false; break;
+					}
+				if (!res) break;
+			}
+			if (res) {
+				CodeItem ci1 = blockCore[i][j].Ir[0];
+				CodeItem ci2 = blockCore[i][j].Ir[blockCore[i][j].Ir.size() - 1];
+				blockCore[i][j].Ir.clear();
+				if (ci1.getCodetype() == LABEL) blockCore[i][j].Ir.push_back(ci1);
+				if (ci2.getCodetype() == BR) blockCore[i][j].Ir.push_back(ci2);
+				build_def_use_chain();
+				active_var_analyse();
+				continue;
 			}
 		}
 	}

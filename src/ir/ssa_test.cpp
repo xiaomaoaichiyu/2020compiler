@@ -228,6 +228,9 @@ void SSA::Test_Build_Def_Use_Chain() {
 			debug_ssa << "该基本块的use变量: {  ";
 			for (set<string>::iterator iter = v[i][j].use.begin(); iter != v[i][j].use.end(); iter++) debug_ssa << *iter << "\t\t";
 			debug_ssa << "}" << endl;
+			debug_ssa << "该基本块的def2变量: {  ";
+			for (set<string>::iterator iter = v[i][j].def2.begin(); iter != v[i][j].def2.end(); iter++) debug_ssa << *iter << "\t\t";
+			debug_ssa << "}" << endl;
 		}
 	}
 }
