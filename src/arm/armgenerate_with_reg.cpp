@@ -25,7 +25,7 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
-int out_bufferSize;
+int canOutput;
 bool judgetemp(string a)		//丛加的
 {
 	if (a == "R0" || a == "R1" || a == "R2" || a == "R3" || a == "R12") {
@@ -51,6 +51,7 @@ bool is_nonsence(int index)
 {
 	string str = output_buffer[index];
 	smatch result;
+	canOutput = 1;
 	regex pattern1("MOV\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
 	if (regex_match(str, result, pattern1)) {
 		if (result[1] == result[2]) {
@@ -70,6 +71,7 @@ bool is_nonsence(int index)
 	//数组做参数取值或存值时，基址是全局寄存器，会先将其放到临时寄存器产生冗余
 	//例：MOV R2,R7   STR R1,[R2,R0]   ——>  STR R1,[R7,R0]		丛加的
 	//注：由于寄存器可能是3位，因此会带来问题
+	
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
@@ -84,7 +86,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
-				out_bufferSize--;
+				canOutput = 0;
 				return false;
 			}
 			str_num1 = str.substr(4, 2);
@@ -97,7 +99,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
-				out_bufferSize--;
+				canOutput = 0;
 				return false;
 			}
 			str_num1 = str.substr(4, 3);
@@ -110,7 +112,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
-				out_bufferSize--;
+				canOutput = 0;
 				return false;
 			}
 			str_num1 = str.substr(4, 3);
@@ -123,7 +125,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
-				out_bufferSize--;
+				canOutput = 0;
 				return false;
 			}
 		}
@@ -1494,12 +1496,18 @@ void arm_generate(string sname)
 	arm << ".global __aeabi_idivmod\n";
 	//arm << "main:\nMOV PC,LR\n";
 	cout << "get rid of these:\n";
+	int out_bufferSize;
 	for (out_bufferSize = 0; out_bufferSize < output_buffer.size(); out_bufferSize++) {
 		if (is_nonsence(out_bufferSize)) {
 			cout << output_buffer[out_bufferSize] << "\n";
 		}
 		else {
-			arm << output_buffer[out_bufferSize] << "\n";
+			if (canOutput == 1) {
+				arm << output_buffer[out_bufferSize] << "\n";
+			}
+			else {
+				out_bufferSize--;		//优化后的指令又再被优化的可能
+			}
 		}
 	}
 	/*
