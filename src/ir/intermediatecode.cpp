@@ -320,7 +320,7 @@ void CodeItem::changeContent(string res, string ope1, string ope2)
 	this->operand1 = ope1;
 	this->operand2 = ope2;
 }
-bool isTemp(string a)
+bool istemp(string a)
 {
 	if (a[0] == '%' && isdigit(a[1])) {
 		return true;
@@ -332,13 +332,16 @@ bool CodeItem::isequal(CodeItem a)
 	if (a.getCodetype() != this->codetype) {
 		return false;
 	}
-	if ( (a.getResult() != this->result) && (isTemp(a.getResult())==false||isTemp(this->result)==false) ) {
+	if (a.getCodetype() == STORE || a.getCodetype() == STOREARR) {			//只要涉及改内存就不等
+		return false;	
+	}
+	if ( (a.getResult() != this->result) && (istemp(a.getResult())==false||istemp(this->result)==false) ) {
 		return false;			//不相等而且必须有一个不是临时变量
 	}
-	if ((a.getOperand1() != this->operand1) && (isTemp(a.getOperand1()) == false || isTemp(this->operand1) == false)) {
+	if ((a.getOperand1() != this->operand1) && (istemp(a.getOperand1()) == false || istemp(this->operand1) == false)) {
 		return false;			//不相等而且必须有一个不是临时变量
 	}
-	if ((a.getOperand2() != this->operand2) && (isTemp(a.getOperand2()) == false || isTemp(this->operand2) == false)) {
+	if ((a.getOperand2() != this->operand2) && (istemp(a.getOperand2()) == false || istemp(this->operand2) == false)) {
 		return false;			//不相等而且必须有一个不是临时变量
 	}
 	return true;

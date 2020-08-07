@@ -25,6 +25,7 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+int out_bufferSize;
 bool judgetemp(string a)		//丛加的
 {
 	if (a == "R0" || a == "R1" || a == "R2" || a == "R3" || a == "R12") {
@@ -83,6 +84,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
+				out_bufferSize--;
 				return false;
 			}
 			str_num1 = str.substr(4, 2);
@@ -95,6 +97,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
+				out_bufferSize--;
 				return false;
 			}
 			str_num1 = str.substr(4, 3);
@@ -107,6 +110,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
+				out_bufferSize--;
 				return false;
 			}
 			str_num1 = str.substr(4, 3);
@@ -119,6 +123,7 @@ bool is_nonsence(int index)
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, 4);
 				output_buffer.insert(output_buffer.begin() + index, newstr);
+				out_bufferSize--;
 				return false;
 			}
 		}
@@ -156,6 +161,7 @@ bool is_nonsence(int index)
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				return false;
 			}
+
 		}
 	}
 	return false;
@@ -1488,13 +1494,12 @@ void arm_generate(string sname)
 	arm << ".global __aeabi_idivmod\n";
 	//arm << "main:\nMOV PC,LR\n";
 	cout << "get rid of these:\n";
-	int jjj;
-	for (jjj = 0; jjj < output_buffer.size(); jjj++) {
-		if (is_nonsence(jjj)) {
-			cout << output_buffer[jjj] << "\n";
+	for (out_bufferSize = 0; out_bufferSize < output_buffer.size(); out_bufferSize++) {
+		if (is_nonsence(out_bufferSize)) {
+			cout << output_buffer[out_bufferSize] << "\n";
 		}
 		else {
-			arm << output_buffer[jjj] << "\n";
+			arm << output_buffer[out_bufferSize] << "\n";
 		}
 	}
 	/*
