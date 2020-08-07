@@ -1219,7 +1219,7 @@ void SSA::generate() {
 	// 为每个函数划分基本块
 	divide_basic_block();
 	// 为每个基本块删除共同代码(丛睿轩加的)
-	//optimize_delete_same_exp();
+	optimize_delete_same_exp();
 	// 建立基本块间的前序和后序关系
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
