@@ -1847,15 +1847,11 @@ void SSA::delete_dead_codes_2() {
 								CodeItem tci = blockCore[i][j - 1].Ir.back();
 								CodeItem tnci(BR, ci2.getOperand1(), tci.getOperand1(), tci.getOperand2());
 								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
-								blockCore[i][j].pred.clear();
-								simplify_basic_block();
 							}
 							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand2()) == 0) {
 								CodeItem tci = blockCore[i][j - 1].Ir.back();
 								CodeItem tnci(BR, tci.getResult(), tci.getOperand1(), ci2.getOperand1());
 								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
-								blockCore[i][j].pred.clear();
-								simplify_basic_block();
 							}
 						}
 						else {
@@ -1863,8 +1859,6 @@ void SSA::delete_dead_codes_2() {
 								CodeItem tci = blockCore[i][j - 1].Ir.back();
 								CodeItem tnci(BR, "", ci2.getOperand1(), "");
 								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
-								blockCore[i][j].pred.clear();
-								simplify_basic_block();
 							}
 						}
 					}
@@ -1896,15 +1890,11 @@ void SSA::delete_dead_codes_2() {
 								CodeItem tci = blockCore[i][j - 1].Ir.back();
 								CodeItem tnci(BR, ci2.getOperand1(), tci.getOperand1(), tci.getOperand2());
 								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
-								blockCore[i][j].pred.clear();
-								simplify_basic_block();
 							}
 							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand2()) == 0) {
 								CodeItem tci = blockCore[i][j - 1].Ir.back();
 								CodeItem tnci(BR, tci.getResult(), tci.getOperand1(), ci2.getOperand1());
 								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
-								blockCore[i][j].pred.clear();
-								simplify_basic_block();
 							}
 						}
 						else {
@@ -1912,8 +1902,6 @@ void SSA::delete_dead_codes_2() {
 								CodeItem tci = blockCore[i][j - 1].Ir.back();
 								CodeItem tnci(BR, "", ci2.getOperand1(), "");
 								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
-								blockCore[i][j].pred.clear();
-								simplify_basic_block();
 							}
 						}
 					}
