@@ -1354,10 +1354,10 @@ void _arrayinit(CodeItem* ir)
 	//OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
 	//OUTPUT("BL memset");
 	//第二种，连续存
-	int length = stoi(size)*4;
+	int length = stoi(size)+stoi(ir->getExtend());
 	OUTPUT("LDR LR,=" + iniv);
-	for (int i = 0; i < length; i += 4) {
-		int off = p.second - sp + i;
+	for (int i = stoi(ir->getExtend()); i < length; i += 1) {
+		int off = p.second - sp + i*4;
 		if (!is_illegal(to_string(off))) {
 			OUTPUT("LDR R12,=" + to_string(off));
 			OUTPUT("STR LR,[SP,R12]");

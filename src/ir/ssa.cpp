@@ -1218,13 +1218,13 @@ void SSA::generate() {
 	find_primary_statement();
 	// 为每个函数划分基本块
 	divide_basic_block();
+	// 为每个基本块删除共同代码(丛睿轩加的)
+	optimize_delete_same_exp();
 	// 建立基本块间的前序和后序关系
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
 	simplify_basic_block();
 
-	// 睿轩做的基本块内公共表达式删除
-	optimize_delete_common_sub_exp();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
