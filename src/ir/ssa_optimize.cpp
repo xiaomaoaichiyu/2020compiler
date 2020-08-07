@@ -6,6 +6,7 @@
 
 #include <queue>
 #include <unordered_map>
+#include <algorithm>
 
 //==========================================================
 
@@ -177,10 +178,10 @@ void SSA::ssa_optimize() {
 void SSA::simplify_alloc() {
 	int i, j, k;
 	int size1 = codetotal.size();
-	for (i = 1; i < size1; i++) {
+	for (i = 1; i < size1; i++) {	// 遍历函数
 		map<string, bool> ifUse;
 		int size2 = codetotal[i].size();
-		for (j = 1; j < size2; j++) {
+		for (j = 1; j < size2; j++) {		
 			CodeItem ci = codetotal[i][j];
 			if (ci.getCodetype() != ALLOC) {
 				if (ifLocalVariable(ci.getResult())) ifUse[ci.getResult()] = true;
@@ -669,7 +670,7 @@ void SSA::delete_dead_codes() {
 				update = false;
 				set<string> tmpout = blockCore[i][j].out;
 				size3 = blockCore[i][j].Ir.size();
-				for (k = size3 - 1; k >= 0; k--) {
+				for (k = size3 - 1; k >= 0; k--) {	// 遍历中间代码
 					CodeItem ci = blockCore[i][j].Ir[k];
 					switch (ci.getCodetype())
 					{
@@ -1411,3 +1412,133 @@ void SSA::code_outside() {
 //void SSA::protocol_variable_deletion()
 //{
 //}
+
+
+void SSA::optimize_arrayinit() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 函数
+		j = 1;	// 基本块
+		if (blockCore[i][j].Ir.empty())	continue;
+		map<string, int> arraySize;	// 初始化数组size大小
+		map<string, vector<int>> arrayNotInit;	// 不用初始化的元素
+		map<string, vector<int>> arrayInit;		// 必须初始化的元素
+		for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
+			CodeItem ci = blockCore[i][j].Ir[k];
+			if (ci.getCodetype() == ARRAYINIT) {
+				arraySize[ci.getOperand1()] = str2int(ci.getOperand2());
+				arrayNotInit[ci.getOperand1()] = vector<int>();
+				arrayInit[ci.getOperand1()] = vector<int>();
+			}
+			else if (ci.getCodetype() == STOREARR && ifDigit(ci.getOperand2())) {
+				int index = str2int(ci.getOperand2()) / 4;
+				if (arrayNotInit.find(ci.getOperand1()) != arrayNotInit.end() &&
+					find(arrayNotInit[ci.getOperand1()].begin(), arrayNotInit[ci.getOperand1()].end(), index) == arrayNotInit[ci.getOperand1()].end())
+					arrayNotInit[ci.getOperand1()].push_back(index);
+			}
+			else if (ci.getCodetype() == LOADARR) {
+				if (!ifDigit(ci.getOperand2())) {	// 不确定要用数组的那个元素，整个数组必须初始化
+					if (arraySize.find(ci.getOperand1()) != arraySize.end()) {
+						arraySize.erase(ci.getOperand1());
+						arrayNotInit.erase(ci.getOperand1());
+						arrayInit.erase(ci.getOperand1());
+					}
+				}
+				else {
+					int index = str2int(ci.getOperand2()) / 4;
+					if (arrayInit.find(ci.getOperand1()) != arrayInit.end() &&
+						find(arrayNotInit[ci.getOperand1()].begin(), arrayNotInit[ci.getOperand1()].end(), index) == arrayNotInit[ci.getOperand1()].end())
+						// 之前未显式定义，必须初始化的元素
+						arrayInit[ci.getOperand1()].push_back(index);
+				}
+			}
+		}
+		if (!arrayNotInit.empty()) {
+			for (map<string, vector<int>>::iterator iter = arrayNotInit.begin(); iter != arrayNotInit.end(); iter++) {
+				if (!(iter->second).empty())
+					sort((iter->second).begin(), (iter->second).end());
+			}
+		}
+		if (!arrayInit.empty()) {
+			for (map<string, vector<int>>::iterator iter = arrayInit.begin(); iter != arrayInit.end(); iter++) {
+				if (!(iter->second).empty())
+					sort((iter->second).begin(), (iter->second).end());
+			}
+		}
+		for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
+			CodeItem ci = blockCore[i][j].Ir[k];
+			if (ci.getCodetype() == ARRAYINIT) {
+				if (arraySize.find(ci.getOperand1()) == arraySize.end()) continue;
+				vector<int> v = arrayNotInit[ci.getOperand1()];
+				if (!v.empty() && v[v.size() - 1] - v[0] + 1 == v.size()) {
+					vector<int> v2 = arrayInit[ci.getOperand1()];
+					bool update = true;
+					if (!v.empty()) {
+						for (vector<int>::iterator iter = v2.begin(); iter != v2.end(); iter++) {
+							if (find(v.begin(), v.end(), *iter) != v.end()) {
+								// 必须初始化的元素在无需初始化的列表里面
+								update = false; break;
+							}
+						}
+					}
+					if (!update) continue;
+					string arrayName = ci.getOperand1();
+					int firstMember = v[0];
+					int lastMember = v[v.size() - 1];
+					if (firstMember == 0) {
+						int initSize = arraySize[arrayName] - v.size();
+						if (initSize > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize), to_string(lastMember + 1));
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else if (initSize == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, to_string(4 * (lastMember + 1)));
+							blockCore[i][j].Ir[k] = nci;
+						}
+					}
+					else if (lastMember == arraySize[arrayName] - 1) {
+						int initSize = arraySize[arrayName] - v.size();
+						if (initSize > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize), "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else if (initSize == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+					}
+					else {
+						int initSize1 = firstMember + 1;
+						if (initSize1 > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize1), "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else if (initSize1 == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						int initSize2 = arraySize[arrayName] - 1 - lastMember;
+						if (initSize2 > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize2), to_string(lastMember + 1));
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else if (initSize2 == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, to_string(4 * (lastMember + 1)));
+							blockCore[i][j].Ir[k] = nci;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void SSA::optimize_delete_dead_codes() {
+	for (int i = 1; i < blockCore.size(); i++) { // 遍历函数
+		for (int j = 1; j < blockCore[i].size() - 1; j++) { // 遍历该函数的基本块，跳过entry和exit块
+			for (int k = 0; k < blockCore[i][j].Ir.size(); k++) { // 遍历基本块中的中间代码
+				CodeItem ci = blockCore[i][j].Ir[k];
+			}
+		}
+	}
+}

@@ -1193,6 +1193,15 @@ vector<map<string, string>> SSA::getvar2reg() {
 	return var2reg;
 }
 
+// 不考虑错误情况
+int SSA::str2int(string name) {
+	int ans = 0;
+	for (auto i : name) {
+		ans = ans * 10 + (i - '0');
+	}
+	return ans;
+}
+
 // 入口函数
 void SSA::generate() {
 
@@ -1213,6 +1222,9 @@ void SSA::generate() {
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
 	simplify_basic_block();
+
+	// 睿轩做的基本块内公共表达式删除
+	optimize_delete_dead_codes();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
@@ -1257,6 +1269,8 @@ void SSA::generate() {
 
 	// 恢复变量命名
 	rename_back();
+
+	optimize_arrayinit();
 
 	//复写传播
 	//copy_propagation();

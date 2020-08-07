@@ -38,6 +38,7 @@ class CodeItem
 {
 public:
 	CodeItem(irCodeType type, string res, string ope1, string ope2);
+	CodeItem(irCodeType type, string res, string ope1, string ope2, string extend);
 	void setID(int id);
 	int getId();
 	void setInvariant();
@@ -48,6 +49,7 @@ public:
 	void setCodetype(irCodeType type);
 	string getOperand1();
 	string getOperand2();
+	string getExtend();
 	string getResult();
 	void setOperand1(string ope1);
 	void setOperand2(string ope2);
@@ -68,6 +70,7 @@ private:
 	string result;				//结果
 	string operand1;			//左操作数
 	string operand2;			//右操作数
+	string extend;				// 额外的附加域
 	vector<int> fatherBlock;	//当前中间代码所在作用域
 	int inlineMatrixTag;        //数组能否内联
 	string funcName;			//push类型中间代码所属的函数

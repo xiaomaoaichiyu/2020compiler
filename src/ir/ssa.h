@@ -190,6 +190,7 @@ private:
 	bool ifVR(std::string name);						// 判断是否是虚拟寄存器
 	bool ifRegister(std::string name);				// 判断是否是寄存器
 	void init();													// 初始化varName2St结构体
+	int str2int(std::string name);						// 字符串转int
 
 
 	// dag
@@ -198,6 +199,8 @@ private:
 	void delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd);
 	std::string getNewTempVariable();
 
+	void optimize_arrayinit();
+	void optimize_delete_dead_codes();
 
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {

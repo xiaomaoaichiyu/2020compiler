@@ -210,7 +210,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case ARRAYINIT: {
-		content = "arrayinit  " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "arrayinit  " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "" + standardLength(extend);
 		break;
 	}
 	default:
@@ -226,6 +226,18 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->id = -1;
 	this->invariant = "";
 	this->codeout = "";
+	this->extend = "0";
+}
+
+CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2, string extend) {
+	this->codetype = type;
+	this->result = res;
+	this->operand1 = ope1;
+	this->operand2 = ope2;
+	this->id = -1;
+	this->invariant = "";
+	this->codeout = "";
+	this->extend = extend;
 }
 
 void CodeItem::setID(int id) {
@@ -274,6 +286,10 @@ string CodeItem::getOperand2() {
 
 string CodeItem::getResult() {
 	return this->result;
+}
+
+string CodeItem::getExtend() {
+	return this->extend;
 }
 
 void CodeItem::setOperand1(string ope1) {
