@@ -1840,6 +1840,35 @@ void SSA::delete_dead_codes_2() {
 				blockCore[i][j].Ir.clear();
 				if (ci1.getCodetype() == LABEL) blockCore[i][j].Ir.push_back(ci1);
 				if (ci2.getCodetype() == BR) blockCore[i][j].Ir.push_back(ci2);
+				if (ci1.getCodetype() == LABEL && ci2.getCodetype() == BR) {
+					if (!ifTempVariable(ci2.getOperand1()) && blockCore[i][j - 1].Ir.back().getCodetype() == BR) {
+						if (ifTempVariable(blockCore[i][j - 1].Ir.back().getOperand1())) {
+							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getResult()) == 0) {
+								CodeItem tci = blockCore[i][j - 1].Ir.back();
+								CodeItem tnci(BR, ci2.getOperand1(), tci.getOperand1(), tci.getOperand2());
+								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+								blockCore[i][j].pred.clear();
+								simplify_basic_block();
+							}
+							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand2()) == 0) {
+								CodeItem tci = blockCore[i][j - 1].Ir.back();
+								CodeItem tnci(BR, tci.getResult(), tci.getOperand1(), ci2.getOperand1());
+								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+								blockCore[i][j].pred.clear();
+								simplify_basic_block();
+							}
+						}
+						else {
+							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand1()) == 0) {
+								CodeItem tci = blockCore[i][j - 1].Ir.back();
+								CodeItem tnci(BR, "", ci2.getOperand1(), "");
+								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+								blockCore[i][j].pred.clear();
+								simplify_basic_block();
+							}
+						}
+					}
+				}
 				build_def_use_chain();
 				active_var_analyse();
 				continue;
@@ -1860,6 +1889,35 @@ void SSA::delete_dead_codes_2() {
 				blockCore[i][j].Ir.clear();
 				if (ci1.getCodetype() == LABEL) blockCore[i][j].Ir.push_back(ci1);
 				if (ci2.getCodetype() == BR) blockCore[i][j].Ir.push_back(ci2);
+				if (ci1.getCodetype() == LABEL && ci2.getCodetype() == BR) {
+					if (!ifTempVariable(ci2.getOperand1()) && blockCore[i][j - 1].Ir.back().getCodetype() == BR) {
+						if (ifTempVariable(blockCore[i][j - 1].Ir.back().getOperand1())) {
+							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getResult()) == 0) {
+								CodeItem tci = blockCore[i][j - 1].Ir.back();
+								CodeItem tnci(BR, ci2.getOperand1(), tci.getOperand1(), tci.getOperand2());
+								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+								blockCore[i][j].pred.clear();
+								simplify_basic_block();
+							}
+							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand2()) == 0) {
+								CodeItem tci = blockCore[i][j - 1].Ir.back();
+								CodeItem tnci(BR, tci.getResult(), tci.getOperand1(), ci2.getOperand1());
+								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+								blockCore[i][j].pred.clear();
+								simplify_basic_block();
+							}
+						}
+						else {
+							if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand1()) == 0) {
+								CodeItem tci = blockCore[i][j - 1].Ir.back();
+								CodeItem tnci(BR, "", ci2.getOperand1(), "");
+								blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+								blockCore[i][j].pred.clear();
+								simplify_basic_block();
+							}
+						}
+					}
+				}
 				build_def_use_chain();
 				active_var_analyse();
 				continue;
