@@ -1,6 +1,6 @@
 ﻿#ifndef _SSA_H_
 #define _SSA_H_
-
+      
 #include <iostream>
 #include <vector>
 #include <set>
@@ -203,8 +203,11 @@ private:
 	std::string getNewTempVariable();
 
 	void optimize_arrayinit();
-	void optimize_delete_common_sub_exp();
+
 	void delete_dead_codes_2();
+
+	void optimize_delete_same_exp();
+
 
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
