@@ -1495,6 +1495,10 @@ void SSA::optimize_arrayinit() {
 							CodeItem nci(STOREARR, "0", arrayName, to_string(4 * (lastMember + 1)));
 							blockCore[i][j].Ir[k] = nci;
 						}
+						else {
+							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+							k--;
+						}
 					}
 					else if (lastMember == arraySize[arrayName] - 1) {
 						int initSize = arraySize[arrayName] - v.size();
@@ -1505,6 +1509,10 @@ void SSA::optimize_arrayinit() {
 						else if (initSize == 1) {
 							CodeItem nci(STOREARR, "0", arrayName, "0");
 							blockCore[i][j].Ir[k] = nci;
+						}
+						else {
+							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+							k--;
 						}
 					}
 					else {
@@ -1517,15 +1525,18 @@ void SSA::optimize_arrayinit() {
 							CodeItem nci(STOREARR, "0", arrayName, "0");
 							blockCore[i][j].Ir[k] = nci;
 						}
+						else cout << "arrayinit优化：error1" << endl;
 						int initSize2 = arraySize[arrayName] - 1 - lastMember;
+						k++;
 						if (initSize2 > 1) {
 							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize2), to_string(lastMember + 1));
-							blockCore[i][j].Ir[k] = nci;
+							blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin() + k, nci);
 						}
 						else if (initSize2 == 1) {
 							CodeItem nci(STOREARR, "0", arrayName, to_string(4 * (lastMember + 1)));
-							blockCore[i][j].Ir[k] = nci;
+							blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin() + k, nci);
 						}
+						else cout << "arrayinit优化：error2" << endl;
 					}
 				}
 			}
