@@ -1544,7 +1544,7 @@ void SSA::optimize_arrayinit() {
 	}
 }
 
-void SSA::optimize_delete_dead_codes() {
+void SSA::optimize_delete_common_sub_exp() {
 	for (int i = 1; i < blockCore.size(); i++) { // 遍历函数
 		for (int j = 1; j < blockCore[i].size() - 1; j++) { // 遍历该函数的基本块，跳过entry和exit块
 			for (int k = 0; k < blockCore[i][j].Ir.size(); k++) { // 遍历基本块中的中间代码

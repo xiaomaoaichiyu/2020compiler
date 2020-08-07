@@ -1224,7 +1224,7 @@ void SSA::generate() {
 	simplify_basic_block();
 
 	// 睿轩做的基本块内公共表达式删除
-	optimize_delete_dead_codes();
+	optimize_delete_common_sub_exp();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();

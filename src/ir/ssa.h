@@ -200,7 +200,7 @@ private:
 	std::string getNewTempVariable();
 
 	void optimize_arrayinit();
-	void optimize_delete_dead_codes();
+	void optimize_delete_common_sub_exp();
 
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
