@@ -24,8 +24,41 @@ string reglist = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR,R0";
 string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
-
+map<string, int> funcname2index;
+map<string, set<string>> funcname2caller;
 int canOutput;
+
+string getname(string ir_name)
+{
+	if (ir_name[0] == '@') {
+		return ir_name.substr(1);
+	}
+}
+
+void getcallerMap()
+{
+	string funcname = "";
+	for (int i = 0; i < LIR.size(); i++) {
+		for (int j = 0; j < LIR[i].size(); j++) {
+			CodeItem* ir_now = &LIR[i][j];
+			auto type = ir_now->getCodetype();
+			if (type == DEFINE) {
+				funcname = getname(ir_now->getResult());
+				funcname2index[funcname] = i;
+			}
+			else if (type == CALL) {
+				string name = getname(ir_now->getOperand1());
+				if (funcname2caller.find(name) != funcname2caller.end()) {
+					funcname2caller[name].insert(funcname);
+				}
+				else {
+					funcname2caller[name] = { funcname };
+				}
+			}
+		}
+	}
+}
+
 bool judgetemp(string a)		//丛加的
 {
 	if (a == "R0" || a == "R1" || a == "R2" || a == "R3" || a == "R12") {
@@ -309,13 +342,6 @@ string get_cmp_label(string logistic) {
 	return logistic + ".L" + to_string(cnt++);
 }
 
-string getname(string ir_name)
-{
-	if (ir_name[0] == '@') {
-		return ir_name.substr(1);
-	}
-}
-
 pair<string, int> get_location(string name)
 {
 	if (name[0] == '@') {
@@ -420,10 +446,18 @@ void _define(CodeItem* ir)
 	}
 
 	global_reg_list = "";
+	set<string> reg_need2push;
+	for (string callername : funcname2caller[name]) {
+		for (string reg : func2gReg[funcname2index[callername]]) {
+			reg_need2push.insert(reg);
+		}
+	}
 	int regN = 1;
 	for (string reg : func2gReg[symbol_pointer]) {
-		global_reg_list += "," + reg;
-		regN++;
+		if (reg_need2push.find(reg) != reg_need2push.end()) {
+			global_reg_list += "," + reg;
+			regN++;
+		}
 	}
 	if (!is_illegal(to_string(sp - sp_without_para))) {
 		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
@@ -1368,11 +1402,10 @@ void _arrayinit(CodeItem* ir)
 	}
 }
 
-
-
 void arm_generate(string sname)
 {
 	ofstream arm(sname);
+	getcallerMap();
 	for (int i = 0; i < LIR.size(); i++) {
 		for (int j = 0; j < LIR[i].size(); j++) {
 			CodeItem* ir_now = &LIR[i][j];
