@@ -1876,7 +1876,7 @@ void SSA::optimize_br_label() {
 		for (j = 2; j < size2 - 1; j++) {
 			CodeItem ci1 = blockCore[i][j].Ir[0];
 			CodeItem ci2 = blockCore[i][j].Ir[blockCore[i][j].Ir.size() - 1];
-			if (ci1.getCodetype() == LABEL && ci2.getCodetype() == BR) {
+			if (blockCore[i][j].Ir.size() == 2 && ci1.getCodetype() == LABEL && ci2.getCodetype() == BR) {
 				if (!ifTempVariable(ci2.getOperand1()) && blockCore[i][j - 1].Ir.back().getCodetype() == BR) {
 					if (ifTempVariable(blockCore[i][j - 1].Ir.back().getOperand1())) {
 						if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getResult()) == 0) {
