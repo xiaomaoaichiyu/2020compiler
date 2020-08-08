@@ -451,9 +451,9 @@ void SSA::inline_function() {
 					else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
 						continue;
 					}
-					// else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
-					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && globalRegAllocated[i] + globalRegAllocated[funNum] > 10) {
-						//continue;
+					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
+					//else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && globalRegAllocated[i] + globalRegAllocated[funNum] > 10) {
+						continue;
 					}
 					else {
 						if (debug) cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
