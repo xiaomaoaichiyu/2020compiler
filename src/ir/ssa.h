@@ -111,6 +111,7 @@ private:
 	std::vector<int> funCallCount;									// 记录一个函数第几次被调用
 
 	std::vector<std::map<std::string, symbolTable>> varName2St;	// 变量名
+	vector<int> globalRegAllocated;	// 函数内需要的全局寄存器数量
 	
 	// R12参与全局寄存器分配
 	/*std::map<std::string, int> regName2Num{ {"R4", 4}, {"R5", 5}, {"R6", 6}, {"R7", 7}, {"R8", 8}, {"R9", 9}, {"R10", 10}, {"R11", 11}, {"R12", 12} };
@@ -235,6 +236,8 @@ private:
 	void optimize_delete_same_exp();
 
 	void optimize_br_label();
+
+	void count_global_reg_allocated();
 
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
