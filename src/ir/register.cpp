@@ -179,7 +179,13 @@ void registerAllocation() {
 		vector<CodeItem> funcTmp;
 
 		//初始化
-		vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };	//临时寄存器池
+
+		// R12作为临时寄存器
+		// vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };	//临时寄存器池
+		
+		// R12不作为临时寄存器
+		vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//临时寄存器池
+
 		RegPool regpool(tmpRegs);
 		vreg2varReg.clear();
 		first.clear();
@@ -1036,7 +1042,13 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		vector<CodeItem> funcTmp;
 
 		//初始化
-		vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12"};	//临时寄存器池
+
+		// R12作为临时寄存器
+		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12"};	//临时寄存器池
+		
+		// R12不作为临时寄存器
+		vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//临时寄存器池
+		
 		RegPool regpool(tmpRegs);
 		vreg2varReg.clear();
 		first.clear();
