@@ -170,13 +170,19 @@ void youhuaDivCompare();		//将涉及到除法比较优化成乘法比较
 bool isCompare(irCodeType type);
 
 //相同表达式删除
-int noWhileLabel;
+int noWhileLabel;				//记录最后一条和while相关中间代码下标，在changeForInline函数内完成，节约一次遍历
 map<string, int>  record;		//记录load或loadarr型变量出现次数
 map<string, string> newVarName;	//记录新的变量名
 map<string, int> maxLine;		//记录变量最先出现store对应行数
 void deleteSameExp(int index);
 bool isTemp(string a);
 bool isNoChangeFunc(string a);		//跳转到该函数不会修改任何内容
+
+//全局变量多次使用变成局部变量，可以避免多次LDR和STR
+void changeGlobalToAlloc(int index);		
+int haveCall;			//该函数不能出现call类型中间代码，在changeForInline函数内完成，节约一次遍历
+
+
 //=============================================================================================================
 //        以上为全局变量定义以及函数定义
 //=============================================================================================================
@@ -336,6 +342,7 @@ void CompUnit()
 					change(Funcindex);		//修改中间代码、符号表
 					changeForInline(Funcindex);
 					total[Funcindex][0].setisinlineFunc(isinlineFunc);
+					changeGlobalToAlloc(Funcindex);
 					deleteSameExp(Funcindex);
 				}
 				else {
@@ -357,6 +364,7 @@ void CompUnit()
 				change(Funcindex);			//修改中间代码、符号表
 				changeForInline(Funcindex);
 				total[Funcindex][0].setisinlineFunc(isinlineFunc);
+				changeGlobalToAlloc(Funcindex);
 				deleteSameExp(Funcindex);
 			}
 		}
@@ -2461,11 +2469,14 @@ void changeForInline(int index)
 	//先修改中间代码中局部变量、参数名
 	vector<CodeItem> b = codetotal[index];
 	codetotal.pop_back();
-	for (i = 0,noWhileLabel=0; i < b.size(); i++) {
+	for (i = 0, noWhileLabel = 0, haveCall = 0; i < b.size(); i++) {
 		irCodeType codetype = b[i].getCodetype();
 		string res = b[i].getResult();
 		string ope1 = b[i].getOperand1();
 		string ope2 = b[i].getOperand2();
+		if (codetype == CALL && isNoChangeFunc(ope1)==false) {
+			haveCall = 1;		//出现调用，直接不做将全局变量变成局部变量的操作
+		}
 		if (res.size() > 0 && res[0] == '%' && (!isdigit(res[1]))) {  //res必须是变量或参数
 			string aa = res;
 			string bb = res;
@@ -2834,4 +2845,114 @@ bool isTemp(string a)
 	}
 	return false;
 }
+void changeGlobalToAlloc(int index)
+{
+	if (haveCall == 1) {	//出现调用，直接不做将全局变量变成局部变量的操作
+		return;
+	}
+	int i, j, k;
+	map<string, int> globalTimes;	//统计全局变量出现次数
+	set<string> globalNames;		//统计全局变量名
+	for (i = 1; i < codetotal[index].size(); i++) {		//先遍历中间代码统计全局变量出现次数
+		string res = codetotal[index][i].getResult();
+		string ope1 = codetotal[index][i].getOperand1();
+		string ope2 = codetotal[index][i].getOperand2();
+		if (codetotal[index][i].getCodetype() == NOTE) {			//注释类的中间代码不管
+			continue;
+		}
+		if (res[0] == '@') {
+			globalTimes[res] = globalTimes[res] + 1;
+			globalNames.insert(res);
+		}
+		if (ope1[0] == '@') {
+			globalTimes[ope1] = globalTimes[ope1] + 1;
+			globalNames.insert(ope1);
+		}
+		if (ope2[0] == '@') {
+			globalTimes[ope2] = globalTimes[ope2] + 1;
+			globalNames.insert(ope2);
+		}
+	}
+	while (true) {
+		int flag = 0;
+		for (string str : globalNames) {	
+			if (globalTimes[str] <= 4) {		//该变量至少出现5次
+				globalNames.erase(str);
+				flag = 1;
+				break;
+			}
+			for (j = 0; j < total[0].size(); j++) {		
+				string gName = str.substr(1, str.size());
+				if (total[0][j].getName() == gName) {		//此时符号表中变量还没有@，所以要去掉首字符
+					break;
+				}
+			}
+			if (total[0][j].getDimension() > 0) {  //该变量不能是全局数组
+				globalNames.erase(str);
+				flag = 1;
+				break;
+			}
+		}
+		if (flag == 0) {
+			break;
+		}
+	}
+	//此时globalNames中剩下符合要求的全局变量
+	if (globalNames.size() == 0) {
+		return;
+	}
+	if (total[index][0].getValuetype() == VOID) {		//VOID函数没有ret自动补齐
+		int size = codetotal[index].size();
+		if (codetotal[index][size - 1].getCodetype() != RET) {
+			CodeItem citem = CodeItem(RET, "", "", "void");
+			codetotal[index].push_back(citem);
+		}
+	}
+	for (string str : globalNames) {
+		string newName = str.substr(1, str.size());
+		newName = "%Glo-All-" + newName + "-" + total[index][0].getName();	//该全局变量对应局部变量新名字
+		for (i = 1; i < codetotal[index].size(); i++) {		//遍历中间代码，更改成分
+			if (codetotal[index][i].getResult() == str) {
+				codetotal[index][i].setResult(newName);
+			}
+			if (codetotal[index][i].getOperand1() == str) {
+				codetotal[index][i].setOperand1(newName);
+			}
+			if (codetotal[index][i].getOperand2() == str) {
+				codetotal[index][i].setOperand2(newName);
+			}
+		}
+		//在符号表中插入新变量
+		symbolTable item = symbolTable(VARIABLE, INT,newName.substr(1,newName.size()), 0, 0);
+		total[index].push_back(item);
+		//在中间代码加入新内容
+		//先获取临时变量序号,共需要retNum+1个
+		for (j = 1; j < codetotal[index].size(); j++) {
+			if (codetotal[index][j].getCodetype() == PARA || codetotal[index][j].getCodetype() == ALLOC) {
+				continue;
+			}
+			else {
+				CodeItem citem = CodeItem(ALLOC, newName, "0", "1");
+				codetotal[index].insert(codetotal[index].begin() + j, citem);
+				CodeItem citem1 = CodeItem(LOAD,'%'+numToString(Temp) , str, "");
+				codetotal[index].insert(codetotal[index].begin() + j + 1, citem1);
+				CodeItem citem2 = CodeItem(STORE, '%' + numToString(Temp), newName, "");	//赋值单值
+				codetotal[index].insert(codetotal[index].begin() + j + 2, citem2);
+				j = j + 3;
+				Temp++;
+				break;
+			}
+		}
+		for (; j < codetotal[index].size(); j++) {
+			if (codetotal[index][j].getCodetype() == RET ) {
+				CodeItem citem1 = CodeItem(LOAD, '%' + numToString(Temp), newName, "");
+				codetotal[index].insert(codetotal[index].begin() + j , citem1);
+				CodeItem citem2 = CodeItem(STORE, '%' + numToString(Temp), str, "");	//赋值单值
+				codetotal[index].insert(codetotal[index].begin() + j + 1, citem2);
+				j = j + 2;
+				Temp++;
+			}
+		}
+	}
 
+}
