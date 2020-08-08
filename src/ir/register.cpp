@@ -181,10 +181,10 @@ void registerAllocation() {
 		//初始化
 
 		// R12作为临时寄存器
-		// vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };	//临时寄存器池
+		 vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };	//临时寄存器池
 		
 		// R12不作为临时寄存器
-		vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//临时寄存器池
+		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//临时寄存器池
 
 		RegPool regpool(tmpRegs);
 		vreg2varReg.clear();
@@ -1044,10 +1044,10 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		//初始化
 
 		// R12作为临时寄存器
-		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12"};	//临时寄存器池
+		vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12"};	//临时寄存器池
 		
 		// R12不作为临时寄存器
-		vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//临时寄存器池
+		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//临时寄存器池
 		
 		RegPool regpool(tmpRegs);
 		vreg2varReg.clear();
