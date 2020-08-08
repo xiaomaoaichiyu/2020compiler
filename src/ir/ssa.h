@@ -10,7 +10,6 @@
 #include "intermediatecode.h"
 #include "../front/syntax.h"
 
-<<<<<<< HEAD
 //==============================
 // 循环
 //==============================
@@ -29,7 +28,6 @@ extern vector<vector<Circle>> func2circles;
 
 //===========================================
 
-=======
 // dag
 class TreeNode {
 public:
@@ -41,7 +39,6 @@ public:
 	TreeNode();
 };
 
->>>>>>> 080083817e1320a1bb397127f797593744ffd77e
 class phiFun {
 	// phi函数的例子：y^3 = \phi(y^1, y^2)
 public:
