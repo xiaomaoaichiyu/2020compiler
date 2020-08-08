@@ -54,6 +54,13 @@ void UDchain::count_gen() {
 					def2var[def1] = res;
 				}
 				break;
+			} case PARA: {
+				if (ope2 == "0") {	//单值变量
+					Node def1(i, j, res);
+					gen.at(i).insert(def1);
+					def2var[def1] = res;
+				}
+				break;
 			}
 			default:
 				break;
