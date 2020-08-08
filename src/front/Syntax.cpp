@@ -165,11 +165,18 @@ symbolTable checkTable(string checkname, int function_number, vector<int> father
 void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
 void changeForInline(int index);		//如果为内联函数修改符号表和中间代码的名字
-void changecodeForInline();			//修改中间代码
-int judgeSpecialFunc(string name);		//判断是否为特殊函数
-int findFuncindex(string name);			//查找函数名在符号表中下标
-string newLabelName(string name, int houzhui);		//修改内敛函数的标签名
-string newTempName(string name);					//修改临时变量%后的下标名
+
+void youhuaDivCompare();		//将涉及到除法比较优化成乘法比较
+bool isCompare(irCodeType type);
+
+//相同表达式删除
+int noWhileLabel;
+map<string, int>  record;		//记录load或loadarr型变量出现次数
+map<string, string> newVarName;	//记录新的变量名
+map<string, int> maxLine;		//记录变量最先出现store对应行数
+void deleteSameExp(int index);
+bool isTemp(string a);
+bool isNoChangeFunc(string a);		//跳转到该函数不会修改任何内容
 //=============================================================================================================
 //        以上为全局变量定义以及函数定义
 //=============================================================================================================
@@ -221,6 +228,7 @@ int frontExecute(string syname)
 		}
 	}
 	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
+	youhuaDivCompare();				//除法比较进行优化
 	//检测符号表内容
 	/*
 	cout << "名字 " << "Block下标 " << "种类 0Con 1Var 2Para 3Func " << "维度 " << endl;
@@ -328,6 +336,7 @@ void CompUnit()
 					change(Funcindex);		//修改中间代码、符号表
 					changeForInline(Funcindex);
 					total[Funcindex][0].setisinlineFunc(isinlineFunc);
+					deleteSameExp(Funcindex);
 				}
 				else {
 					symbol = sym_tag;
@@ -348,6 +357,7 @@ void CompUnit()
 				change(Funcindex);			//修改中间代码、符号表
 				changeForInline(Funcindex);
 				total[Funcindex][0].setisinlineFunc(isinlineFunc);
+				deleteSameExp(Funcindex);
 			}
 		}
 	}
@@ -2451,7 +2461,7 @@ void changeForInline(int index)
 	//先修改中间代码中局部变量、参数名
 	vector<CodeItem> b = codetotal[index];
 	codetotal.pop_back();
-	for (i = 0; i < b.size(); i++) {
+	for (i = 0,noWhileLabel=0; i < b.size(); i++) {
 		irCodeType codetype = b[i].getCodetype();
 		string res = b[i].getResult();
 		string ope1 = b[i].getOperand1();
@@ -2468,6 +2478,9 @@ void changeForInline(int index)
 			if (aa != "%while." && bb != "%if.") {
 				res = newinlineName(res, Funcname);
 			}
+			if (aa == "%while.") {
+				noWhileLabel = i;
+			}
 		}
 		if (ope1.size() > 0 && ope1[0] == '%' && (!isdigit(ope1[1]))) {  //res必须是变量
 			string aa = ope1;
@@ -2481,6 +2494,9 @@ void changeForInline(int index)
 			if (aa != "%while." && bb != "%if.") {
 				ope1 = newinlineName(ope1, Funcname);
 			}
+			if (aa == "%while.") {
+				noWhileLabel = i;
+			}
 		}
 		if (ope2.size() > 0 && ope2[0] == '%' && (!isdigit(ope2[1]))) {  //res必须是变量
 			string aa = ope2;
@@ -2493,6 +2509,9 @@ void changeForInline(int index)
 			}
 			if (aa != "%while." && bb != "%if.") {
 				ope2 = newinlineName(ope2, Funcname);
+			}
+			if (aa == "%while.") {
+				noWhileLabel = i;
 			}
 		}
 		b[i].changeContent(res, ope1, ope2);
@@ -2513,191 +2532,306 @@ void changeForInline(int index)
 	}
 	total.push_back(a);
 }
-
-void changecodeForInline()
+void youhuaDivCompare()
 {
-	int i, j, k ,p;
-	int funcIndex;	//函数在符号表中下标
-	string funcName;
-	int inlineTime = 0; //记录内联次数，用于区分下标使用
-	vector<vector<string>> canshu;
-	for (i = 0; i < 20; i++) {		//先对参数初始化
-		vector<string> a;
-		canshu.push_back(a);
-	}
-	//全局中间代码不动
+	int i, j, k;
 	for (i = 1; i < codetotal.size(); i++) {
-		map<string, int> message;	//存储信息
-		int allocIndex = 1;		//alloc截至的下标
-		for (j = 1; j < codetotal[i].size(); j++) {
-			if (codetotal[i][j].getCodetype() == PARA || codetotal[i][j].getCodetype() == ALLOC) {
-				allocIndex++;
-			}
-			if (codetotal[i][j].getCodetype() == PUSH) {
-				funcName = codetotal[i][j].getFuncName();
-				if (judgeSpecialFunc(funcName)) {
-					continue;
-				}
-				funcIndex = findFuncindex(funcName);
-				if (total[funcIndex][0].getisinlineFunc()==0) {
-					continue;
-				}
-				else {	//内联函数，将push类型中间代码改成STORE赋值
-					//先把push的东西暂存起来，等到有CALL的时候再按顺序STORE
-					int paraIndex = stringToNum(codetotal[i][j].getOperand2());
-					string paravalue = codetotal[i][j].getOperand1();
-					canshu[paraIndex].push_back(paravalue);
-					codetotal[i].erase(codetotal[i].begin() + j);
-					j--;
-					/*
-					CodeItem citem = CodeItem(STORE, codetotal[i][j].getOperand1(), paraName, "");	//赋值单值
-					codetotal[i].erase(codetotal[i].begin() + j);
-					codetotal[i].insert(codetotal[i].begin() + j, citem);
-					*/
-				}
-			}
-			if (codetotal[i][j].getCodetype() == CALL) {
-				funcName = codetotal[i][j].getOperand1();
-				if (judgeSpecialFunc(funcName)) {
-					continue;
-				}
-				funcIndex = findFuncindex(funcName);
-				if (total[funcIndex][0].getisinlineFunc() == 0) {
-					continue;
-				}
-				else {	//内联函数，将该函数中间代码全加到当前中间代码里面
-					CodeItem callResult = codetotal[i][j];
-					codetotal[i].erase(codetotal[i].begin() + j);		//当前CALL可以删除了
-					//开头加入被内敛函数的ALLOC声明,被内敛的PARA当ALLOC,ALLOC还是ALLOC，插在原函数ALLOC后面即可
-					//同时修改函数的符号表
-					if (message.count(funcName) == 0) {
-						message[funcName] = 1;
-						for (k = 0, p = 0; k < codetotal[funcIndex].size(); k++) {	//从1开始，最开始的define就不要了
-							if (codetotal[funcIndex][k].getCodetype() == ALLOC) {
-								codetotal[i].insert(codetotal[i].begin() + allocIndex + p, codetotal[funcIndex][k]);
-								p++;
+		for (j = 0; j < codetotal[i].size(); j++) {		//优化条件1：当前代码为除数而且下一条代码为比较类型代码
+			if (codetotal[i][j].getCodetype() == DIV && isCompare(codetotal[i][j+1].getCodetype()) ) {		
+				CodeItem c1 = codetotal[i][j];
+				CodeItem c2 = codetotal[i][j+1];
+				string res = c1.getResult();
+				string ope1 = c2.getOperand1();
+				string ope2 = c2.getOperand2();			//比较的右操作数
+				if (res == ope1 && ope2[0] != '%') {		//比较左操作数为临时变量，右操作数为整数
+					int value = stringToNum(ope2);
+					if (value >= 0) {
+						string num1 = c1.getOperand1();		//DIV中的被除数
+						string num2 = c1.getOperand2();		//DIV中的除数
+						if (num2[0] == '%') {			//div中除数是临时变量
+							codetotal[i].erase(codetotal[i].begin() + j);
+							codetotal[i].erase(codetotal[i].begin() + j);
+							if (c2.getCodetype() == SLT) {		//div %2  %1  %0；slt %3 %2 10000    小于                
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope2);
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
 							}
-							if (codetotal[funcIndex][k].getCodetype() == PARA) {
-								CodeItem citem = CodeItem(ALLOC, codetotal[funcIndex][k].getResult(), "", "1");
-								codetotal[i].insert(codetotal[i].begin() + allocIndex + p, citem);
-								p++;
+							else if (c2.getCodetype() == SLE) {  //div %2  %1  %0；sle %3 %2 10000    小于等于    
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value+1));
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
 							}
-						}
-						j = j + p;
-						//修改符号表
-						for (k = 1; k < total[funcIndex].size(); k++) {
-							if (total[funcIndex][k].getForm() == PARAMETER) {	//参数变成普通变量
-								symbolTable item = symbolTable(VARIABLE, INT, total[funcIndex][k].getName(), 0, 0);
-								total[i].push_back(item);
+							else if (c2.getCodetype() == SGE) {  //div %2  %1  %0；sge %3 %2 10000    大于等于    
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope2);
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
 							}
-							else {
-								total[i].push_back(total[funcIndex][k]);
+							else if (c2.getCodetype() == SGT) {  //div %2  %1  %0；sgt %3 %2 10000    大于    
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value + 1));
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
 							}
-						}
-					}
-					//给参数赋初值
-					for (int aa = 0; aa < total[funcIndex][0].getparaLength(); aa++) {
-						int size = canshu[aa + 1].size();
-						CodeItem citem = CodeItem(STORE, canshu[aa+1][size-1], total[funcIndex][aa+1].getName(), "");	//赋值单值
-						codetotal[i].insert(codetotal[i].begin() + j, citem);
-						j++;
-						canshu[aa + 1].pop_back();
-					}
-					inlineTime++;
-					Temp++;
-					string tem = funcName;
-					tem.erase(0, 1);
-					string funcEndLabel = tem + numToString(inlineTime);
-					for (k = 0,p=0; k < codetotal[funcIndex].size(); k++) {	//从1开始，最开始的define就不要了
-						if (codetotal[funcIndex][k].getCodetype() == BR || codetotal[funcIndex][k].getCodetype() == LABEL) {	//标签需要改成分
-							string res = newLabelName(codetotal[funcIndex][k].getResult(),inlineTime);
-							string ope1 = newLabelName(codetotal[funcIndex][k].getOperand1(),inlineTime);
-							string ope2 = newLabelName(codetotal[funcIndex][k].getOperand2(),inlineTime);
-							res = newTempName(res);
-							ope1 = newTempName(ope1);
-							ope2 = newTempName(ope2);
-							CodeItem citem = CodeItem(codetotal[funcIndex][k].getCodetype(), res, ope1, ope2);	//更改完成分
-							codetotal[i].insert(codetotal[i].begin() + j + p, citem);
-							p++;
-						}
-						else if(codetotal[funcIndex][k].getCodetype()==RET){
-							if (codetotal[funcIndex][k].getOperand2() == "int") {
-								CodeItem citem = CodeItem(MOV, "", callResult.getResult(), newTempName(codetotal[funcIndex][k].getOperand1()));
-								codetotal[i].insert(codetotal[i].begin() + j + p, citem);
-								p++;
-							}
-							CodeItem citem = CodeItem(BR, "", funcEndLabel, "");   //BR if.end
-							codetotal[i].insert(codetotal[i].begin() + j + p, citem);
-							p++;
-						}
-						else if (codetotal[funcIndex][k].getCodetype() == ALLOC || codetotal[funcIndex][k].getCodetype() == PARA
-							|| codetotal[funcIndex][k].getCodetype() == DEFINE) {
-							continue;		//这种直接跳过
 						}
 						else {
-							string res = newTempName(codetotal[funcIndex][k].getResult());
-							string ope1 = newTempName(codetotal[funcIndex][k].getOperand1());
-							string ope2 = newTempName(codetotal[funcIndex][k].getOperand2());
-							CodeItem citem = CodeItem(codetotal[funcIndex][k].getCodetype(), res, ope1, ope2);	//更改完成分
-							codetotal[i].insert(codetotal[i].begin() + j + p, citem);
-							p++;
+							int value2 = stringToNum(num2);
+							if (value2 > 0) {
+								codetotal[i].erase(codetotal[i].begin() + j);
+								codetotal[i].erase(codetotal[i].begin() + j);
+								if (c2.getCodetype() == SLT) {		//div %2  %1  30；slt %3 %2 10000    小于                
+									CodeItem citem = CodeItem(SLT, c2.getResult(), num1, numToString(value2 * value));
+									codetotal[i].insert(codetotal[i].begin()+j,citem);
+								}
+								else if (c2.getCodetype() == SLE) {  //div %2  %1  30；sle %3 %2 10000    小于等于    
+									CodeItem citem = CodeItem(SLT, c2.getResult(), num1, numToString(value2 * (value+1)));
+									codetotal[i].insert(codetotal[i].begin() + j, citem);
+								}
+								else if (c2.getCodetype() == SGE) {  //div %2  %1  30；sge %3 %2 10000    大于等于    
+									CodeItem citem = CodeItem(SGE, c2.getResult(), num1, numToString(value2 * value));
+									codetotal[i].insert(codetotal[i].begin() + j, citem);
+								}
+								else if (c2.getCodetype() == SGT) {  //div %2  %1  30；sle %3 %2 10000    大于    
+									CodeItem citem = CodeItem(SGE, c2.getResult(), num1, numToString(value2 * (value + 1)));
+									codetotal[i].insert(codetotal[i].begin() + j, citem);
+								}
+							}
 						}
 					}
-					CodeItem citem = CodeItem(LABEL, funcEndLabel, "", "");	//label if.else
-					codetotal[i].insert(codetotal[i].begin() + j + p, citem);
-					p++;
-					j = j + p;
+				}
+				else if (res == ope2 && ope1[0] != '%') {		//比较右操作数为临时变量，左操作数为整数
+					int value = stringToNum(ope1);
+					if (value >= 0) {
+						string num1 = c1.getOperand1();		//DIV中的被除数
+						string num2 = c1.getOperand2();		//DIV中的除数
+						if (num2[0] == '%') {			//div中除数是临时变量
+							codetotal[i].erase(codetotal[i].begin() + j);
+							codetotal[i].erase(codetotal[i].begin() + j);
+							if (c2.getCodetype() == SLT) {		//div %2  %1  %0；slt %3 10000 %2   小于                
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value+1));
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+							}
+							else if (c2.getCodetype() == SLE) {  //div %2  %1  %0；sle %3 %2 10000    小于等于    
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope1);
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+							}
+							else if (c2.getCodetype() == SGE) {  //div %2  %1  %0；sge %3 10000 %2    大于等于    
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value + 1));
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+							}
+							else if (c2.getCodetype() == SGT) {  //div %2  %1  %0；sgt %3 10000 %2    大于    
+								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope1);
+								codetotal[i].insert(codetotal[i].begin() + j, citem1);
+								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
+								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+							}
+						}
+						else {
+							int value2 = stringToNum(num2);
+							if (value2 > 0) {
+								codetotal[i].erase(codetotal[i].begin() + j);
+								codetotal[i].erase(codetotal[i].begin() + j);
+								if (c2.getCodetype() == SLT) {		//div %2  %1  30；slt %3 10000  %2   小于                
+									CodeItem citem = CodeItem(SGE, c2.getResult(), num1, numToString(value2 * (value+1)));
+									codetotal[i].insert(codetotal[i].begin() + j, citem);
+								}
+								else if (c2.getCodetype() == SLE) {  //div %2  %1  30；sle %3 10000 %2    小于等于    
+									CodeItem citem = CodeItem(SGE, c2.getResult(), num1, numToString(value2 * value));
+									codetotal[i].insert(codetotal[i].begin() + j, citem);
+								}
+								else if (c2.getCodetype() == SGE) {  //div %2  %1  30；sge %3 10000 %2    大于等于    
+									CodeItem citem = CodeItem(SLT, c2.getResult(), num1, numToString(value2 * (value+1)));
+									codetotal[i].insert(codetotal[i].begin() + j, citem);
+								}
+								else if (c2.getCodetype() == SGT) {  //div %2  %1  30；sle %3 10000 %2    大于    
+									CodeItem citem = CodeItem(SLT, c2.getResult(), num1, numToString(value2 * value ));
+									codetotal[i].insert(codetotal[i].begin() + j, citem);
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 	}
-	for (i = 1; i < codetotal.size(); i++) {	
-		if (total[i][0].getisinlineFunc() == 1) {	//被内联的函数的中间代码没有存在的必要
-			codetotal[i].clear();
-		}
-	}
 }
-
-int judgeSpecialFunc(string name)
+bool isCompare(irCodeType type)
 {
-	if (name != "@printf" && name != "@_sysy_starttime" && name != "@_sysy_stoptime"
-		&& name != "@putarray" && name != "@putch" && name != "@putint"
-		&& name != "@getint" && name != "@getarray" && name != "@getch") {
-		return 0;
+	if (type == SLT || type == SGT || type == SGE || type == SLE) {
+		return true;
 	}
-	return 1;
+	return false;
 }
-int findFuncindex(string name)
+void deleteSameExp(int index)
 {
 	int i;
-	for (i = 1; i < total.size(); i++) {
-		if (total[i][0].getName() == name) {
+	for (i = noWhileLabel + 1; i < codetotal[index].size(); i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+		if (codetotal[index][i].getCodetype() == CALL && isNoChangeFunc(codetotal[index][i].getFuncName()) == false ) {
+			return;		//如果还会跳到别的函数，直接不做了
+		}
+	}
+	//从此开始找相同表达式
+	set<string> varName;
+	record.clear();
+	maxLine.clear();
+	newVarName.clear();
+	for (i = noWhileLabel + 1; i < codetotal[index].size(); i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+		if (codetotal[index][i].getCodetype() == STORE || codetotal[index][i].getCodetype()==STOREARR) {	
+			if (!maxLine.count(codetotal[index][i].getOperand1()) > 0) {
+				maxLine[codetotal[index][i].getOperand1()] = i; //涉及此类变量求出下限
+			}		
+		}
+		if (codetotal[index][i].getCodetype() == LOAD || codetotal[index][i].getCodetype() == LOADARR) {
+			varName.insert(codetotal[index][i].getOperand1());				//涉及此类变量先记录下来，存在表达式相同的可能
+			record[codetotal[index][i].getOperand1()] = record[codetotal[index][i].getOperand1()] + 1;
+		}
+	}
+	while (true) {
+		int flag = 0;
+		for (string str : varName) {		//该变量至少load3次
+			if (record[str] <= 2) {
+				varName.erase(str);
+				flag = 1;
+				break;
+			}
+		}
+		if (flag ==0) {
 			break;
 		}
 	}
-	return i;
+	if (varName.size() == 0) {
+		return;			//没有变量符合公共表达式删除，直接退出
+	}
+	int j,i1,j1,i2,j2;
+	newVarName.clear();
+	for (string str : varName) {
+		if (!maxLine.count(str)>0) {
+			maxLine[str] = codetotal[index].size();
+		}
+		for (i = noWhileLabel + 1; i < maxLine[str]; i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+			if (codetotal[index][i].getCodetype() == LOAD || codetotal[index][i].getCodetype() == LOADARR) {
+				if (str == codetotal[index][i].getOperand1()) {		//找到该变量第一次出现的位置
+					j = i;
+					break;
+				}
+			}
+		}
+		for ( i =i +1; i < maxLine[str]; i++) {
+			if (codetotal[index][i].getCodetype() == LOAD || codetotal[index][i].getCodetype() == LOADARR) {
+				if (str == codetotal[index][i].getOperand1()) {		//找到该变量第二次出现的位置
+					j1 = j; i1 = i; j2 = j; i2 = i;
+					while (j1 > noWhileLabel && codetotal[index][j1].isequal(codetotal[index][i1]) && j < i1) {
+						j1--;		i1--;
+					}
+					while (j2 < i && codetotal[index][j2].isequal(codetotal[index][i2])  && j2<i1) {
+						j2++;		i2++;
+					}		//上下搜索公共子表达式
+					j2 = j2 - 1; i2 = i2 - 1; j1 = j1 + 1; i1 = i1 + 1;
+					if (j2 - j1 < 6 || isTemp(codetotal[index][i2].getResult())==false || isTemp(codetotal[index][j2].getResult()) == false) {
+						continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量
+					}
+					else {		//可以删除了
+						string xiabiao = numToString(j1) + "-" + numToString(j2);
+						if (!(newVarName.count(xiabiao) > 0)) {		//第一次找到公共子表达式
+							string replace = "%Rep" + numToString(j1) + "-" + numToString(j2) + "+" + total[index][0].getName();
+							newVarName[xiabiao] = replace;
+							string newTemp;
+							int i4 = i1;
+							while (i1 < i2) {		//找一个可用的临时变量
+								if (isTemp(codetotal[index][i1].getResult())) {
+									newTemp = codetotal[index][i1].getResult(); break;
+								}
+								if (isTemp(codetotal[index][i1].getOperand1())) {
+									newTemp = codetotal[index][i1].getOperand1(); break;
+								}
+								if (isTemp(codetotal[index][i1].getOperand2())) {
+									newTemp = codetotal[index][i1].getOperand2(); break;
+								}
+								i1++;
+							}
+							i1 = i4;
+							//同时往j2处插入新的中间代码
+							string oldTemp = codetotal[index][j2].getResult();
+							codetotal[index][j2].setResult(newTemp);	//改成新的
+							CodeItem citem1 = CodeItem(STORE, newTemp, newVarName[xiabiao], "");	//赋值单值
+							CodeItem citem2 = CodeItem(LOAD, oldTemp, newVarName[xiabiao], "");
+							codetotal[index].insert(codetotal[index].begin() + j2 + 1, citem1);
+							codetotal[index].insert(codetotal[index].begin() + j2 + 2, citem2);
+							i2 = i2 + 2; i1 = i1 + 2; maxLine[str] = maxLine[str] + 2;
+						}
+						CodeItem citem = CodeItem(LOAD, codetotal[index][i2].getResult(), newVarName[xiabiao], "");
+						int i3 = i1;
+						while (i1 <= i2) {		//删除公共子表达式
+							codetotal[index].erase(codetotal[index].begin() + i3);
+							i1++;
+						}
+						codetotal[index].insert(codetotal[index].begin() + i3, citem);	//生成新的子表达式
+						maxLine[str] = maxLine[str] - (i2 - i3);
+						for (; i < maxLine[str]; i++) {	//找到一个基础上继续找相同的
+							if (codetotal[index][i].isequal(codetotal[index][j1])) {
+								int i5 = i; int j5 = j1;
+								while (j5 <= j2) {
+									if (!codetotal[index][i5].isequal(codetotal[index][j5])) {
+										break;
+									}
+									j5++;  i5++;
+								}
+								j5 = j5 - 1; i5 = i5 - 1;
+								if (j5 == j2) {	//找到相同的
+									CodeItem citem = CodeItem(LOAD, codetotal[index][i5].getResult(), newVarName[xiabiao], "");
+									int i6 = i5 - (j2 -j1);
+									int i7 = i6;
+									while (i6 <= i5) {		//删除公共子表达式
+										codetotal[index].erase(codetotal[index].begin() + i7);
+										i6++;
+									}
+									codetotal[index].insert(codetotal[index].begin() + i7, citem);	//生成新的子表达式
+									maxLine[str] = maxLine[str] - (j2 - j1);
+									i = i6;
+								}
+								else {
+									continue;
+								}
+							}
+						}
+						i = i3;		//恢复循环变量值
+					}
+				}
+			}
+		}
+	}
+	//最后插入符号表同时生成ALLOC代码
+	map <  string, string>::iterator iter;
+	for (iter = newVarName.begin(); iter != newVarName.end(); iter++)
+	{
+		string ppp = iter->second.substr(1, iter->second.size());
+		symbolTable item = symbolTable(VARIABLE, INT, ppp, 0, 0);
+		total[index].push_back(item);
+		CodeItem citem = CodeItem(ALLOC,iter->second, "0", "1");
+		codetotal[index].insert(codetotal[index].begin() + codetotal[index].size()-2, citem);
+	}
 }
-string newLabelName(string name,int houzhui)
+bool isNoChangeFunc(string a)
 {
-	string aa = name;
-	string bb = name;
-	if (aa.size() > 7) {
-		aa = aa.substr(0, 7);
+	if (a == "@printf" || a == "@_sysy_starttime" || a == "@_sysy_stoptime" || a == "@putarray"
+		|| a == "@putch" || a == "@putint") {
+		return true;
 	}
-	if (bb.size() > 4) {
-		bb = bb.substr(0, 4);
-	}
-	if (aa == "%while." || bb == "%if.") {
-		name = name + numToString(houzhui);
-	}
-	return name;
+	return false;
 }
-string newTempName(string name)
+bool isTemp(string a)
 {
-	if (name.size() > 0 && name[0] == '%' && isdigit(name[1])) {
-		name.erase(0, 1);
-		name =  numToString(Temp)+name;
-		name = "%" + name;
+	if (a[0] == '%' && isdigit(a[1])) {
+		return true;
 	}
-	return name;
+	return false;
 }
+

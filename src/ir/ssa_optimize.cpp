@@ -6,6 +6,9 @@
 
 #include <queue>
 #include <unordered_map>
+#include <algorithm>
+#include <regex>
+#include <iterator>
 
 //==========================================================
 
@@ -169,10 +172,10 @@ void SSA::ssa_optimize() {
 void SSA::simplify_alloc() {
 	int i, j, k;
 	int size1 = codetotal.size();
-	for (i = 1; i < size1; i++) {
+	for (i = 1; i < size1; i++) {	// 遍历函数
 		map<string, bool> ifUse;
 		int size2 = codetotal[i].size();
-		for (j = 1; j < size2; j++) {
+		for (j = 1; j < size2; j++) {		
 			CodeItem ci = codetotal[i][j];
 			if (ci.getCodetype() != ALLOC) {
 				if (ifLocalVariable(ci.getResult())) ifUse[ci.getResult()] = true;
@@ -438,10 +441,17 @@ void SSA::inline_function() {
 					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
 						continue;
 					}
-					else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
+					//else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
+					/*else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && codetotal[funNum].size()>200) {
 						continue;		//第一个条件说明当前函数没被内联过
 					}
 					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
+						continue;
+					}*/
+					else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
+						continue;
+					}
+					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 11) {	// 内联后变量个数超过10个Orz
 						continue;
 					}
 					else {
@@ -654,7 +664,7 @@ void SSA::delete_dead_codes() {
 				update = false;
 				set<string> tmpout = blockCore[i][j].out;
 				size3 = blockCore[i][j].Ir.size();
-				for (k = size3 - 1; k >= 0; k--) {
+				for (k = size3 - 1; k >= 0; k--) {	// 遍历中间代码
 					CodeItem ci = blockCore[i][j].Ir[k];
 					switch (ci.getCodetype())
 					{
@@ -670,6 +680,7 @@ void SSA::delete_dead_codes() {
 								tmpout.insert(ci.getOperand1());
 							if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
 								tmpout.insert(ci.getOperand2());
+							tmpout.erase(ci.getResult());
 						}
 						break;
 					case STORE:
@@ -680,6 +691,7 @@ void SSA::delete_dead_codes() {
 						else {
 							if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
 								tmpout.insert(ci.getResult());
+							tmpout.erase(ci.getOperand1());
 						}
 						break;
 					case STOREARR:		// 数组不敢删除
@@ -1379,4 +1391,494 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 	catch (exception e) {
 		WARN_MSG("delete code out wrong!!");
 	}
+}
+
+
+void SSA::optimize_arrayinit() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {	// 函数
+		j = 1;	// 基本块
+		if (blockCore[i][j].Ir.empty())	continue;
+		map<string, int> arraySize;	// 初始化数组size大小
+		map<string, vector<int>> arrayNotInit;	// 不用初始化的元素
+		map<string, vector<int>> arrayInit;		// 必须初始化的元素
+		for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
+			CodeItem ci = blockCore[i][j].Ir[k];
+			if (ci.getCodetype() == ARRAYINIT) {
+				arraySize[ci.getOperand1()] = str2int(ci.getOperand2());
+				arrayNotInit[ci.getOperand1()] = vector<int>();
+				arrayInit[ci.getOperand1()] = vector<int>();
+			}
+			else if (ci.getCodetype() == STOREARR && ifDigit(ci.getOperand2())) {
+				int index = str2int(ci.getOperand2()) / 4;
+				if (arrayNotInit.find(ci.getOperand1()) != arrayNotInit.end() &&
+					find(arrayNotInit[ci.getOperand1()].begin(), arrayNotInit[ci.getOperand1()].end(), index) == arrayNotInit[ci.getOperand1()].end())
+					arrayNotInit[ci.getOperand1()].push_back(index);
+			}
+			else if (ci.getCodetype() == LOADARR) {
+				if (!ifDigit(ci.getOperand2())) {	// 不确定要用数组的那个元素，整个数组必须初始化
+					if (arraySize.find(ci.getOperand1()) != arraySize.end()) {
+						arraySize.erase(ci.getOperand1());
+						arrayNotInit.erase(ci.getOperand1());
+						arrayInit.erase(ci.getOperand1());
+					}
+				}
+				else {
+					int index = str2int(ci.getOperand2()) / 4;
+					if (arrayInit.find(ci.getOperand1()) != arrayInit.end() &&
+						find(arrayNotInit[ci.getOperand1()].begin(), arrayNotInit[ci.getOperand1()].end(), index) == arrayNotInit[ci.getOperand1()].end())
+						// 之前未显式定义，必须初始化的元素
+						arrayInit[ci.getOperand1()].push_back(index);
+				}
+			}
+		}
+		if (!arrayNotInit.empty()) {
+			for (map<string, vector<int>>::iterator iter = arrayNotInit.begin(); iter != arrayNotInit.end(); iter++) {
+				if (!(iter->second).empty())
+					sort((iter->second).begin(), (iter->second).end());
+			}
+		}
+		if (!arrayInit.empty()) {
+			for (map<string, vector<int>>::iterator iter = arrayInit.begin(); iter != arrayInit.end(); iter++) {
+				if (!(iter->second).empty())
+					sort((iter->second).begin(), (iter->second).end());
+			}
+		}
+		for (k = 0; k < blockCore[i][j].Ir.size(); k++) {
+			CodeItem ci = blockCore[i][j].Ir[k];
+			if (ci.getCodetype() == ARRAYINIT) {
+				if (arraySize.find(ci.getOperand1()) == arraySize.end()) continue;
+				vector<int> v = arrayNotInit[ci.getOperand1()];
+				if (!v.empty() && v[v.size() - 1] - v[0] + 1 == v.size()) {
+					vector<int> v2 = arrayInit[ci.getOperand1()];
+					bool update = true;
+					if (!v.empty()) {
+						for (vector<int>::iterator iter = v2.begin(); iter != v2.end(); iter++) {
+							if (find(v.begin(), v.end(), *iter) != v.end()) {
+								// 必须初始化的元素在无需初始化的列表里面
+								update = false; break;
+							}
+						}
+					}
+					if (!update) continue;
+					string arrayName = ci.getOperand1();
+					int firstMember = v[0];
+					int lastMember = v[v.size() - 1];
+					if (firstMember == 0) {
+						int initSize = arraySize[arrayName] - v.size();
+						if (initSize > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize), to_string(lastMember + 1));
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else if (initSize == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, to_string(4 * (lastMember + 1)));
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else {
+							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+							k--;
+						}
+					}
+					else if (lastMember == arraySize[arrayName] - 1) {
+						int initSize = arraySize[arrayName] - v.size();
+						if (initSize > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize), "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else if (initSize == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else {
+							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+							k--;
+						}
+					}
+					else {
+						int initSize1 = firstMember + 1;
+						if (initSize1 > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize1), "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else if (initSize1 == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, "0");
+							blockCore[i][j].Ir[k] = nci;
+						}
+						else cout << "arrayinit优化：error1" << endl;
+						int initSize2 = arraySize[arrayName] - 1 - lastMember;
+						k++;
+						if (initSize2 > 1) {
+							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize2), to_string(lastMember + 1));
+							blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin() + k, nci);
+						}
+						else if (initSize2 == 1) {
+							CodeItem nci(STOREARR, "0", arrayName, to_string(4 * (lastMember + 1)));
+							blockCore[i][j].Ir.insert(blockCore[i][j].Ir.begin() + k, nci);
+						}
+						else cout << "arrayinit优化：error2" << endl;
+					}
+				}
+			}
+		}
+	}
+}
+ //从这开始都是丛睿轩加的
+bool allowFuncname(string name)		//call的函数必须是自定义函数且该函数内部不能出现数组、全局变量、函数调用(后两个可通过非@可判断)
+{
+	if (name == "@printf" || name == "@_sysy_starttime" || name == "@_sysy_stoptime" || name == "@putarray"
+		|| name == "@putch" || name == "@putint" || name == "@getint" || name == "@getarray" || name == "@getch") {
+		return false;
+	}
+	int i = 0;
+	for (i = 1; i < total.size(); i++) {
+		if (total[i][0].getName() == name) {
+			break;
+		}
+	}
+	int j;
+	for (j = 1; j < codetotal[i].size(); j++) {
+		if (codetotal[i][j].getCodetype() == LOADARR || codetotal[i][j].getCodetype() == STOREARR) {
+			return false;
+		}
+		if (codetotal[i][j].getResult()[0] == '@') {
+			return false;
+		}
+		if (codetotal[i][j].getOperand1()[0] == '@') {
+			return false;
+		}
+		if (codetotal[i][j].getOperand2()[0] == '@') {
+			return false;
+		}
+	}
+	return true;
+}
+bool judgeTemp(string a)
+{
+	if (a[0] == '%' && isdigit(a[1])) {
+		return true;
+	}
+	return false;
+}
+string numtoString(int a)
+{
+	stringstream trans;          //数字和字符串相互转化渠道
+	trans << a;
+	return trans.str();
+}
+void SSA::optimize_delete_same_exp()
+{
+	int o, p, q;
+	int i, j, k;
+	int times = 0;
+	for ( o = 1; o < blockCore.size(); o++) { // 遍历函数
+		for (p = 1; p < blockCore[o].size() - 1; p++) { // 遍历该函数的基本块，跳过entry和exit块
+			int get;
+			for (q = 0,get=0; q < blockCore[o][p].Ir.size(); q++) { // 遍历基本块中的中间代码
+				if (blockCore[o][p].Ir[q].getCodetype() == CALL && allowFuncname(blockCore[o][p].Ir[q].getOperand1())==false) {
+					get = 1;
+					break;   //调用非法函数直接不删
+				}
+			}
+			if (get == 1) {
+				continue;
+			}
+			else {		//公共表达式删除
+				//从此开始找相同表达式
+				set<string> varName;
+				map<string, int>  record;		//记录load或loadarr型变量出现次数
+				map<string, string> newVarName;	//记录新的变量名
+				map<string, int> maxLine;		//记录变量最先出现store对应行数
+				record.clear();
+				maxLine.clear();
+				newVarName.clear();
+				for (i = 0; i < blockCore[o][p].Ir.size(); i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+					if (blockCore[o][p].Ir[i].getCodetype() == STORE || blockCore[o][p].Ir[i].getCodetype() == STOREARR) {
+						if (!maxLine.count(blockCore[o][p].Ir[i].getOperand1()) > 0) {
+							maxLine[blockCore[o][p].Ir[i].getOperand1()] = i; //涉及此类变量求出下限
+						}
+					}
+					if (blockCore[o][p].Ir[i].getCodetype() == LOAD || blockCore[o][p].Ir[i].getCodetype() == LOADARR) {
+						varName.insert(blockCore[o][p].Ir[i].getOperand1());				//涉及此类变量先记录下来，存在表达式相同的可能
+						record[blockCore[o][p].Ir[i].getOperand1()] = record[blockCore[o][p].Ir[i].getOperand1()] + 1;
+					}
+				}
+				while (true) {
+					int flag = 0;
+					for (string str : varName) {		//该变量至少load2次
+						if (record[str] <= 1) {
+							varName.erase(str);
+							flag = 1;
+							break;
+						}
+					}
+					if (flag == 0) {
+						break;
+					}
+				}
+				if (varName.size() == 0) {
+					continue;			//没有变量符合公共表达式删除，直接退出
+				}
+				int j, i1, j1, i2, j2;
+				int jian = 0;
+				newVarName.clear();
+				for (string str : varName) {
+					if (!maxLine.count(str) > 0) {
+						maxLine[str] = blockCore[o][p].Ir.size();
+					}
+					else {
+						maxLine[str] = maxLine[str] - jian;
+					}
+					for (i = 0; i < maxLine[str]; i++) {		//保证从noWhileLabel+1 到最后一定是顺序执行的
+						if (blockCore[o][p].Ir[i].getCodetype() == LOAD || blockCore[o][p].Ir[i].getCodetype() == LOADARR) {
+							if (str == blockCore[o][p].Ir[i].getOperand1()) {		//找到该变量第一次出现的位置
+								j = i;
+								break;
+							}
+						}
+					}
+					for (i = i + 1; i < maxLine[str]; i++) {
+						if (blockCore[o][p].Ir[i].getCodetype() == LOAD || blockCore[o][p].Ir[i].getCodetype() == LOADARR) {
+							if (str == blockCore[o][p].Ir[i].getOperand1()) {		//找到该变量第二次出现的位置
+								j1 = j; i1 = i; j2 = j; i2 = i;
+								while (j1 > 0 && blockCore[o][p].Ir[j1].isequal(blockCore[o][p].Ir[i1]) && j < i1) {
+									j1--;		i1--;
+								}
+								while (j2 < i && blockCore[o][p].Ir[j2].isequal(blockCore[o][p].Ir[i2]) && j2 < i1) {
+									j2++;		i2++;
+								}		//上下搜索公共子表达式
+								j2 = j2 - 1; i2 = i2 - 1; j1 = j1 + 1; i1 = i1 + 1;
+								int zj = j2;;
+								while (blockCore[o][p].Ir[zj].getCodetype() == NOTE) {
+									zj--;//NOTE的res并不是临时寄存器，产生错误
+								}
+								int zi = i2;
+								while (blockCore[o][p].Ir[zi].getCodetype() == NOTE) {
+									zi--;//NOTE的res并不是临时寄存器，产生错误
+								}
+								if (j2 - j1 < 10 || judgeTemp(blockCore[o][p].Ir[zj].getResult()) == false || judgeTemp(blockCore[o][p].Ir[zi].getResult()) == false) {
+									continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量
+								}
+								else {		//可以删除了
+									string xiabiao = numtoString(j1) + "-" + numtoString(j2);
+									if (!(newVarName.count(xiabiao) > 0)) {		//第一次找到公共子表达式
+										string replace = "%Rep+"+xiabiao+"-" + numtoString(times++) + "+" + total[o][0].getName();
+										newVarName[xiabiao] = replace;
+										string newTemp;
+										int i4 = i1;
+										while (i1 < i2) {		//找一个可用的临时变量
+											if (judgeTemp(blockCore[o][p].Ir[i1].getResult())) {
+												newTemp = blockCore[o][p].Ir[i1].getResult(); break;
+											}
+											if (judgeTemp(blockCore[o][p].Ir[i1].getOperand1())) {
+												newTemp = blockCore[o][p].Ir[i1].getOperand1(); break;
+											}
+											if (judgeTemp(blockCore[o][p].Ir[i1].getOperand2())) {
+												newTemp = blockCore[o][p].Ir[i1].getOperand2(); break;
+											}
+											i1++;
+										}
+										i1 = i4;
+										//同时往j2处插入新的中间代码
+										string oldTemp = blockCore[o][p].Ir[zj].getResult();
+										blockCore[o][p].Ir[zj].setResult(newTemp);	//改成新的
+										CodeItem citem1 = CodeItem(STORE, newTemp, newVarName[xiabiao], "");	//赋值单值
+										CodeItem citem2 = CodeItem(LOAD, oldTemp, newVarName[xiabiao], "");
+										blockCore[o][p].Ir.insert(blockCore[o][p].Ir.begin() + j2 + 1, citem1);
+										blockCore[o][p].Ir.insert(blockCore[o][p].Ir.begin() + j2 + 2, citem2);
+										i2 = i2 + 2; i1 = i1 + 2; maxLine[str] = maxLine[str] + 2; jian = jian - 2; zi = zi + 2;
+									}
+									//用zi是因为NOTE的res并不是临时寄存器，产生错误
+									CodeItem citem = CodeItem(LOAD, blockCore[o][p].Ir[zi].getResult(), newVarName[xiabiao], "");
+									int i3 = i1;
+									while (i1 <= i2) {		//删除公共子表达式
+										blockCore[o][p].Ir.erase(blockCore[o][p].Ir.begin() + i3);
+										i1++;
+									}
+									blockCore[o][p].Ir.insert(blockCore[o][p].Ir.begin() + i3, citem);	//生成新的子表达式
+									maxLine[str] = maxLine[str] - (i2 - i3);
+									jian = jian + (i2 - i3);
+									for (; i < maxLine[str]; i++) {	//找到一个基础上继续找相同的
+										if (blockCore[o][p].Ir[i].isequal(blockCore[o][p].Ir[j1])) {
+											int i5 = i; int j5 = j1;
+											while (j5 <= j2) {
+												if (!blockCore[o][p].Ir[i5].isequal(blockCore[o][p].Ir[j5])) {
+													break;
+												}
+												j5++;  i5++;
+											}
+											j5 = j5 - 1; i5 = i5 - 1;
+											if (j5 == j2) {	//找到相同的
+												int zzz = i5;
+												while (blockCore[o][p].Ir[zzz].getCodetype() == NOTE) {	
+													zzz--;//NOTE的res并不是临时寄存器，产生错误
+												}
+												CodeItem citem = CodeItem(LOAD, blockCore[o][p].Ir[zzz].getResult(), newVarName[xiabiao], "");
+												int i6 = i5 - (j2 - j1);
+												int i7 = i6;
+												while (i6 <= i5) {		//删除公共子表达式
+													blockCore[o][p].Ir.erase(blockCore[o][p].Ir.begin() + i7);
+													i6++;
+												}
+												blockCore[o][p].Ir.insert(blockCore[o][p].Ir.begin() + i7, citem);	//生成新的子表达式
+												maxLine[str] = maxLine[str] - (j2 - j1);
+												jian = jian + (i2 - i3);
+												i = i6;
+											}
+											else {
+												continue;
+											}
+										}
+									}
+									i = i3;		//恢复循环变量值
+								}
+							}
+						}
+					}
+				}
+				//最后插入符号表同时生成ALLOC代码
+				map <  string, string>::iterator iter;
+				for (iter = newVarName.begin(); iter != newVarName.end(); iter++)
+				{
+					symbolTable item = symbolTable(VARIABLE, INT, iter->second, 0, 0);		//此时插入符号表要带@
+					total[o].push_back(item);
+					CodeItem citem = CodeItem(ALLOC, iter->second, "0", "1");
+					for (k = 1; k < blockCore[o][1].Ir.size(); k++) {   //define 、 para 、alloc在第一个基本块
+						if (blockCore[o][1].Ir[k].getCodetype() == DEFINE || blockCore[o][1].Ir[k].getCodetype() == PARA || blockCore[o][1].Ir[k].getCodetype() == ALLOC) {
+							continue;
+						}
+						else {
+							break;
+						}
+					}
+					blockCore[o][1].Ir.insert(blockCore[o][1].Ir.begin() + k, citem);
+				}
+			}
+		}
+	}
+	/*
+	for (o = 1; o < blockCore.size(); o++) { // 遍历函数
+		for (p = 1; p < blockCore[o].size() - 1; p++) { // 遍历该函数的基本块，跳过entry和exit块
+			for (q = 0; q < blockCore[o][p].Ir.size(); q++) { // 遍历基本块中的中间代码
+				cout << blockCore[o][p].Ir[q].getContent() << endl;
+			}
+		}
+		cout << "\n" << endl;
+	}*/
+}
+
+void SSA::delete_dead_codes_2() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		for (j = 2; j < blockCore[i].size() - 1; j++) {
+			if (blockCore[i][j].pred.size() > 1 ||
+				blockCore[i][j].succeeds.size() > 1 ||
+				blockCore[i][j].succeeds.find(blockCore[i].size() - 1) != blockCore[i][j].succeeds.end()) continue;
+			bool res = true;
+			int size3 = blockCore[i][j].Ir.size();
+			for (k = 0; k < size3; k++) {
+				CodeItem ci = blockCore[i][j].Ir[k];
+				if (ci.getCodetype() == STOREARR) {
+					res = false; break;
+				}
+				if (ci.getCodetype() == CALL) {
+					res = false; break;
+				}
+				if (ifOp1Def(ci.getCodetype())) {
+					if (ifGlobalVariable(ci.getOperand1())) {
+						res = false; break;
+					}
+				}
+				if (ifResultDef(ci.getCodetype())) {
+					if (ifGlobalVariable(ci.getResult())) {
+						res = false; break;
+					}
+				}
+			}
+			if (!res) continue;
+			set<string> tmpDef, tmpDef2, tmpUse, tmpIn, tmpOut;
+			for (set<string>::iterator iter = blockCore[i][j].def.begin(); iter != blockCore[i][j].def.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpDef.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].def2.begin(); iter != blockCore[i][j].def2.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpDef2.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].use.begin(); iter != blockCore[i][j].use.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpUse.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].in.begin(); iter != blockCore[i][j].in.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpIn.insert(*iter);
+			for (set<string>::iterator iter = blockCore[i][j].out.begin(); iter != blockCore[i][j].out.end(); iter++)
+				if (!ifTempVariable(*iter)) tmpOut.insert(*iter);
+			set<string> tmp1;
+			set_intersection(tmpDef.begin(), tmpDef.end(), tmpOut.begin(), tmpOut.end(), inserter(tmp1, tmp1.begin()));
+			if (!tmp1.empty()) continue;
+			// if (tmpUse.empty()) {
+			if (tmpDef2.empty()) {
+				CodeItem ci1 = blockCore[i][j].Ir[0];
+				CodeItem ci2 = blockCore[i][j].Ir[blockCore[i][j].Ir.size() - 1];
+				blockCore[i][j].Ir.clear();
+				if (ci1.getCodetype() == LABEL) blockCore[i][j].Ir.push_back(ci1);
+				if (ci2.getCodetype() == BR) blockCore[i][j].Ir.push_back(ci2);
+				build_def_use_chain();
+				active_var_analyse();
+				continue;
+			}
+			//for (set<string>::iterator iter = tmpUse.begin(); iter != tmpUse.end(); iter++) {
+			for (set<string>::iterator iter = tmpDef2.begin(); iter != tmpDef2.end(); iter++) {
+				for (k = 1; k < blockCore[i].size() - 1; k++)
+					if (j == k) continue;
+					else if (blockCore[i][k].use.find(*iter) != blockCore[i][k].use.end()) {
+						// cout << *iter << i << " " << j << " " << k << endl;
+						res = false; break;
+					}
+				if (!res) break;
+			}
+			if (res) {
+				CodeItem ci1 = blockCore[i][j].Ir[0];
+				CodeItem ci2 = blockCore[i][j].Ir[blockCore[i][j].Ir.size() - 1];
+				blockCore[i][j].Ir.clear();
+				if (ci1.getCodetype() == LABEL) blockCore[i][j].Ir.push_back(ci1);
+				if (ci2.getCodetype() == BR) blockCore[i][j].Ir.push_back(ci2);
+				build_def_use_chain();
+				active_var_analyse();
+				continue;
+			}
+		}
+	}
+}
+
+void SSA::optimize_br_label() {
+	int i, j, k;
+	int size1 = blockCore.size();
+	for (i = 1; i < size1; i++) {
+		int size2 = blockCore[i].size();
+		for (j = 2; j < size2 - 1; j++) {
+			CodeItem ci1 = blockCore[i][j].Ir[0];
+			CodeItem ci2 = blockCore[i][j].Ir[blockCore[i][j].Ir.size() - 1];
+			if (blockCore[i][j].Ir.size() == 2 && ci1.getCodetype() == LABEL && ci2.getCodetype() == BR) {
+				if (!ifTempVariable(ci2.getOperand1()) && blockCore[i][j - 1].Ir.back().getCodetype() == BR) {
+					if (ifTempVariable(blockCore[i][j - 1].Ir.back().getOperand1())) {
+						if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getResult()) == 0) {
+							CodeItem tci = blockCore[i][j - 1].Ir.back();
+							CodeItem tnci(BR, ci2.getOperand1(), tci.getOperand1(), tci.getOperand2());
+							blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+						}
+						if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand2()) == 0) {
+							CodeItem tci = blockCore[i][j - 1].Ir.back();
+							CodeItem tnci(BR, tci.getResult(), tci.getOperand1(), ci2.getOperand1());
+							blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+						}
+					}
+					else {
+						if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand1()) == 0) {
+							CodeItem tci = blockCore[i][j - 1].Ir.back();
+							CodeItem tnci(BR, "", ci2.getOperand1(), "");
+							blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
+						}
+					}
+				}
+			}
+		}
+	}
+	build_def_use_chain();
+	active_var_analyse();
 }

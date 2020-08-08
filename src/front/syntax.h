@@ -7,6 +7,7 @@
 #include<vector>
 #include<sstream>
 #include<map>
+#include<set>
 
 #include "word.h"
 #include "symboltable.h"

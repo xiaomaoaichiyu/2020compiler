@@ -1,6 +1,6 @@
 ﻿#ifndef _SSA_H_
 #define _SSA_H_
-
+      
 #include <iostream>
 #include <vector>
 #include <set>
@@ -10,6 +10,7 @@
 #include "intermediatecode.h"
 #include "../front/syntax.h"
 
+<<<<<<< HEAD
 //==============================
 // 循环
 //==============================
@@ -28,6 +29,19 @@ extern vector<vector<Circle>> func2circles;
 
 //===========================================
 
+=======
+// dag
+class TreeNode {
+public:
+	irCodeType op;
+	int leftchild, rightchild, father;
+	int nodeid;
+	bool ifIn;
+	std::set<std::string> nameset;
+	TreeNode();
+};
+
+>>>>>>> 080083817e1320a1bb397127f797593744ffd77e
 class phiFun {
 	// phi函数的例子：y^3 = \phi(y^1, y^2)
 public:
@@ -100,9 +114,9 @@ private:
 	std::vector<int> funCallCount;									// 记录一个函数第几次被调用
 
 	std::vector<std::map<std::string, symbolTable>> varName2St;	// 变量名
-	std::map<std::string, int> regName2Num{ {"R4", 4}, {"R5", 5}, {"R6", 6}, {"R7", 7}, {"R8", 8}, {"R9", 9}, {"R10", 10}, {"R11", 11} };
-	std::map<int, std::string> regNum2Name{ {4, "R4"}, {5, "R5"}, {6, "R6"}, {7, "R7"}, {8, "R8"}, {9, "R9"}, {10, "R10"}, {11, "R11"} };
-	const int MAX_ALLOC_GLOBAL_REG = 8;
+	std::map<std::string, int> regName2Num{ {"R4", 4}, {"R5", 5}, {"R6", 6}, {"R7", 7}, {"R8", 8}, {"R9", 9}, {"R10", 10}, {"R11", 11}, {"R12", 12} };
+	std::map<int, std::string> regNum2Name{ {4, "R4"}, {5, "R5"}, {6, "R6"}, {7, "R7"}, {8, "R8"}, {9, "R9"}, {10, "R10"}, {11, "R11"}, {12, "R12"} };
+	const int MAX_ALLOC_GLOBAL_REG = 9;
 	const int ALLOC_GLOBAL_REG_START = 4;
 	std::vector<std::map<std::string, std::string>> var2reg;
 	std::vector<std::map<std::string, std::set<std::string>>> clash_graph;
@@ -197,6 +211,26 @@ private:
 	bool ifVR(std::string name);						// 判断是否是虚拟寄存器
 	bool ifRegister(std::string name);				// 判断是否是寄存器
 	void init();													// 初始化varName2St结构体
+	int str2int(std::string name);						// 字符串转int
+	bool ifNotToDeal(irCodeType ct);
+	bool ifResultDef(irCodeType ct);
+	bool ifOp1Def(irCodeType ct);
+
+
+	// dag
+	void build_dag();	// 构建dag图
+	bool ifCalIr(irCodeType ict);	// 是否是运算型指令
+	void delete_common_sub_exp(int funNum, int blkNum, int IrStart, int IrEnd);
+	std::string getNewTempVariable();
+
+	void optimize_arrayinit();
+
+	void delete_dead_codes_2();
+
+	void optimize_delete_same_exp();
+
+	void optimize_br_label();
+
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
@@ -204,6 +238,7 @@ public:
 	}*/
 	SSA() {}
 	void generate();		// 开始函数
+	void generate_active_var_analyse();	// 仅进行活跃变量分析
 	void registerAllocation();
 	// 优化函数
 	void pre_optimize();	// 在睿轩生成的中间代码上做优化

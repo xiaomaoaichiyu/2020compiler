@@ -25,6 +25,7 @@ string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
 map<string, int> func2para;
 
+int canOutput;
 bool judgetemp(string a)		//丛加的
 {
 	if (a == "R0" || a == "R1" || a == "R2" || a == "R3" || a == "R12") {
@@ -50,6 +51,7 @@ bool is_nonsence(int index)
 {
 	string str = output_buffer[index];
 	smatch result;
+	canOutput = 1;
 	regex pattern1("MOV\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
 	if (regex_match(str, result, pattern1)) {
 		if (result[1] == result[2]) {
@@ -68,34 +70,78 @@ bool is_nonsence(int index)
 	}
 	//数组做参数取值或存值时，基址是全局寄存器，会先将其放到临时寄存器产生冗余
 	//例：MOV R2,R7   STR R1,[R2,R0]   ——>  STR R1,[R7,R0]		丛加的
+	//注：由于寄存器可能是3位，因此会带来问题
+	
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
 		if (a == "MOV" && (nextOp == "STR" || nextOp == "LDR")) {
 			string str_num1 = str.substr(4, 2);
 			string str_num2 = str.substr(7, 2);
-			string next_num1 = strNext.substr(8, 2);
-			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//可以把两条变一条
+			string next_num1 = strNext.substr(8, 2);   
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
 				cout << strNext << endl;
-				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, 4);
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
+			str_num1 = str.substr(4, 2);
+			str_num2 = str.substr(7, 3);
+			next_num1 = strNext.substr(8, 2); //例：MOV R2,R10   STR R1,[R2,R0] 
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况二：默认全局寄存器是3位
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
+			str_num1 = str.substr(4, 3);
+			str_num2 = str.substr(8, 2);
+			next_num1 = strNext.substr(8, 3);  //例：MOV R12,R4   STR R1,[R12,R0] 
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况三：默认临时寄存器是3位
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
+			str_num1 = str.substr(4, 3);
+			str_num2 = str.substr(8, 3);
+			next_num1 = strNext.substr(8, 3);  //例：MOV R12,R10   STR R1,[R12,R0] 
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况四：默认临时寄存器和全局寄存器都是3位
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
 				return false;
 			}
 		}
 	}
 	//传参优化	上一条是指令运算结果，比如LDR、ADD、SUB、ASR、LSL、MUL为上一条指令可求出结果的指令，只能以R0为相同寄存器
 	//例：LDR R0,=C  MOV R3,R0  ——> LDR R3,=C		丛加的
+	//注：这里只涉及R0~R3的情况，所以截取2单位长度没问题
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
 		if (nextOp == "MOV" && judgeLoadOp(a)) {
 			string next_num1 = strNext.substr(4, 2);
 			string next_num2 = strNext.substr(7, 2);
+			string next_num3 = strNext.substr(7, 3);		//防止next_num2实际是R11、R12只是因为取两位才为R1
 			string num1 = str.substr(4, 2);
-			if (num1 == next_num2 && next_num2 == "R0" && (next_num1 == "R1" || next_num1 == "R2" || next_num1 == "R3")) {
+			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")&&next_num2==next_num3) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -104,6 +150,20 @@ bool is_nonsence(int index)
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				return false;
 			}
+			next_num1 = strNext.substr(4, 3);
+			next_num2 = strNext.substr(8, 2);
+			next_num3 = strNext.substr(8, 3);				//防止next_num2实际是R11、R12只是因为取两位才为R1
+			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") && next_num2 == next_num3) {
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = str.substr(0, 4) + next_num1 + str.substr(6, str.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				return false;
+			}
+
 		}
 	}
 	return false;
@@ -1294,10 +1354,10 @@ void _arrayinit(CodeItem* ir)
 	//OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
 	//OUTPUT("BL memset");
 	//第二种，连续存
-	int length = stoi(size)*4;
+	int length = stoi(size)+stoi(ir->getExtend());
 	OUTPUT("LDR LR,=" + iniv);
-	for (int i = 0; i < length; i += 4) {
-		int off = p.second - sp + i;
+	for (int i = stoi(ir->getExtend()); i < length; i += 1) {
+		int off = p.second - sp + i*4;
 		if (!is_illegal(to_string(off))) {
 			OUTPUT("LDR R12,=" + to_string(off));
 			OUTPUT("STR LR,[SP,R12]");
@@ -1436,13 +1496,18 @@ void arm_generate(string sname)
 	arm << ".global __aeabi_idivmod\n";
 	//arm << "main:\nMOV PC,LR\n";
 	cout << "get rid of these:\n";
-	int jjj;
-	for (jjj = 0; jjj < output_buffer.size(); jjj++) {
-		if (is_nonsence(jjj)) {
-			cout << output_buffer[jjj] << "\n";
+	int out_bufferSize;
+	for (out_bufferSize = 0; out_bufferSize < output_buffer.size(); out_bufferSize++) {
+		if (is_nonsence(out_bufferSize)) {
+			cout << output_buffer[out_bufferSize] << "\n";
 		}
 		else {
-			arm << output_buffer[jjj] << "\n";
+			if (canOutput == 1) {
+				arm << output_buffer[out_bufferSize] << "\n";
+			}
+			else {
+				out_bufferSize--;		//优化后的指令又再被优化的可能
+			}
 		}
 	}
 	/*

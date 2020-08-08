@@ -210,7 +210,7 @@ string CodeItem::getContent()
 		break;
 	}
 	case ARRAYINIT: {
-		content = "arrayinit  " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		content = "arrayinit  " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2) + "" + standardLength(extend);
 		break;
 	}
 	default:
@@ -226,6 +226,18 @@ CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2) {
 	this->id = -1;
 	this->invariant = "";
 	this->codeout = "";
+	this->extend = "0";
+}
+
+CodeItem::CodeItem(irCodeType type, string res, string ope1, string ope2, string extend) {
+	this->codetype = type;
+	this->result = res;
+	this->operand1 = ope1;
+	this->operand2 = ope2;
+	this->id = -1;
+	this->invariant = "";
+	this->codeout = "";
+	this->extend = extend;
 }
 
 void CodeItem::setID(int id) {
@@ -276,6 +288,10 @@ string CodeItem::getResult() {
 	return this->result;
 }
 
+string CodeItem::getExtend() {
+	return this->extend;
+}
+
 void CodeItem::setOperand1(string ope1) {
 	this->operand1 = ope1;
 }
@@ -319,4 +335,30 @@ void CodeItem::changeContent(string res, string ope1, string ope2)
 	this->result = res;
 	this->operand1 = ope1;
 	this->operand2 = ope2;
+}
+bool istemp(string a)
+{
+	if (a[0] == '%' && isdigit(a[1])) {
+		return true;
+	}
+	return false;
+}
+bool CodeItem::isequal(CodeItem a)
+{
+	if (a.getCodetype() != this->codetype) {
+		return false;
+	}
+	if (a.getCodetype() == STORE || a.getCodetype() == STOREARR) {			//只要涉及改内存就不等
+		return false;	
+	}
+	if ( (a.getResult() != this->result) && (istemp(a.getResult())==false||istemp(this->result)==false) ) {
+		return false;			//不相等而且必须有一个不是临时变量
+	}
+	if ((a.getOperand1() != this->operand1) && (istemp(a.getOperand1()) == false || istemp(this->operand1) == false)) {
+		return false;			//不相等而且必须有一个不是临时变量
+	}
+	if ((a.getOperand2() != this->operand2) && (istemp(a.getOperand2()) == false || istemp(this->operand2) == false)) {
+		return false;			//不相等而且必须有一个不是临时变量
+	}
+	return true;
 }
