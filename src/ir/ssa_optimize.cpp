@@ -152,7 +152,7 @@ void SSA::ssa_optimize() {
 		delete_dead_codes();
 	}
 
-	if (1) { // 关闭循环优化
+	if (0) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -1408,7 +1408,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 					if (instr.getCodetype() == LOAD && j+1 < ir.size() && ir.at(j+1).getInvariant() != 1) {
 						instr.setInvariant("");
 					}
-					else if (condition1(circle.cir_outs, idx, funcNum)) {
+					else if (condition1(circle.cir_outs, idx, funcNum) || condition2(circle.cir_outs, instr.getResult(), funcNum)) {
 						auto tmp = instr;
 						tmp.setInvariant("");
 						irTmp.push_back(tmp);
