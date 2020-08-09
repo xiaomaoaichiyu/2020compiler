@@ -7,6 +7,8 @@
 #include<ctype.h>
 #include<set>
 #include<regex>
+#include<algorithm>
+#include<queue>
 #define OUTPUT(s) do{output_buffer.push_back(s);}while(0)
 using namespace std;
 
@@ -23,10 +25,21 @@ bool is_global = true;
 string reglist = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR,R0";
 string reglist_without0 = "R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR";
 string global_reg_list;
+int global_reg_size;
 map<string, int> func2para;
-map<string, int> funcname2index;
-map<string, set<string>> funcname2caller;
+map<string, vector<string>> funcname2pushlist;
 int canOutput;
+
+void li(string reg, int im)
+{
+	//user ldr
+	OUTPUT("LDR " + reg + ",=" + to_string(im));
+	return;
+	//user movw,movt
+	OUTPUT("MOVW " + reg + ",#" + to_string(im & 0xffff));
+	OUTPUT("MOVT " + reg + ",#" + to_string((unsigned)(im & 0xffff0000) >> 16));
+	return;
+}
 
 string getname(string ir_name)
 {
@@ -35,8 +48,24 @@ string getname(string ir_name)
 	}
 }
 
+string get_varname_scale(string name) 
+{
+	if (name.size() == 0) {
+		return "";
+	}
+	for (int i = 0; i < name.size(); i++) {
+		if (name[i] == '+') {
+			return name.substr(i + 1);
+		}
+	}
+	return "";
+}
+
 void getcallerMap()
 {
+	map<string, set<int>> func2reg_without_inline;
+	map<string, int> funcname2index;
+	map<string, set<string>> funcname2caller;
 	string funcname = "";
 	for (int i = 0; i < LIR.size(); i++) {
 		for (int j = 0; j < LIR[i].size(); j++) {
@@ -54,6 +83,37 @@ void getcallerMap()
 				else {
 					funcname2caller[name] = { funcname };
 				}
+			}
+			else if (type == ALLOC || type == PARA) {
+				string scale = get_varname_scale(ir_now->getResult());
+				if (scale == funcname) {
+					string loca = ir_now->getOperand1();
+					if (loca[0] == 'R') {
+						func2reg_without_inline[funcname].insert(stoi(loca.substr(1)));
+					}
+				}
+			}
+		}
+	}
+	for (auto p : funcname2caller) {
+		set<string> caller_gReg;
+		queue<string> caller_queue;
+		for (string c : p.second) {
+			caller_queue.push(c);
+		}
+		while (caller_queue.size() != 0) {
+			string f = caller_queue.front();
+			for (string c : funcname2caller[f]) {
+				caller_queue.push(c);
+			}
+			caller_queue.pop();
+			for (int reg : func2reg_without_inline[f]) {
+				caller_gReg.insert("R" + to_string(reg));
+			}
+		}
+		for (string g : func2gReg[funcname2index[p.first]]) {
+			if (caller_gReg.find(g) != caller_gReg.end()) {
+				funcname2pushlist[p.first].push_back(g);
 			}
 		}
 	}
@@ -446,21 +506,16 @@ void _define(CodeItem* ir)
 	}
 
 	global_reg_list = "";
-	set<string> reg_need2push;
-	for (string callername : funcname2caller[name]) {
-		for (string reg : func2gReg[funcname2index[callername]]) {
-			reg_need2push.insert(reg);
-		}
-	}
+	global_reg_size = 0;
 	int regN = 1;
-	for (string reg : func2gReg[symbol_pointer]) {
-		if (reg_need2push.find(reg) != reg_need2push.end()) {
-			global_reg_list += "," + reg;
-			regN++;
-		}
+	for (string reg : funcname2pushlist[name]) {
+		global_reg_list += "," + reg;
+		regN++;
 	}
+	global_reg_size = regN - 1;
 	if (!is_illegal(to_string(sp - sp_without_para))) {
-		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
+		//OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
+		li("R12", sp - sp_without_para);
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
@@ -479,10 +534,12 @@ void _alloc(CodeItem* ir)
 	string ini_value = ir->getOperand1();
 	int size = stoi(ir->getOperand2());
 	if (ini_value != "") {
-		OUTPUT("LDR R12,=" + ini_value);
+		//OUTPUT("LDR R12,=" + ini_value);
+		li("R12", stoi(ini_value));
 		int im = get_location(name).second - sp;
 		if (!is_illegal(to_string(im))) {
-			OUTPUT("LDR LR,=" + to_string(im));
+			//OUTPUT("LDR LR,=" + to_string(im));
+			li("LR", im);
 			OUTPUT("STR R12,[SP,LR]");
 		}
 		else {
@@ -501,7 +558,8 @@ void _load(CodeItem* ir)
 	else {
 		auto p = get_location(var);
 		if (!is_illegal(to_string(p.second - sp))) {
-			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			li("LR", p.second - sp);
 			OUTPUT("LDR " + target + ",[SP,LR]");
 		}
 		else {
@@ -523,7 +581,8 @@ void _loadarr(CodeItem* ir)
 			auto p = get_location(var);			
 			//丛改的
 			if (!is_illegal(to_string(p.second - sp))) {
-				OUTPUT("LDR LR,=" + to_string(p.second - sp));
+				//OUTPUT("LDR LR,=" + to_string(p.second - sp));
+				li("LR", p.second - sp);
 				OUTPUT("ADD LR,LR," + offset);
 				OUTPUT("LDR " + target + ",[SP,LR]");
 			}
@@ -541,7 +600,8 @@ void _loadarr(CodeItem* ir)
 	else {
 		if (var[0] == 'R') {
 			if (!is_illegal(offset)) {
-				OUTPUT("LDR LR,=" + offset);
+				//OUTPUT("LDR LR,=" + offset);
+				li("LR", stoi(offset));
 				OUTPUT("LDR " + target + ",[" + var + ",LR]");
 			}
 			else {
@@ -552,7 +612,8 @@ void _loadarr(CodeItem* ir)
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
 			if (!is_illegal(to_string(im))) {
-				OUTPUT("LDR LR,=" + to_string(im));
+				//OUTPUT("LDR LR,=" + to_string(im));
+				li("LR", im);
 				OUTPUT("LDR " + target + ",[SP,LR]");
 			}
 			else {
@@ -572,7 +633,8 @@ void _store(CodeItem* ir)
 	else {
 		auto p = get_location(loca);
 		if (!is_illegal(to_string(p.second - sp))) {
-			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			li("LR", p.second - sp);
 			OUTPUT("STR " + value + ",[SP,LR]");
 		}
 		else {
@@ -600,7 +662,8 @@ void _storearr(CodeItem* ir)
 			auto p = get_location(var);
 			//丛改的
 			if (!is_illegal(to_string(p.second - sp))) {
-				OUTPUT("LDR LR,=" + to_string(p.second - sp));
+				//OUTPUT("LDR LR,=" + to_string(p.second - sp));
+				li("LR", p.second - sp);
 				OUTPUT("ADD LR,LR," + offset);
 				OUTPUT("STR " + value + ",[SP,LR]");
 			}
@@ -618,7 +681,8 @@ void _storearr(CodeItem* ir)
 	else {
 		if (var[0] == 'R') {
 			if (!is_illegal(offset)) {
-				OUTPUT("LDR LR,=" + offset);
+				//OUTPUT("LDR LR,=" + offset);
+				li("LR", stoi(offset));
 				OUTPUT("STR " + value + ",[" + var + ",LR]");
 			}
 			else {
@@ -629,7 +693,8 @@ void _storearr(CodeItem* ir)
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
 			if (!is_illegal(to_string(im))) {
-				OUTPUT("LDR LR,=" + to_string(im));
+				//OUTPUT("LDR LR,=" + to_string(im));
+				li("LR", im);
 				OUTPUT("STR " + value + ",[SP,LR]");
 			}
 			else {
@@ -646,7 +711,8 @@ void _add(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -663,7 +729,8 @@ void _sub(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op1[0] != 'R') {
 		if (!is_illegal(op1)) {
-			OUTPUT("LDR LR,=" + op1);
+			//OUTPUT("LDR LR,=" + op1);
+			li("LR", stoi(op1));
 			OUTPUT("SUB " + target + ",LR," + op2);
 		}
 		else {
@@ -673,7 +740,8 @@ void _sub(CodeItem* ir)
 	}
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -714,7 +782,8 @@ void _mul(CodeItem* ir)
 				return;
 			}
 		}
-		OUTPUT("LDR LR,=" + op2);
+		//OUTPUT("LDR LR,=" + op2);
+		li("LR", stoi(op2));
 		op2 = "LR";
 	}
 	OUTPUT("MUL " + target + "," + op1 + "," + op2);
@@ -729,7 +798,8 @@ void _div(CodeItem* ir)
 		OUTPUT("PUSH {R0}");
 		OUTPUT("PUSH {R1,R2,R3,R12}");
 		OUTPUT("MOV R1," + op2);
-		OUTPUT("LDR R0,=" + op1);
+		//OUTPUT("LDR R0,=" + op1);
+		li("R0", stoi(op1));
 		OUTPUT("BL __aeabi_idiv");
 		if (target == "R0") {
 			OUTPUT("POP {R1,R2,R3,R12}");
@@ -754,7 +824,8 @@ void _div(CodeItem* ir)
 			int sh_post;
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
 			bool pop = false;
-			OUTPUT("LDR LR,=" + to_string(m_high));
+			//OUTPUT("LDR LR,=" + to_string(m_high));
+			li("LR", m_high);
 			OUTPUT("SMMUL LR,LR," + op1);
 			if (m_high < 0) {
 				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
@@ -801,7 +872,8 @@ void _div(CodeItem* ir)
 			}
 		}
 		else {
-			OUTPUT("LDR R1,=" + op2);
+			//OUTPUT("LDR R1,=" + op2);
+			li("R1", stoi(op2));
 		}
 		OUTPUT("BL __aeabi_idiv");
 		if (target == "R0") {
@@ -826,7 +898,8 @@ void _rem(CodeItem* ir)
 		OUTPUT("PUSH {R1}");
 		OUTPUT("PUSH {R0,R2,R3,R12}");
 		OUTPUT("MOV R1," + op2);
-		OUTPUT("LDR R0,=" + op1);
+		//OUTPUT("LDR R0,=" + op1);
+		li("R0", stoi(op1));
 		OUTPUT("BL __aeabi_idivmod");
 		if (target == "R1") {
 			OUTPUT("POP {R0,R2,R3,R12}");
@@ -848,7 +921,8 @@ void _rem(CodeItem* ir)
 			int m_high;
 			int sh_post;
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
-			OUTPUT("LDR LR,=" + to_string(m_high));
+			//OUTPUT("LDR LR,=" + to_string(m_high));
+			li("LR", m_high);
 			OUTPUT("SMMUL LR,LR," + op1);
 			if (m_high < 0) {
 				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
@@ -875,7 +949,8 @@ void _rem(CodeItem* ir)
 				tempreg = "R12";
 				pop = true;
 			}
-			OUTPUT("LDR " + tempreg + ",=" + op2);
+			//OUTPUT("LDR " + tempreg + ",=" + op2);
+			li(tempreg, stoi(op2));
 			OUTPUT("MUL LR,LR," + tempreg);
 			OUTPUT("SUB " + target + "," + op1 + ",LR");
 			if (pop) {
@@ -908,7 +983,8 @@ void _rem(CodeItem* ir)
 			}
 		}
 		else {
-			OUTPUT("LDR R1,=" + op2);
+			//OUTPUT("LDR R1,=" + op2);
+			li("R1", stoi(op2));
 		}
 		OUTPUT("BL __aeabi_idivmod");
 		if (target == "R1") {
@@ -1047,7 +1123,8 @@ void _eql(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -1071,7 +1148,8 @@ void _neq(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -1095,7 +1173,8 @@ void _sgt(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -1119,7 +1198,8 @@ void _sge(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -1143,7 +1223,8 @@ void _slt(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -1167,7 +1248,8 @@ void _sle(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op2[0] != 'R') {
 		if (!is_illegal(op2)) {
-			OUTPUT("LDR LR,=" + op2);
+			//OUTPUT("LDR LR,=" + op2);
+			li("LR", stoi(op2));
 			op2 = "LR";
 		}
 		else {
@@ -1264,10 +1346,12 @@ void _ret(CodeItem* ir)
 	fake_sp += 4;
 	if (global_reg_list != "") {
 		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
-		fake_sp += func2gReg[symbol_pointer].size() * 4;
+		//fake_sp += func2gReg[symbol_pointer].size() * 4;
+		fake_sp +=  global_reg_size* 4;
 	}
 	if (!is_illegal(to_string(sp_without_para-fake_sp))) {
-		OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
+		//OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
+		li("R12", sp_without_para - fake_sp);
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
@@ -1309,7 +1393,8 @@ void _lea(CodeItem* ir) {
 	}
 	else {
 		if (!is_illegal(to_string(p.second - sp))) {
-			OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
+			li("LR", p.second - sp);
 			OUTPUT("ADD " + reg + ",SP,LR");
 		}
 		else {
@@ -1360,7 +1445,8 @@ void _note(CodeItem* ir) {
 			int off = (paraN - 4) * 4;
 			sp += off;
 			if (!is_illegal(to_string(off))) {
-				OUTPUT("LDR LR,=" + to_string(off));
+				//OUTPUT("LDR LR,=" + to_string(off));
+				li("LR", off);
 				OUTPUT("ADD SP,SP,LR");
 			}
 			else {
@@ -1389,11 +1475,13 @@ void _arrayinit(CodeItem* ir)
 	//OUTPUT("BL memset");
 	//第二种，连续存
 	int length = stoi(size)+stoi(ir->getExtend());
-	OUTPUT("LDR LR,=" + iniv);
+	//OUTPUT("LDR LR,=" + iniv);
+	li("LR", stoi(iniv));
 	for (int i = stoi(ir->getExtend()); i < length; i += 1) {
 		int off = p.second - sp + i*4;
 		if (!is_illegal(to_string(off))) {
-			OUTPUT("LDR R12,=" + to_string(off));
+			//OUTPUT("LDR R12,=" + to_string(off));
+			li("R12", off);
 			OUTPUT("STR LR,[SP,R12]");
 		}
 		else {
