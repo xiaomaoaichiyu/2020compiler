@@ -1408,8 +1408,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 					if (instr.getCodetype() == LOAD && j+1 < ir.size() && ir.at(j+1).getInvariant() != 1) {
 						instr.setInvariant("");
 					}
-					else if (condition1(circle.cir_outs, idx, funcNum) 
-							 || condition2(circle.cir_outs, instr.getResult(), funcNum)) {
+					else if (condition1(circle.cir_outs, idx, funcNum)) {
 						auto tmp = instr;
 						tmp.setInvariant("");
 						irTmp.push_back(tmp);
