@@ -98,18 +98,22 @@ void getcallerMap()
 	for (auto p : funcname2caller) {
 		set<string> caller_gReg;
 		queue<string> caller_queue;
+		set<string> func_done; //in case some dunc call itself
 		for (string c : p.second) {
 			caller_queue.push(c);
 		}
 		while (caller_queue.size() != 0) {
 			string f = caller_queue.front();
 			for (string c : funcname2caller[f]) {
-				caller_queue.push(c);
+				if (func_done.find(c) == func_done.end()) {
+					caller_queue.push(c);
+				}
 			}
 			caller_queue.pop();
 			for (int reg : func2reg_without_inline[f]) {
 				caller_gReg.insert("R" + to_string(reg));
 			}
+			func_done.insert(f);
 		}
 		for (string g : func2gReg[funcname2index[p.first]]) {
 			if (caller_gReg.find(g) != caller_gReg.end()) {
