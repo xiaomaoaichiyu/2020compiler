@@ -108,9 +108,18 @@ private:
 	std::vector<int> funCallCount;									// 记录一个函数第几次被调用
 
 	std::vector<std::map<std::string, symbolTable>> varName2St;	// 变量名
-	std::map<std::string, int> regName2Num{ {"R4", 4}, {"R5", 5}, {"R6", 6}, {"R7", 7}, {"R8", 8}, {"R9", 9}, {"R10", 10}, {"R11", 11}, {"R12", 12} };
+	vector<int> globalRegAllocated;	// 函数内需要的全局寄存器数量
+	
+	// R12参与全局寄存器分配
+	/*std::map<std::string, int> regName2Num{ {"R4", 4}, {"R5", 5}, {"R6", 6}, {"R7", 7}, {"R8", 8}, {"R9", 9}, {"R10", 10}, {"R11", 11}, {"R12", 12} };
 	std::map<int, std::string> regNum2Name{ {4, "R4"}, {5, "R5"}, {6, "R6"}, {7, "R7"}, {8, "R8"}, {9, "R9"}, {10, "R10"}, {11, "R11"}, {12, "R12"} };
-	const int MAX_ALLOC_GLOBAL_REG = 9;
+	const int MAX_ALLOC_GLOBAL_REG = 9;*/
+	
+	// R12不参与全局寄存器分配
+	std::map<std::string, int> regName2Num{ {"R4", 4}, {"R5", 5}, {"R6", 6}, {"R7", 7}, {"R8", 8}, {"R9", 9}, {"R10", 10}, {"R11", 11} };
+	std::map<int, std::string> regNum2Name{ {4, "R4"}, {5, "R5"}, {6, "R6"}, {7, "R7"}, {8, "R8"}, {9, "R9"}, {10, "R10"}, {11, "R11"} };
+	const int MAX_ALLOC_GLOBAL_REG = 8;
+
 	const int ALLOC_GLOBAL_REG_START = 4;
 	std::vector<std::map<std::string, std::string>> var2reg;
 	std::vector<std::map<std::string, std::set<std::string>>> clash_graph;
@@ -224,6 +233,8 @@ private:
 	void optimize_delete_same_exp();
 
 	void optimize_br_label();
+
+	void count_global_reg_allocated();
 
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {

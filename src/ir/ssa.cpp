@@ -1094,6 +1094,7 @@ void SSA::build_clash_graph() {
 	int i, j, k;
 	int size1 = blockCore.size();
 	bool debug = false;
+	clash_graph.clear();
 	for (i = 0; i < size1; i++) clash_graph.push_back(map<string, set<string>>());
 	for (i = 1; i < size1; i++) {
 		if (debug) cout << "i=" << i;
@@ -1133,6 +1134,8 @@ void SSA::allocate_global_reg() {
 	int i, j, k;
 	int size1 = clash_graph.size();
 	bool debug = false;
+	allocRegList.clear();
+	var2reg.clear();
 	for (i = 0; i < size1; i++) allocRegList.push_back(stack<string>());
 	// 图着色移走节点
 	for (i = 1; i < size1; i++) {
@@ -1291,6 +1294,9 @@ void SSA::generate() {
 	TestIrCode("ir2.txt");
 
 	// 函数内联
+	registerAllocation();
+	count_global_reg_allocated();
+	for (auto i : globalRegAllocated) cout << i << endl;
 	inline_function();
 
 	// 恢复为之前中间代码形式后再做一次无用代码删除

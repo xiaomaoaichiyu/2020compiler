@@ -451,7 +451,8 @@ void SSA::inline_function() {
 					else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
 						continue;
 					}
-					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 11) {	// 内联后变量个数超过10个Orz
+					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
+					//else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && globalRegAllocated[i] + globalRegAllocated[funNum] > 10) {
 						continue;
 					}
 					else {
@@ -680,7 +681,7 @@ void SSA::delete_dead_codes() {
 								tmpout.insert(ci.getOperand1());
 							if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
 								tmpout.insert(ci.getOperand2());
-							tmpout.erase(ci.getResult());
+							//tmpout.erase(ci.getResult());
 						}
 						break;
 					case STORE:
@@ -691,7 +692,7 @@ void SSA::delete_dead_codes() {
 						else {
 							if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
 								tmpout.insert(ci.getResult());
-							tmpout.erase(ci.getOperand1());
+							//tmpout.erase(ci.getOperand1());
 						}
 						break;
 					case STOREARR:		// 数组不敢删除
@@ -704,7 +705,7 @@ void SSA::delete_dead_codes() {
 						if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
 							tmpout.insert(ci.getOperand2());
 						break;
-					case LABEL: case DEFINE: case GLOBAL: case NOTE:case ALLOC:
+					case LABEL: case DEFINE: case GLOBAL: case NOTE: case ALLOC:
 						// 不做处理
 						break;
 					default:
@@ -2123,4 +2124,16 @@ void SSA::optimize_br_label() {
 	}
 	build_def_use_chain();
 	active_var_analyse();
+}
+
+void SSA::count_global_reg_allocated() {
+	int size1 = var2reg.size();
+	globalRegAllocated.clear();
+	globalRegAllocated.push_back(0);
+	for (int i = 1; i < size1; i++) {
+		set<string> s;
+		for (map<string, string>::iterator iter = var2reg[i].begin(); iter != var2reg[i].end(); iter++)
+			s.insert(iter->second);
+		globalRegAllocated.push_back(s.size());
+	}
 }
