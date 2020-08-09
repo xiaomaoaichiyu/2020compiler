@@ -1565,6 +1565,15 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 					}
 					break;
 				}
+				case BR: case PUSH: case RET: {
+					if (tmpVar.find(ope1) != tmpVar.end()) {
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope1], "");
+						instr.setOperand1(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						func2tmpIndex.at(funcNum)++;
+						ir.insert(ir.begin() + j, tmp2);
+						j++;
+					}
+				}
 				default:
 					break;
 				}
