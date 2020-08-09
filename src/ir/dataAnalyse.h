@@ -18,14 +18,14 @@ class Node {
 public:
 	string var;
 	int bIdx, lIdx;
-	Node() {}
+	Node() : var(""), bIdx(-1), lIdx(-1) {}
 	Node(int blk_idx, int line_idx, string var) : var(var), bIdx(blk_idx), lIdx(line_idx) {}
 	string display() const {
 		return FORMAT("({}, <{}, {}>)", var, bIdx, lIdx);
 	}
 
 	friend bool operator==(const Node& lhs, const Node& rhs) {
-		return tie(lhs.bIdx, lhs.lIdx) == tie(rhs.bIdx, rhs.lIdx);
+		return tie(lhs.bIdx, lhs.lIdx, lhs.var) == tie(rhs.bIdx, rhs.lIdx, rhs.var);
 	}
 
 	friend bool operator!=(const Node& lhs, const Node& rhs) {
@@ -33,7 +33,9 @@ public:
 	}
 
 	friend bool operator<(const Node& lhs, const Node& rhs) {
-		return tie(lhs.bIdx, lhs.lIdx) < tie(rhs.bIdx, rhs.lIdx);
+		const int var1 = A2I(lhs.var.substr(1));
+		const int var2 = A2I(rhs.var.substr(1));
+		return tie(var1, lhs.bIdx, lhs.lIdx) < tie(var2, rhs.bIdx, rhs.lIdx);
 	}
 
 	friend bool operator<=(const Node& lhs, const Node& rhs) {
@@ -59,7 +61,9 @@ class UDchain {
 	map<string, set<Node>> var2defs;						//记录每个变量的定义点
 	map<Node, string> def2var;								//每个定义点只会定义一个变量
 
-	map<pair<string, Node>, Node> chains;
+	map<pair<string, Node>, Node> chains;				//udchains
+	//因为临时变量只会使用一次
+	map<pair<string, Node>, Node> duchains;		//duchains	主要给临时变量用，变量是否需要这个？循环不变式外提
 public:
 	UDchain() {}
 	UDchain(vector<basicBlock>& cfg) : CFG(cfg) {
@@ -88,6 +92,7 @@ private:
 	void erase_defs(set<Node> container, string var);			//删除集合中的var的定义
 	void add_A_UDChain(string var, const Node& use);			//添加一条使用-定义链
 	bool checkPhi(string var, int blkNum);											//检查具有多个定义的使用use是不是phi定义的变量
+	void add_A_DUChain(string var, const Node& use);
 };
 
 #endif //_DATA_ANALYSE_H_

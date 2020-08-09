@@ -152,7 +152,7 @@ void SSA::ssa_optimize() {
 		delete_dead_codes();
 	}
 
-	if (0) { // 关闭循环优化
+	if (1) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -995,32 +995,23 @@ string calculate(irCodeType op, string ope1, string ope2) {
 // 循环优化：不变式外提、强度削弱、归纳变量删除
 //============================================================
 
-
-//每个函数的循环，已连续的基本块构成；
-vector<vector<Circle>> func2circles;
+vector<Circle> circles;
 
 void printCircle() {
 	if (TIJIAO) {
-		int i = 0;
-		for (auto circles : func2circles) {
-			if (circles.empty()) {
-				continue;
+		static int i = 0;
+		cout << "function_" << i << endl;
+		for (auto circle : circles) {
+			cout << "circle's blocks: { ";
+			for (auto blk : circle.cir_blks) {
+				cout << "B" << blk << " ";
 			}
-			cout << "function_" << i << endl;
-			i++;
-			for (auto circle : circles) {
-				cout << "circle's blocks: { ";
-				for (auto blk : circle.cir_blks) {
-					cout << "B" << blk << " ";
-				}
-				cout << "}	Quit block in circle: { ";
-				for (auto blk : circle.cir_outs) {
-					cout << "B" << blk << " ";
-				}
-				cout << "}  ";
-				cout << "Begin block of circle: { B" << circle.cir_begin << " }" << endl;
+			cout << "}	Quit block in circle: { ";
+			for (auto blk : circle.cir_outs) {
+				cout << "B" << blk << " ";
 			}
-			cout << endl;
+			cout << "}  ";
+			cout << "Begin block of circle: { B" << circle.cir_begin << " }" << endl;
 		}
 		cout << endl;
 	}
@@ -1045,11 +1036,26 @@ void SSA::count_UDchains() {
 	ud.close();
 }
 
+void add_a_circle(Circle& cir) {
+	for (int i = 0; i < circles.size(); i++) {
+		if (circles.at(i).cir_blks.find(cir.cir_begin) != circles.at(i).cir_blks.end()) {
+			circles.insert(circles.begin() + i, cir);
+			return;
+		}
+	}
+	circles.push_back(cir);
+}
+
+int tmpVarIdx;
+
+string getTmpVar() {
+	return FORMAT("%tmpVar-{}", tmpVarIdx++);
+}
 
 void SSA::back_edge() {
-	func2circles.push_back(vector<Circle>());
 	for (int i = 1; i < blockCore.size(); i++) {
-		func2circles.push_back(vector<Circle>());
+		circles.clear();
+		tmpVarIdx = 0;
 		//每一个函数的基本块
 		auto blocks = blockCore.at(i);
 		vector<pair<int, int>> backEdges;		//存储找到的回边
@@ -1097,11 +1103,12 @@ void SSA::back_edge() {
 					}
 				}
 			}
-			func2circles.at(i).push_back(circle);
+			add_a_circle(circle);
 		}
+		printCircle();
 		//输出当前函数的所有循环
 		//print
-		for (auto circle : func2circles.at(i)) {
+		for (auto circle : circles) {
 			mark_invariant(i, circle);				//确定不变式
 			ofstream ly1("xunhuan1.txt");
 			printCircleIr(this->blockCore, ly1);
@@ -1180,23 +1187,36 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case STOREARR: case LOADARR: {
+				case LOADARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
 						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 							instr.setInvariant();
 						}
 					}
+					else {	//偏移是立即数
+						instr.setInvariant();
+					}
 					break;
 				}
-				case RET: case PUSH: case BR: {
-					if (isTmp(ope1)) {
-						auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				case STOREARR: {
+					if (!isNumber(ope2)) {
+						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+						auto def1 = udchain.getDef(Node(idx, j, res), res);
+						if (def.var != "" && def1.var != "" 
+							&& circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+							&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
 							instr.setInvariant();
 						}
 					}
-					break; }
+					else {
+						auto def1 = udchain.getDef(Node(idx, j, res), res);
+						if (def1.var != "" && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
+							instr.setInvariant();
+						}
+					}
+					break;
+				}
 				default:
 					break;
 				}
@@ -1285,32 +1305,54 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case STOREARR: case LOADARR: {
+				case LOADARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-							instr.setInvariant();
+						if (def.var != "") {
+							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								instr.setInvariant();
+							}
+							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
 						}
-						else {
-							if (def.var != "" && blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+					}
+					else {	//偏移是立即数
+						instr.setInvariant();
+					}
+					break;
+				}
+				case STOREARR: {
+					if (!isNumber(ope2)) {
+						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+						auto def1 = udchain.getDef(Node(idx, j, res), res);
+						if (def.var != "" && def1.var != "") {
+							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+								&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
+								instr.setInvariant();
+							}
+							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1
+									 && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {	//定值点被标记了
+								instr.setInvariant();
+							}
+							else if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+									 && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
+						}
+					} 
+					else {
+						auto def = udchain.getDef(Node(idx, j, res), res);
+						if (def.var != "") {
+							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								instr.setInvariant();
+							}
+							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
 								instr.setInvariant();
 							}
 						}
 					}
 				}
-				case RET: case PUSH: case BR: {
-					if (isTmp(ope1)) {
-						auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-							instr.setInvariant();
-						}
-						else {
-							if (def.var != "" && blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
-								instr.setInvariant();
-							}
-						}
-					}
-					break; }
 				default:
 					break;
 				}
@@ -1354,43 +1396,243 @@ bool SSA::condition2(set<int> outBlk, string var, int func) {
 void SSA::code_outside(int funcNum, Circle& circle) {
 	//外提代码
 	auto& blocks = blockCore.at(funcNum);
-	try {		
+	try {
+		vector<CodeItem> irTmp;
+
 		for (auto idx : circle.cir_blks) {
 			auto& ir = blocks.at(idx).Ir;
-			int pos = 0;
-			for (int j = 0; j < ir.size(); j++) { //这里判断每条指令的操作数是否为常数或者定值在循环外面
+			for (int j = 0; j < ir.size();) { //这里判断每条指令的操作数是否为常数或者定值在循环外面
 				auto& instr = ir.at(j);
-				if (instr.getInvariant() == 1) {	//不变式代码
-					//外提到循环开始基本块的label前面
-					if (condition1(circle.cir_outs, idx, funcNum) || condition2(circle.cir_outs, instr.getResult(), funcNum)) {
+				if (instr.getInvariant() == 1) {
+					if (instr.getCodetype() == LOAD && j+1 < ir.size() && ir.at(j+1).getInvariant() != 1) {
+						instr.setInvariant("");
+					}
+					else if (condition1(circle.cir_outs, idx, funcNum) 
+							 || condition2(circle.cir_outs, instr.getResult(), funcNum)) {
 						auto tmp = instr;
-						instr.setCodeOut();
-						blocks.at(circle.cir_begin).Ir.insert(blocks.at(circle.cir_begin).Ir.begin() + pos++, tmp);
-						j++;
+						tmp.setInvariant("");
+						irTmp.push_back(tmp);
+						ir.erase(ir.begin() + j);
+						continue;
 					}
 				}
+				j++;
 			}
+		}
+		auto& beginIr = blocks.at(circle.cir_begin).Ir;
+		for (int i = 0; i < beginIr.size(); i++) {
+			if (beginIr.at(i).getCodetype() == LABEL && beginIr.at(i).getResult().substr(7, 4) == "cond") {
+				int pos = 0;
+				for (auto instr : irTmp) {
+					beginIr.insert(beginIr.begin() +  i + pos, instr);
+					pos++;
+				}
+				break;
+			}
+		}
+		//改名字
+		set<string> tmpVar;
+		map<string, string> tmp2var;
+		//给循环开始块新添临时变量 def
+		auto& ir = blocks.at(circle.cir_begin).Ir;
+		for (int j = 0; j < ir.size(); j++) {
+			auto instr = ir.at(j);
+			if (instr.getCodetype() == LABEL && instr.getResult().substr(7, 4) == "cond") {
+				break;
+			}
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			switch (instr.getCodetype()) {
+			case LOAD: {
+				tmpVar.insert(res);
+				break;
+			}
+			case STORE: {
+				if (tmpVar.find(res) != tmpVar.end()) tmpVar.erase(res);
+				break;
+			}
+			case ADD:case SUB:case DIV:case MUL:case REM:
+			case AND:case OR:case NOT:
+			case EQL:case NEQ:case SLT:case SLE:case SGE:case SGT: {
+				if (tmpVar.find(ope1) != tmpVar.end()) tmpVar.erase(ope1);
+				if (tmpVar.find(ope2) != tmpVar.end()) tmpVar.erase(ope2);
+				tmpVar.insert(res);
+				break;
+			}
+			case LOADARR: {
+				if (tmpVar.find(ope2) != tmpVar.end()) tmpVar.erase(ope2);
+				tmpVar.insert(res);
+				break;
+			}
+			case STOREARR: {
+				if (tmpVar.find(ope2) != tmpVar.end()) tmpVar.erase(ope2);
+				if (tmpVar.find(res) != tmpVar.end()) tmpVar.erase(res);
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		//记录临时变量和Tmpvar的关系
+		for (int j = 0; j < ir.size(); j++) {
+			auto instr = ir.at(j);
+			if (instr.getCodetype() == LABEL && instr.getResult().substr(7, 4) == "cond") {
+				break;
+			}
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			switch (instr.getCodetype()) {
+			case LOAD: 
+			case ADD:case SUB:case DIV:case MUL:case REM:
+			case AND:case OR:case NOT:
+			case EQL:case NEQ:case SLT:case SLE:case SGE:case SGT: 
+			case LOADARR: {
+				if (tmpVar.find(res) != tmpVar.end()) {
+					tmp2var[res] = getTmpVar();
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		//给循环块对应位置添加对应的名字 use
+		for (auto idx : circle.cir_blks) {
+			auto& ir = blocks.at(idx).Ir;
+			for (int j = 0; j < ir.size(); j++) {
+				auto& instr = ir.at(j);
+				auto op = instr.getCodetype();
+				auto res = instr.getResult();
+				auto ope1 = instr.getOperand1();
+				auto ope2 = instr.getOperand2();
+				switch (op)
+				{
+				case ADD:case SUB:case DIV:case MUL:case REM:
+				case AND:case OR:case NOT:
+				case EQL:case NEQ:case SGT:case SGE:case SLT:case SLE: {
+					if (tmpVar.find(ope1) != tmpVar.end()) {
+						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope1], "");
+						instr.setOperand1(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						func2tmpIndex.at(funcNum)++;
+						ir.insert(ir.begin() + j, tmp1);
+						j++;
+					}
+					if (tmpVar.find(ope2) != tmpVar.end()) {
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
+						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						func2tmpIndex.at(funcNum)++;
+						ir.insert(ir.begin() + j, tmp2);
+						j++;
+					}
+					break;
+				}
+				case STORE: {
+					if (tmpVar.find(res) != tmpVar.end()) {
+						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[res], "");
+						instr.setResult(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						func2tmpIndex.at(funcNum)++;
+						ir.insert(ir.begin() + j, tmp1);
+						j++;
+					}
+					break;
+				}
+				case STOREARR: {
+					if (tmpVar.find(res) != tmpVar.end()) {
+						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[res], "");
+						instr.setResult(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						func2tmpIndex.at(funcNum)++;
+						ir.insert(ir.begin() + j, tmp1);
+						j++;
+					}
+					if (tmpVar.find(ope2) != tmpVar.end()) {
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
+						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						func2tmpIndex.at(funcNum)++;
+						ir.insert(ir.begin() + j, tmp2);
+						j++;
+					}
+					break;
+				}
+				case LOADARR: {
+					if (tmpVar.find(ope2) != tmpVar.end()) {
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
+						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						func2tmpIndex.at(funcNum)++;
+						ir.insert(ir.begin() + j, tmp2);
+						j++;
+					}
+					break;
+				}
+				default:
+					break;
+				}
+			}
+		}
+		//添加store指令
+		for (int j = 0; j < ir.size(); j++) {
+			auto instr = ir.at(j);
+			if (instr.getCodetype() == LABEL && instr.getResult().substr(7, 4) == "cond") {
+				break;
+			}
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			switch (instr.getCodetype()) {
+			case LOAD:
+			case ADD:case SUB:case DIV:case MUL:case REM:
+			case AND:case OR:case NOT:
+			case EQL:case NEQ:case SLT:case SLE:case SGE:case SGT:
+			case LOADARR: {
+				if (tmpVar.find(res) != tmpVar.end()) {
+					CodeItem tmp(STORE, res, tmp2var[res], "");
+					ir.insert(ir.begin() + j + 1, tmp);
+					j++;
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		//添加alloc
+		for (int j = 0; j < blocks.at(1).Ir.size(); j++) {
+			auto instr = blocks.at(1).Ir.at(j);
+			if (instr.getCodetype() == ALLOC) {
+				for (auto var : tmpVar) {
+					CodeItem tmp(ALLOC, tmp2var[var], "_", "1");
+					blocks.at(1).Ir.insert(blocks.at(1).Ir.begin() + j, tmp);
+				}
+				break;
+			}
+		}
+		//添加符号表
+		auto& fuhaobiao = total.at(funcNum);
+		for (auto var : tmpVar) {
+			symbolTable tmp(VARIABLE, INT, tmp2var[var], 0, 0);
+			fuhaobiao.push_back(tmp);
 		}
 	}
 	catch (exception e) {
 		WARN_MSG("code outside wrong!!");
 	}
 	//删除标记为outcode的代码
-	try {
-		for (auto& blk : blocks) {
-			auto& ir = blk.Ir;
-			for (auto it = ir.begin(); it != ir.end();) {
-				if (it->getCodeOut() == 1) {	//被外提的代码，删除
-					it = ir.erase(it);
-					continue;
-				}
-				it++;
-			}
-		}
-	}
-	catch (exception e) {
-		WARN_MSG("delete code out wrong!!");
-	}
+	//try {
+	//	for (auto& blk : blocks) {
+	//		auto& ir = blk.Ir;
+	//		for (auto it = ir.begin(); it != ir.end();) {
+	//			if (it->getCodeOut() == 1) {	//被外提的代码，删除
+	//				it = ir.erase(it);
+	//				continue;
+	//			}
+	//			it++;
+	//		}
+	//	}
+	//}
+	//catch (exception e) {
+	//	WARN_MSG("delete code out wrong!!");
+	//}
 }
 
 

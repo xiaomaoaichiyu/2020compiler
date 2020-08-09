@@ -23,9 +23,6 @@ public:
 	Circle(set<int>& blks) : cir_blks(blks) {}
 };
 
-//记录每个函数的循环
-extern vector<vector<Circle>> func2circles;
-
 //===========================================
 
 // dag

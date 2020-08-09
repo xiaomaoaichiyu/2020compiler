@@ -32,6 +32,7 @@ void UDchain::count_gen() {
 				Node def1(i, j, res);
 				gen.at(i).insert(def1);
 				def2var[def1] = res;
+				duchains[pair<string, Node>(res, def1)] = Node();
 				break;
 			} case STORE: {
 				if (!isGlobal(ope1)) {
@@ -45,6 +46,7 @@ void UDchain::count_gen() {
 					Node def1(i, j, res);
 					gen.at(i).insert(def1);
 					def2var[def1] = res;
+					duchains[pair<string, Node>(res, def1)] = Node();
 				}
 				break;
 			} case PHI: {
@@ -52,6 +54,7 @@ void UDchain::count_gen() {
 					Node def1(i, j, res);
 					gen.at(i).insert(def1);
 					def2var[def1] = res;
+					//duchains[pair<string, Node>(res, def1)] = Node();
 				}
 				break;
 			} case PARA: {
@@ -59,6 +62,7 @@ void UDchain::count_gen() {
 					Node def1(i, j, res);
 					gen.at(i).insert(def1);
 					def2var[def1] = res;
+					//duchains[pair<string, Node>(res, def1)] = Node();
 				}
 				break;
 			}
@@ -151,6 +155,16 @@ bool UDchain::checkPhi(string var, int blkNum) {
 	return false;
 }
 
+//记录临时变量的d-u链
+void UDchain::add_A_DUChain(string var, const Node& use) {
+	for (auto def : duchains) {
+		if (def.first.first == var) {
+			duchains[def.first] = use;
+			break;
+		}
+	}
+}
+
 void UDchain::add_A_UDChain(string var, const Node& use) {
 	int i = use.bIdx;
 	int j = use.lIdx;
@@ -191,6 +205,7 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 	}
 }
 
+
 //理论上除了phi函数定义的变量都只有一个定义点！！
 //计算整个流程图的使用-定义链
 void UDchain::count_UDchain() {
@@ -210,33 +225,57 @@ void UDchain::count_UDchain() {
 			case ADD: case SUB: case DIV: case MUL: case REM:
 			case AND: case OR:
 			case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE: {
-				if (isTmp(ope1)) add_A_UDChain(ope1, Node(i, j, ope1));
-				if (isTmp(ope2)) add_A_UDChain(ope2, Node(i, j, ope2));
+				if (isTmp(ope1)) {
+					add_A_UDChain(ope1, Node(i, j, ope1));
+					add_A_DUChain(ope1, Node(i, j, ope1));
+				}
+				if (isTmp(ope2)) {
+					add_A_UDChain(ope2, Node(i, j, ope2));
+					add_A_DUChain(ope2, Node(i, j, ope2));
+				}
 				break;
 			}
 			case NOT: {
 				add_A_UDChain(ope1, Node(i, j, ope1));
+				add_A_DUChain(ope1, Node(i, j, ope1));
 				break;
 			}
 			case STORE: {
-				if (isTmp(res))	add_A_UDChain(res, Node(i, j, res));
+				if (isTmp(res)) {
+					add_A_UDChain(res, Node(i, j, res));
+					add_A_DUChain(res, Node(i, j, res));
+				}
 				break;
 			}
 			case STOREARR: {
-				if (isTmp(res)) add_A_UDChain(res, Node(i, j, res));
-				if (isTmp(ope2)) add_A_UDChain(ope2, Node(i, j, ope2));
+				if (isTmp(res)) {
+					add_A_UDChain(res, Node(i, j, res));
+					add_A_DUChain(res, Node(i, j, res));
+				}
+				if (isTmp(ope2)) {
+					add_A_UDChain(ope2, Node(i, j, ope2));
+					add_A_DUChain(ope2, Node(i, j, ope2));
+				}
 				break;
 			}
 			case LOAD: {	//全局变量如何处理
-				if (ope2 != "para" && ope2 != "array") add_A_UDChain(ope1, Node(i, j, ope1));
+				if (ope2 != "para" && ope2 != "array") {
+					add_A_UDChain(ope1, Node(i, j, ope1));
+				}
 				break;
 			}
 			case LOADARR: {
-				if (isTmp(ope2)) add_A_UDChain(ope2, Node(i, j, ope2));
+				if (isTmp(ope2)) {
+					add_A_UDChain(ope2, Node(i, j, ope2));
+					add_A_DUChain(ope2, Node(i, j, ope2));
+				}
 				break;
 			}
 			case RET: case PUSH: case BR: {
-				if (isTmp(ope1)) add_A_UDChain(ope1, Node(i, j, ope1));
+				if (isTmp(ope1)) {
+					add_A_UDChain(ope1, Node(i, j, ope1));
+					add_A_DUChain(ope1, Node(i, j, ope1));
+				}
 				break;
 			}
 			default:
@@ -251,7 +290,12 @@ void UDchain::printUDchain(ofstream& ud) {
 	if (TIJIAO) {
 		ud << "func's UDChains" << endl;
 		for (auto chain : chains) {
-			ud << '\t' << chain.first.first << " = USE: <" << chain.first.second.bIdx << ", "  << chain.first.second.lIdx << ">,    DEF: " << chain.second.display() << endl;
+			ud << '\t' << chain.first.first << " = USE: <" << chain.first.second.bIdx << ", " << chain.first.second.lIdx << ">,    DEF: " << chain.second.display() << endl;
+		}
+		ud << "func's DUChains" << endl;
+		
+		for (auto chain : duchains) {
+			ud << '\t' << chain.first.first << " = DEF: <" << chain.first.second.bIdx << ", " << chain.first.second.lIdx << ">,    USE: " << chain.second.display() << endl;
 		}
 
 		ud << endl;

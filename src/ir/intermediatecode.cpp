@@ -253,6 +253,10 @@ void CodeItem::setInvariant() {
 	this->invariant = "invariant";
 }
 
+void CodeItem::setInvariant(string str) {
+	this->invariant = str;
+}
+
 int CodeItem::getInvariant()
 {
 	return this->invariant == "invariant";

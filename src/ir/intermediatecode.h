@@ -42,6 +42,7 @@ public:
 	void setID(int id);
 	int getId();
 	void setInvariant();
+	void setInvariant(string str);
 	int getInvariant();
 	void setCodeOut();
 	int getCodeOut();
