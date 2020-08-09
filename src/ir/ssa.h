@@ -101,6 +101,7 @@ private:
 	std::vector<bool> inlineFlag;									// 函数能否内联的标志
 	std::map<std::string, int> funName2Num;				// 对应第几个函数的函数名是什么
 	std::map<int, std::string> funNum2Name;				// 函数名和函数序号的对应关系
+	std::map<int, int> exitStatementNum;						// 函数内出口的数量
 
 	std::vector<int> addrIndex;										// 数组参数命名编号
 	std::vector<int> labelIndex;										// 函数内部标签改名编号
