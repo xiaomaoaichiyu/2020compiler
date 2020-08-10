@@ -1267,19 +1267,19 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case LOADARR: {
-					if (!isNumber(ope2)) {
-						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-							instr.setInvariant();
-						}
-					}
-					else {	//偏移是立即数
-						instr.setInvariant();
-					}
-					break;
-				}
-				case STOREARR: {
+				//case LOADARR: {
+				//	if (!isNumber(ope2)) {
+				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//		if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//			instr.setInvariant();
+				//		}
+				//	}
+				//	else {	//偏移是立即数
+				//		instr.setInvariant();
+				//	}
+				//	break;
+				//}
+				/*case STOREARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
 						auto def1 = udchain.getDef(Node(idx, j, res), res);
@@ -1296,7 +1296,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break;
-				}
+				}*/
 				default:
 					break;
 				}
@@ -1393,54 +1393,54 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case LOADARR: {
-					if (!isNumber(ope2)) {
-						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						if (def.var != "") {
-							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-								instr.setInvariant();
-							}
-							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
-								instr.setInvariant();
-							}
-						}
-					}
-					else {	//偏移是立即数
-						instr.setInvariant();
-					}
-					break;
-				}
-				case STOREARR: {
-					if (!isNumber(ope2)) {
-						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						auto def1 = udchain.getDef(Node(idx, j, res), res);
-						if (def.var != "" && def1.var != "") {
-							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
-								&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
-								instr.setInvariant();
-							}
-							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1
-									 && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {	//定值点被标记了
-								instr.setInvariant();
-							}
-							else if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
-									 && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
-								instr.setInvariant();
-							}
-						}
-					} 
-					else {
-						auto def = udchain.getDef(Node(idx, j, res), res);
-						if (def.var != "") {
-							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-								instr.setInvariant();
-							}
-							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
-								instr.setInvariant();
-							}
-						}
-					}
-				}
+				//case LOADARR: {
+				//	if (!isNumber(ope2)) {
+				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//		if (def.var != "") {
+				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//				instr.setInvariant();
+				//			}
+				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+				//				instr.setInvariant();
+				//			}
+				//		}
+				//	}
+				//	else {	//偏移是立即数
+				//		instr.setInvariant();
+				//	}
+				//	break;
+				//}
+				//case STOREARR: {
+				//	if (!isNumber(ope2)) {
+				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//		auto def1 = udchain.getDef(Node(idx, j, res), res);
+				//		if (def.var != "" && def1.var != "") {
+				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+				//				&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
+				//				instr.setInvariant();
+				//			}
+				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1
+				//					 && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {	//定值点被标记了
+				//				instr.setInvariant();
+				//			}
+				//			else if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+				//					 && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
+				//				instr.setInvariant();
+				//			}
+				//		}
+				//	} 
+				//	else {
+				//		auto def = udchain.getDef(Node(idx, j, res), res);
+				//		if (def.var != "") {
+				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//				instr.setInvariant();
+				//			}
+				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+				//				instr.setInvariant();
+				//			}
+				//		}
+				//	}
+				//}
 				default:
 					break;
 				}
