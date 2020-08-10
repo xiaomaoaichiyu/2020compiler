@@ -152,7 +152,7 @@ void SSA::ssa_optimize() {
 		delete_dead_codes();
 	}
 
-	if (1) { // 关闭循环优化
+	if (0) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -1190,7 +1190,6 @@ void SSA::back_edge() {
 			printCircleIr(this->blockCore, ly2);
 		}
 	}
-	//printCircle();
 }
 
 //================================================
