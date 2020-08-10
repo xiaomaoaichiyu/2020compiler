@@ -2260,11 +2260,11 @@ void SSA::optimize_br_label() {
 							CodeItem tnci(BR, ci2.getOperand1(), tci.getOperand1(), tci.getOperand2());
 							blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
 						}
-						if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand2()) == 0) {
+						/*if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand2()) == 0) {
 							CodeItem tci = blockCore[i][j - 1].Ir.back();
 							CodeItem tnci(BR, tci.getResult(), tci.getOperand1(), ci2.getOperand1());
 							blockCore[i][j - 1].Ir[blockCore[i][j - 1].Ir.size() - 1] = tnci;
-						}
+						}*/
 					}
 					else {
 						if (ci1.getResult().compare(blockCore[i][j - 1].Ir.back().getOperand1()) == 0) {
