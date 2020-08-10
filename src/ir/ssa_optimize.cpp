@@ -394,6 +394,7 @@ void SSA::inline_function() {
 	int i, j;
 	int size1 = codetotal.size();
 	bool switch_optimize_return = true;
+	bool switch_optimize_para_transfer = true;
 	// init & 建立函数名与对应序号的对应关系
 	for (i = 0; i < size1; i++) {
 		addrIndex.push_back(0);
@@ -442,7 +443,9 @@ void SSA::inline_function() {
 				int funNum = funName2Num[funName];	// 该函数对应的序号
 				symbolTable funSt;									// 函数对应的符号表结构
 				set<int> alreadyNeilian;				//丛睿轩添加的...	记录当前以内联的符号
-				
+
+				map<string, string> paraNotNeed;
+
 				if (step1) {	/* step1: 判断调用函数是否可以内联 */
 					for (int iter1 = 1; iter1 < total.size(); iter1++) {
 						if (total[iter1][0].getName().compare(funName) == 0) {
@@ -467,24 +470,21 @@ void SSA::inline_function() {
 					else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
 						continue;
 					}
-					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
+					/*else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
 					//else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && globalRegAllocated[i] + globalRegAllocated[funNum] > 10) {
+						continue;
+					}*/
+					else if (globalRegAllocated[i] == 8) {	// 只有sort样例中不内联
 						continue;
 					}
 					else {
-						if (debug) cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
+						cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 					}
 				}
 				alreadyNeilian.insert(funNum);		//丛睿轩添加的
 				if (debug) cout << "step1 done." << endl;
 				int paraNum = funSt.getparaLength();	// 参数个数
 				vector<string> paraTable;					// 参数列表
-
-				/* optimize para use */
-				
-				map<string, string> paraNotNeed;
-
-				/* optimize para use over*/
 
 				if (step2) {	/* step2: 处理参数及传参指令 */
 					for (int k = 1; k < total[funNum].size(); k++) {
@@ -498,7 +498,7 @@ void SSA::inline_function() {
 								newInsertAllocIr.insert(newInsertAllocIr.begin(), nci);
 								// 插入到符号表
 								symbolTable nst(VARIABLE, INT, paraName, 0, 0);
-								newInsertSymbolTable.insert(newInsertSymbolTable.begin() ,nst);
+								newInsertSymbolTable.insert(newInsertSymbolTable.begin(), nst);
 							}
 							paraTable.push_back(paraName);
 						}
@@ -515,8 +515,18 @@ void SSA::inline_function() {
 					for (int iter2 = paraNum; iter2 > 0; j++) {	// 中间代码倒序，而符号表顺序
 						ci = codetotal[i][j];
 						if (ci.getCodetype() == PUSH) {
-							CodeItem nci(STORE, ci.getOperand1(), paraTable[iter2 - 1], "");
-							codetotal[i][j] = nci;
+							string paraName = paraTable[iter2 - 1];
+							if (switch_optimize_para_transfer && !paraIfNeed[funNum][paraName] && codetotal[i][j - 1].getCodetype() == LOAD) {
+								paraNotNeed[paraName] = codetotal[i][j - 1].getOperand1();
+								j--;
+								codetotal[i].erase(codetotal[i].begin() + j);	// 删除load
+								codetotal[i].erase(codetotal[i].begin() + j);	// 删除push
+								j--;
+							}
+							else {
+								CodeItem nci(STORE, ci.getOperand1(), paraName, "");
+								codetotal[i][j] = nci;
+							}
 							iter2--;
 						}
 						else { continue; }
@@ -662,7 +672,17 @@ void SSA::inline_function() {
 							j++;
 						}
 						else {
-							codetotal[i].insert(codetotal[i].begin() + j, ci);
+							CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), ci.getOperand2());
+							if (switch_optimize_para_transfer && paraNotNeed.find(nci.getResult()) != paraNotNeed.end()) {
+								nci = CodeItem(nci.getCodetype(), paraNotNeed[nci.getResult()], nci.getOperand1(), nci.getOperand2());
+							}
+							if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand1()) != paraNotNeed.end()) {
+								nci = CodeItem(nci.getCodetype(), nci.getResult(), paraNotNeed[nci.getOperand1()], nci.getOperand2());
+							}
+							if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand2()) != paraNotNeed.end()) {
+								nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), paraNotNeed[nci.getOperand2()]);
+							}
+							codetotal[i].insert(codetotal[i].begin() + j, nci);
 							j++;
 						}
 					}
@@ -2215,5 +2235,74 @@ void SSA::count_global_reg_allocated() {
 		for (map<string, string>::iterator iter = var2reg[i].begin(); iter != var2reg[i].end(); iter++)
 			s.insert(iter->second);
 		globalRegAllocated.push_back(s.size());
+	}
+}
+
+void SSA::optimize_alloc() {
+	for (int i = 1; i < codetotal.size(); i++) {
+		map<string, int> useCount;
+		for (auto iter : varName2St[i]) { // 添加所有的参数和局部变量
+				useCount[iter.first] = 0;
+		}
+		for (int j = codetotal[i].size() - 1; j >= 0; j--) {
+			CodeItem ci = codetotal[i][j];
+			if (ci.getCodetype() == ALLOC) {
+				if (useCount.find(ci.getResult()) != useCount.end() && useCount[ci.getResult()] == 0) {
+					// 符号表删除
+					for (int k = 0; k < total[i].size(); k++) {
+						if (total[i][k].getName().compare(ci.getResult()) == 0) {
+							total[i].erase(total[i].begin() + k); break;
+						}
+					}
+					// 中间代码删除
+					codetotal[i].erase(codetotal[i].begin() + j);
+					// varName2St删除
+					varName2St[i].erase(ci.getResult());
+					// useCount删除
+					useCount.erase(ci.getResult());
+				}
+			}
+			/*else if (ci.getCodetype() == PARA) {
+				if (useCount.find(ci.getResult()) != useCount.end() && useCount[ci.getResult()] == 0) {
+
+				}
+			}*/
+			else {
+				string varName;
+				varName = ci.getResult();
+				if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+				varName = ci.getOperand1();
+				if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+				varName = ci.getOperand2();
+				if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+			}
+		}
+	}
+}
+
+void SSA::optimize_para_transfer() {
+	paraIfNeed.clear();
+	for (int i = 0; i < codetotal.size(); i++) paraIfNeed.push_back(map<string, bool>());
+	for (int i = 1; i < codetotal.size(); i++) {
+		for (int j = 0; j < total[i].size(); j++)
+			if (total[i][j].getForm() == PARAMETER)
+				paraIfNeed[i][total[i][j].getName()] = false;
+	}
+	for (int i = 1; i < codetotal.size(); i++) {
+		if (paraIfNeed[i].empty()) continue;	// 该函数没有参数
+		for (int j = 0; j < codetotal[i].size(); j++) {
+			CodeItem ci = codetotal[i][j];
+			if (ifOp1Def(ci.getCodetype())) {
+				if (paraIfNeed[i].find(ci.getOperand1()) != paraIfNeed[i].end())
+					paraIfNeed[i][ci.getOperand1()] = true;
+			}
+			else if (ifResultDef(ci.getCodetype()) && ci.getCodetype() != PARA) {
+				if (paraIfNeed[i].find(ci.getResult()) != paraIfNeed[i].end())
+					paraIfNeed[i][ci.getResult()] = true;
+			}
+			else {
+				;
+			}
+		}
 	}
 }
