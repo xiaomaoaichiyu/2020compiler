@@ -1122,8 +1122,8 @@ void add_a_circle(Circle& cir) {
 
 int tmpVarIdx;
 
-string getTmpVar() {
-	return FORMAT("%tmpVar-{}", tmpVarIdx++);
+string getTmpVar(string funcName) {
+	return FORMAT("%tmpVar-{}+{}", tmpVarIdx++, funcName);
 }
 
 void SSA::back_edge() {
@@ -1496,6 +1496,7 @@ bool SSA::condition2(set<int>& outBlk, set<int>& cir_blks, string var, int func)
 void SSA::code_outside(int funcNum, Circle& circle) {
 	//外提代码
 	auto& blocks = blockCore.at(funcNum);
+	string funcName = blocks.at(1).Ir.at(0).getResult().substr(1);
 	try {
 		vector<CodeItem> irTmp;
 
@@ -1530,6 +1531,9 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 						irTmp.push_back(tmp);
 						ir.erase(ir.begin() + j);
 						continue;
+					}
+					else {
+						instr.setInvariant("");
 					}
 				}
 				j++;
@@ -1606,7 +1610,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 			case EQL:case NEQ:case SLT:case SLE:case SGE:case SGT: 
 			case LOADARR: {
 				if (tmpVar.find(res) != tmpVar.end()) {
-					tmp2var[res] = getTmpVar();
+					tmp2var[res] = getTmpVar(funcName);
 				}
 				break;
 			}
