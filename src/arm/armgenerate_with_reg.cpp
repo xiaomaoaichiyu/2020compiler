@@ -353,13 +353,13 @@ bool is_illegal(string im) {
 	if (i <= 127 && i >= -128) {
 		return true;
 	}
-	unsigned int mask = 0xff;
+	/*unsigned int mask = 0xff;
 	while (mask != 0xfe000000) {
 		if ((i & (~mask)) == 0) {
 			return true;
 		}
 		mask <<= 1;
-	}
+	}*/
 	return false;
 }
 

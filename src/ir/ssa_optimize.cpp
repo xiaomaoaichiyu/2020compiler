@@ -1074,7 +1074,7 @@ vector<Circle> circles;
 void printCircle() {
 	if (TIJIAO) {
 		static int i = 0;
-		cout << "function_" << i << endl;
+		cout << "function_" << i++ << endl;
 		for (auto circle : circles) {
 			cout << "circle's blocks: { ";
 			for (auto blk : circle.cir_blks) {
