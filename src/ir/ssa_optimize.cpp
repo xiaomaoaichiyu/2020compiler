@@ -778,8 +778,14 @@ void SSA::delete_dead_codes() {
 						break;
 					case STORE:
 						if (tmpout.find(ci.getOperand1()) == tmpout.end() && !ifGlobalVariable(ci.getOperand1())) {
-							update = true;
-							blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+							if (inlineArrayName.size() > i && inlineArrayName[i].find(ci.getOperand1()) != inlineArrayName[i].end()) {
+								if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
+									tmpout.insert(ci.getResult());
+							}
+							else {
+								update = true;
+								blockCore[i][j].Ir.erase(blockCore[i][j].Ir.begin() + k);
+							}
 						}
 						else {
 							if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
@@ -2342,8 +2348,9 @@ void SSA::optimize_para_transfer() {
 		for (int j = 0; j < codetotal[i].size(); j++) {
 			CodeItem ci = codetotal[i][j];
 			if (ifOp1Def(ci.getCodetype())) {
-				if (paraIfNeed[i].find(ci.getOperand1()) != paraIfNeed[i].end())
+				if (paraIfNeed[i].find(ci.getOperand1()) != paraIfNeed[i].end()) {
 					paraIfNeed[i][ci.getOperand1()] = true;
+				}
 			}
 			else if (ifResultDef(ci.getCodetype()) && ci.getCodetype() != PARA) {
 				if (paraIfNeed[i].find(ci.getResult()) != paraIfNeed[i].end())

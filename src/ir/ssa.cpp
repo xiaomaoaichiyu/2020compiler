@@ -1210,7 +1210,7 @@ int SSA::str2int(string name) {
 // 入口函数
 void SSA::generate() {
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		// 初始化varName2St结构体
 		init();
