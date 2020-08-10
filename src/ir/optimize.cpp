@@ -679,7 +679,6 @@ void irOptimize() {
 			printLIR("LIR2.txt");
 			//图着色寄存器分配
 			registerAllocation3(var2reg);
-
 		}
 
 		//1. 寄存器直接指派

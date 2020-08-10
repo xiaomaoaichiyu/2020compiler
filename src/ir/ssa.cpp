@@ -1287,6 +1287,9 @@ void SSA::generate() {
 		optimize_br_label();
 
 		//复写传播
+		//copy_propagation();
+
+		//复写传播
 		// copy_propagation();
 
 		// dag图

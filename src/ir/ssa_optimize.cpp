@@ -152,7 +152,7 @@ void SSA::ssa_optimize() {
 		delete_dead_codes();
 	}
 
-	if (0) { // 关闭循环优化
+	if (1) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -1088,12 +1088,13 @@ string calculate(irCodeType op, string ope1, string ope2) {
 // 循环优化：不变式外提、强度削弱、归纳变量删除
 //============================================================
 
+vector<vector<Circle>> func2circles;
 vector<Circle> circles;
 
 void printCircle() {
 	if (TIJIAO) {
 		static int i = 0;
-		cout << "function_" << i << endl;
+		cout << "function_" << i++ << endl;
 		for (auto circle : circles) {
 			cout << "circle's blocks: { ";
 			for (auto blk : circle.cir_blks) {
@@ -1141,11 +1142,12 @@ void add_a_circle(Circle& cir) {
 
 int tmpVarIdx;
 
-string getTmpVar() {
-	return FORMAT("%tmpVar-{}", tmpVarIdx++);
+string getTmpVar(string funcName) {
+	return FORMAT("%tmpVar-{}+{}", tmpVarIdx++, funcName);
 }
 
 void SSA::back_edge() {
+	func2circles.push_back(vector<Circle>());
 	for (int i = 1; i < blockCore.size(); i++) {
 		circles.clear();
 		tmpVarIdx = 0;
@@ -1188,29 +1190,27 @@ void SSA::back_edge() {
 					}
 				}
 			}
-			for (auto one : circle.cir_blks) {
+			for (auto one : circle.cir_blks) {//找循环退出块
 				auto succs = blocks.at(one).succeeds;
 				for (auto suc : succs) {
 					if (circle.cir_blks.find(suc) == circle.cir_blks.end()) {
-						circle.cir_outs.insert(one);
+						circle.cir_outs.insert(suc);
 					}
 				}
 			}
 			add_a_circle(circle);
 		}
+		func2circles.push_back(circles);
 		printCircle();
-		//输出当前函数的所有循环
-		//print
-		for (auto circle : circles) {
-			mark_invariant(i, circle);				//确定不变式
-			ofstream ly1("xunhuan1.txt");
-			printCircleIr(this->blockCore, ly1);
-			code_outside(i, circle);				//不变式外提
-			ofstream ly2("xunhuan2.txt");
-			printCircleIr(this->blockCore, ly2);
-		}
+		//for (auto circle : circles) {
+		//	mark_invariant(i, circle);				//确定不变式
+		//	ofstream ly1("xunhuan1.txt");
+		//	printCircleIr(this->blockCore, ly1);
+		//	code_outside(i, circle);				//不变式外提
+		//	ofstream ly2("xunhuan2.txt");
+		//	printCircleIr(this->blockCore, ly2);
+		//}
 	}
-	//printCircle();
 }
 
 //================================================
@@ -1236,6 +1236,14 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						instr.setInvariant();
 					}
 					else {	//取变量的值，看变量的定义位置def是否在循环外
+						int pos = ope1.find('^');
+						if (pos != -1
+							&& j+1 < ir.size() 
+							&& ir.at(j+1).getCodetype() == STORE 
+							&& ir.at(j+1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
+							j++;
+							break;
+						}
 						if (!isGlobal(ope1)) {
 							auto def = udchain.getDef(Node(idx, j, ope1), ope1);
 							if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
@@ -1280,19 +1288,19 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case LOADARR: {
-					if (!isNumber(ope2)) {
-						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-							instr.setInvariant();
-						}
-					}
-					else {	//偏移是立即数
-						instr.setInvariant();
-					}
-					break;
-				}
-				case STOREARR: {
+				//case LOADARR: {
+				//	if (!isNumber(ope2)) {
+				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//		if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//			instr.setInvariant();
+				//		}
+				//	}
+				//	else {	//偏移是立即数
+				//		instr.setInvariant();
+				//	}
+				//	break;
+				//}
+				/*case STOREARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
 						auto def1 = udchain.getDef(Node(idx, j, res), res);
@@ -1309,7 +1317,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break;
-				}
+				}*/
 				default:
 					break;
 				}
@@ -1331,6 +1339,14 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 				case LOAD: {
 					//取变量的值，看变量的定义位置def是否在循环外
 					if (!isGlobal(ope1)) {	//不是全局变量
+						int pos = ope1.find('^');
+						if (pos != -1
+							&& j + 1 < ir.size()
+							&& ir.at(j + 1).getCodetype() == STORE
+							&& ir.at(j + 1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
+							j++;
+							break;
+						}
 						auto def = udchain.getDef(Node(idx, j, ope1), ope1);
 						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 							instr.setInvariant();
@@ -1398,54 +1414,54 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case LOADARR: {
-					if (!isNumber(ope2)) {
-						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						if (def.var != "") {
-							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-								instr.setInvariant();
-							}
-							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
-								instr.setInvariant();
-							}
-						}
-					}
-					else {	//偏移是立即数
-						instr.setInvariant();
-					}
-					break;
-				}
-				case STOREARR: {
-					if (!isNumber(ope2)) {
-						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						auto def1 = udchain.getDef(Node(idx, j, res), res);
-						if (def.var != "" && def1.var != "") {
-							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
-								&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
-								instr.setInvariant();
-							}
-							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1
-									 && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {	//定值点被标记了
-								instr.setInvariant();
-							}
-							else if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
-									 && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
-								instr.setInvariant();
-							}
-						}
-					} 
-					else {
-						auto def = udchain.getDef(Node(idx, j, res), res);
-						if (def.var != "") {
-							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-								instr.setInvariant();
-							}
-							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
-								instr.setInvariant();
-							}
-						}
-					}
-				}
+				//case LOADARR: {
+				//	if (!isNumber(ope2)) {
+				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//		if (def.var != "") {
+				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//				instr.setInvariant();
+				//			}
+				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+				//				instr.setInvariant();
+				//			}
+				//		}
+				//	}
+				//	else {	//偏移是立即数
+				//		instr.setInvariant();
+				//	}
+				//	break;
+				//}
+				//case STOREARR: {
+				//	if (!isNumber(ope2)) {
+				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//		auto def1 = udchain.getDef(Node(idx, j, res), res);
+				//		if (def.var != "" && def1.var != "") {
+				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+				//				&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
+				//				instr.setInvariant();
+				//			}
+				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1
+				//					 && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {	//定值点被标记了
+				//				instr.setInvariant();
+				//			}
+				//			else if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+				//					 && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
+				//				instr.setInvariant();
+				//			}
+				//		}
+				//	} 
+				//	else {
+				//		auto def = udchain.getDef(Node(idx, j, res), res);
+				//		if (def.var != "") {
+				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//				instr.setInvariant();
+				//			}
+				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+				//				instr.setInvariant();
+				//			}
+				//		}
+				//	}
+				//}
 				default:
 					break;
 				}
@@ -1460,7 +1476,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 //遍历每一条指令s: A = B op C | A = B
 //a)
 //循环不变式外提条件1：所在节点是所有出口结点的必经结点
-bool SSA::condition1(set<int> outBlk, int instrBlk, int func) {
+bool SSA::condition1(set<int>& outBlk, set<int>& cir_blks, int instrBlk, int func) {
 	for (auto one : outBlk) {
 		if (blockCore.at(func).at(one).domin.find(instrBlk) == blockCore.at(func).at(one).domin.end()) {
 			return false;
@@ -1473,11 +1489,23 @@ bool SSA::condition1(set<int> outBlk, int instrBlk, int func) {
 
 //b)
 //循环不变式外提条件1：变量离开循环后不活跃
-bool SSA::condition2(set<int> outBlk, string var, int func) {
+bool SSA::condition2(set<int>& outBlk, set<int>& cir_blks, string var, int func) {
+	//1. 不活跃
 	for (auto one : outBlk) {
-		if (blockCore.at(func).at(one).out.find(var) != blockCore.at(func).at(one).out.end()) {
+		if (blockCore.at(func).at(one).in.find(var) != blockCore.at(func).at(one).in.end()) {
 			return false;
 		}
+	}
+	//2. 没有其他定义点
+	auto defs = func2udChains.at(func).get_Defs_of_var(var);
+	int num = 0;
+	for (auto def : defs) {
+		if (cir_blks.find(def.bIdx) != cir_blks.end()) {
+			num++;
+		}
+	}
+	if (num > 1) {
+		return false;
 	}
 	return true;
 }
@@ -1489,6 +1517,7 @@ bool SSA::condition2(set<int> outBlk, string var, int func) {
 void SSA::code_outside(int funcNum, Circle& circle) {
 	//外提代码
 	auto& blocks = blockCore.at(funcNum);
+	string funcName = blocks.at(1).Ir.at(0).getResult().substr(1);
 	try {
 		vector<CodeItem> irTmp;
 
@@ -1497,15 +1526,35 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 			for (int j = 0; j < ir.size();) { //这里判断每条指令的操作数是否为常数或者定值在循环外面
 				auto& instr = ir.at(j);
 				if (instr.getInvariant() == 1) {
+					string var = "";
+					switch (instr.getCodetype())
+					{
+					case ADD:case SUB:case MUL:case DIV:case REM:case AND:case OR:case NOT:case EQL:case NEQ:case SLT:
+					case SLE:case SGT:case SGE:case LOAD: case LOADARR:{
+						var = instr.getResult();
+						break;
+					}
+					case STORE: {
+						var = instr.getOperand1();
+						break;
+					}
+					default:
+						var = "";
+						break;
+					}
 					if (instr.getCodetype() == LOAD && j+1 < ir.size() && ir.at(j+1).getInvariant() != 1) {
 						instr.setInvariant("");
 					}
-					else if (condition1(circle.cir_outs, idx, funcNum) || condition2(circle.cir_outs, instr.getResult(), funcNum)) {
+					else if (condition1(circle.cir_outs, circle.cir_blks, idx, funcNum)
+						|| condition2(circle.cir_outs, circle.cir_blks, var, funcNum)) {
 						auto tmp = instr;
 						tmp.setInvariant("");
 						irTmp.push_back(tmp);
 						ir.erase(ir.begin() + j);
 						continue;
+					}
+					else {
+						instr.setInvariant("");
 					}
 				}
 				j++;
@@ -1582,7 +1631,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 			case EQL:case NEQ:case SLT:case SLE:case SGE:case SGT: 
 			case LOADARR: {
 				if (tmpVar.find(res) != tmpVar.end()) {
-					tmp2var[res] = getTmpVar();
+					tmp2var[res] = getTmpVar(funcName);
 				}
 				break;
 			}
@@ -1613,7 +1662,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 					}
 					if (tmpVar.find(ope2) != tmpVar.end()) {
 						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
-						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
 						func2tmpIndex.at(funcNum)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
@@ -1640,7 +1689,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 					}
 					if (tmpVar.find(ope2) != tmpVar.end()) {
 						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
-						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
 						func2tmpIndex.at(funcNum)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
