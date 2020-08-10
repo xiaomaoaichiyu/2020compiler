@@ -152,7 +152,7 @@ void SSA::ssa_optimize() {
 		delete_dead_codes();
 	}
 
-	if (0) { // 关闭循环优化
+	if (1) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -1215,6 +1215,14 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						instr.setInvariant();
 					}
 					else {	//取变量的值，看变量的定义位置def是否在循环外
+						int pos = ope1.find('^');
+						if (pos != -1
+							&& j+1 < ir.size() 
+							&& ir.at(j+1).getCodetype() == STORE 
+							&& ir.at(j+1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
+							j++;
+							break;
+						}
 						if (!isGlobal(ope1)) {
 							auto def = udchain.getDef(Node(idx, j, ope1), ope1);
 							if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
@@ -1310,6 +1318,14 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 				case LOAD: {
 					//取变量的值，看变量的定义位置def是否在循环外
 					if (!isGlobal(ope1)) {	//不是全局变量
+						int pos = ope1.find('^');
+						if (pos != -1
+							&& j + 1 < ir.size()
+							&& ir.at(j + 1).getCodetype() == STORE
+							&& ir.at(j + 1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
+							j++;
+							break;
+						}
 						auto def = udchain.getDef(Node(idx, j, ope1), ope1);
 						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
 							instr.setInvariant();

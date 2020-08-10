@@ -89,11 +89,24 @@ public:
 		}
 	}
 	set<Node> get_Defs_of_var(string var) {
-		if (var2defs.find(var) != var2defs.end()) {	//сп
-			return var2defs[var];
+		string varTmp = "";
+		set<Node> res;
+		if (var.find('^') != -1) {
+			varTmp = var.substr(0, var.find('^'));
+			for (auto one : var2defs) {
+				if (one.first.size() > varTmp.size() && one.first.substr(0, var.find('^')) == varTmp) {
+					res.insert(one.second.begin(), one.second.end());
+				}
+			}
+			return res;
 		}
 		else {
-			return set<Node>();
+			if (var2defs.find(var) != var2defs.end()) {	//сп
+				return var2defs[var];
+			}
+			else {
+				return set<Node>();
+			}
 		}
 	}
 private:
