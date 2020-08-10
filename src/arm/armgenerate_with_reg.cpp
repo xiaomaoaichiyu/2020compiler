@@ -30,14 +30,22 @@ map<string, int> func2para;
 map<string, vector<string>> funcname2pushlist;
 int canOutput;
 
+bool is_illegal(string im);
+
 void li(string reg, int im)
 {
 	//user ldr
-	OUTPUT("LDR " + reg + ",=" + to_string(im));
-	return;
+	//OUTPUT("LDR " + reg + ",=" + to_string(im));
+	//return;
 	//user movw,movt
+	if (is_illegal(to_string(im))) {
+		OUTPUT("MOV " + reg + ",#" + to_string(im));
+		return;
+	}
 	OUTPUT("MOVW " + reg + ",#" + to_string(im & 0xffff));
-	OUTPUT("MOVT " + reg + ",#" + to_string((unsigned)(im & 0xffff0000) >> 16));
+	if ((im & 0xffff0000) != 0) {
+		OUTPUT("MOVT " + reg + ",#" + to_string((unsigned)(im & 0xffff0000) >> 16));
+	}
 	return;
 }
 
@@ -342,17 +350,16 @@ bool check_format(CodeItem* ir) {
 
 bool is_illegal(string im) {
 	int i = stoi(im);
-	if (i <= 1023 && i >= -1024) {
+	if (i <= 127 && i >= -128) {
 		return true;
 	}
-	/*
 	unsigned int mask = 0xff;
 	while (mask != 0xfe000000) {
 		if ((i & (~mask)) == 0) {
 			return true;
 		}
 		mask <<= 1;
-	}*/
+	}
 	return false;
 }
 
