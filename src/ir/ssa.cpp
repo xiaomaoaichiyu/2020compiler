@@ -1210,7 +1210,7 @@ int SSA::str2int(string name) {
 // 入口函数
 void SSA::generate() {
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		// 初始化varName2St结构体
 		init();
@@ -1289,9 +1289,6 @@ void SSA::generate() {
 		//复写传播
 		//copy_propagation();
 
-		//复写传播
-		// copy_propagation();
-
 		// dag图
 		//build_dag();
 
@@ -1301,7 +1298,7 @@ void SSA::generate() {
 		optimize_alloc();
 
 		// 输出中间代码
-		if (i == 1) TestIrCode("ir2.txt");
+		TestIrCode("ir2.txt");
 
 		// 函数内联
 		if (i == 0) registerAllocation();
@@ -1314,7 +1311,7 @@ void SSA::generate() {
 		pre_optimize();
 
 		// 输出中间代码
-		if (i == 1) TestIrCode("ir3.txt");
+		TestIrCode("ir3.txt");
 	}
 }
 
