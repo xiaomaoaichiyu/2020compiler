@@ -1181,14 +1181,14 @@ void SSA::back_edge() {
 		}
 		func2circles.push_back(circles);
 		printCircle();
-		for (auto circle : circles) {
-			mark_invariant(i, circle);				//确定不变式
-			ofstream ly1("xunhuan1.txt");
-			printCircleIr(this->blockCore, ly1);
-			code_outside(i, circle);				//不变式外提
-			ofstream ly2("xunhuan2.txt");
-			printCircleIr(this->blockCore, ly2);
-		}
+		//for (auto circle : circles) {
+		//	mark_invariant(i, circle);				//确定不变式
+		//	ofstream ly1("xunhuan1.txt");
+		//	printCircleIr(this->blockCore, ly1);
+		//	code_outside(i, circle);				//不变式外提
+		//	ofstream ly2("xunhuan2.txt");
+		//	printCircleIr(this->blockCore, ly2);
+		//}
 	}
 }
 
