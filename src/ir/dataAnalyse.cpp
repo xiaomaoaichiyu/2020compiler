@@ -32,6 +32,13 @@ void UDchain::count_gen() {
 				Node def1(i, j, res);
 				gen.at(i).insert(def1);
 				def2var[def1] = res;
+				if (var2defs.find(res) != var2defs.end()) {
+					var2defs[res].insert(def1);
+				}
+				else {
+					var2defs[res] = set<Node>();
+					var2defs[res].insert(def1);
+				}
 				duchains[pair<string, Node>(res, def1)] = Node();
 				break;
 			} case STORE: {
@@ -39,6 +46,13 @@ void UDchain::count_gen() {
 					Node def1(i, j, ope1);
 					gen.at(i).insert(def1);
 					def2var[def1] = ope1;
+					if (var2defs.find(ope1) != var2defs.end()) {
+						var2defs[ope1].insert(def1);
+					}
+					else {
+						var2defs[ope1] = set<Node>();
+						var2defs[ope1].insert(def1);
+					}
 				}
 				break;
 			} case CALL: {
@@ -46,6 +60,13 @@ void UDchain::count_gen() {
 					Node def1(i, j, res);
 					gen.at(i).insert(def1);
 					def2var[def1] = res;
+					if (var2defs.find(res) != var2defs.end()) {
+						var2defs[res].insert(def1);
+					}
+					else {
+						var2defs[res] = set<Node>();
+						var2defs[res].insert(def1);
+					}
 					duchains[pair<string, Node>(res, def1)] = Node();
 				}
 				break;
@@ -54,6 +75,13 @@ void UDchain::count_gen() {
 					Node def1(i, j, res);
 					gen.at(i).insert(def1);
 					def2var[def1] = res;
+					if (var2defs.find(res) != var2defs.end()) {
+						var2defs[res].insert(def1);
+					}
+					else {
+						var2defs[res] = set<Node>();
+						var2defs[res].insert(def1);
+					}
 					//duchains[pair<string, Node>(res, def1)] = Node();
 				}
 				break;
@@ -62,6 +90,13 @@ void UDchain::count_gen() {
 					Node def1(i, j, res);
 					gen.at(i).insert(def1);
 					def2var[def1] = res;
+					if (var2defs.find(res) != var2defs.end()) {
+						var2defs[res].insert(def1);
+					}
+					else {
+						var2defs[res] = set<Node>();
+						var2defs[res].insert(def1);
+					}
 					//duchains[pair<string, Node>(res, def1)] = Node();
 				}
 				break;
@@ -93,7 +128,7 @@ bool UDchain::find_var_def(set<Node> container, string var) {
 	return false;
 }
 
-void UDchain::erase_defs(set<Node> container, string var) {
+void UDchain::erase_defs(set<Node>& container, string var) {
 	try {
 		for (auto it = container.begin(); it != container.end();) {
 			if (def2var[*it] == var) {
@@ -182,16 +217,16 @@ void UDchain::add_A_UDChain(string var, const Node& use) {
 	//遍历基本块内部的def是否是变量的定义
 	for (auto def : gen.at(i)) {
 		if (def2var[def] == var) {
-			if (chains.find(tmp) != chains.end()) {
+			if (chains.find(tmp) != chains.end()) {	//还没有var的使用-定义链
 				if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
 					auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 					WARN_MSG(tmp.c_str());
 				}
-				if (chains[tmp].lIdx > def.lIdx) {
+				if (def.lIdx < j) {
 					chains[tmp] = def;
 				}
 			}
-			else if (def.lIdx < j) {
+			else if (def.lIdx < j) {	//已经有了var的使用-定义链
 				if (chains.find(tmp) != chains.end() && chains[tmp] != def && !checkPhi(var, i)) {
 					auto tmp = FORMAT("use ({} <{},{}>) have def over one time!", var, i, j);
 					WARN_MSG(tmp.c_str());
@@ -296,6 +331,15 @@ void UDchain::printUDchain(ofstream& ud) {
 		
 		for (auto chain : duchains) {
 			ud << '\t' << chain.first.first << " = DEF: <" << chain.first.second.bIdx << ", " << chain.first.second.lIdx << ">,    USE: " << chain.second.display() << endl;
+		}
+
+		ud << "var 2 defs:" << endl;
+		for (auto one : var2defs) {
+			ud << one.first << " : ";
+			for (auto def : one.second) {
+				ud << def.display() << " ";
+			}
+			ud << endl;
 		}
 
 		ud << endl;

@@ -58,8 +58,9 @@ public:
 class UDchain {
 	vector<basicBlock> CFG;
 	vector<set<Node>> in, out, gen, kill;					//记录每个基本块的集合
-	map<string, set<Node>> var2defs;						//记录每个变量的定义点
+	
 	map<Node, string> def2var;								//每个定义点只会定义一个变量
+	map<string, set<Node>> var2defs;						//记录每个变量的定义（尤其是phi的定义）
 
 	map<pair<string, Node>, Node> chains;				//udchains
 	//因为临时变量只会使用一次
@@ -87,9 +88,17 @@ public:
 			return Node(-1, -1, "");
 		}
 	}
+	set<Node> get_Defs_of_var(string var) {
+		if (var2defs.find(var) != var2defs.end()) {	//有
+			return var2defs[var];
+		}
+		else {
+			return set<Node>();
+		}
+	}
 private:
 	bool find_var_def(set<Node> container, string var);			//寻找变量的定义
-	void erase_defs(set<Node> container, string var);			//删除集合中的var的定义
+	void erase_defs(set<Node>& container, string var);			//删除集合中的var的定义
 	void add_A_UDChain(string var, const Node& use);			//添加一条使用-定义链
 	bool checkPhi(string var, int blkNum);											//检查具有多个定义的使用use是不是phi定义的变量
 	void add_A_DUChain(string var, const Node& use);

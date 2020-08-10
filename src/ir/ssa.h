@@ -199,8 +199,8 @@ private:
 	void back_edge();	//计算回边+查找循环
 	void code_outside(int funcNum, Circle& circle);	//代码外提
 	void mark_invariant(int funcNum, Circle& circle);			//标记不变式
-	bool condition1(set<int> outBlk, int instrBlk, int func);
-	bool condition2(set<int> outBlk, string var, int func);
+	bool condition1(set<int>& outBlk, set<int>& cir_blks, int instrBlk, int func);
+	bool condition2(set<int>& outBlk, set<int>& cir_blks, string var, int func);
 	void strength_reduction();	//强度削弱
 	void protocol_variable_deletion(); //规约变量删除
 
