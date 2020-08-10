@@ -30,7 +30,14 @@ map<string, int> func2para;
 map<string, vector<string>> funcname2pushlist;
 int canOutput;
 
-bool is_illegal(string im);
+unsigned ror(unsigned val, int size)
+{
+	unsigned res = val >> size;
+	res |= val << (32 - size);
+	return res;
+}
+
+bool is_illegal(string im,bool str=false);
 
 void li(string reg, int im)
 {
@@ -348,18 +355,21 @@ bool check_format(CodeItem* ir) {
 	return true;
 }
 
-bool is_illegal(string im) {
+bool is_illegal(string im,bool str) {
 	int i = stoi(im);
+	if (str) {
+		return i < 4096;
+	}
 	if (i <= 127 && i >= -128) {
 		return true;
 	}
-	/*unsigned int mask = 0xff;
-	while (mask != 0xfe000000) {
+	unsigned int mask = 0xff;
+	do {
 		if ((i & (~mask)) == 0) {
 			return true;
 		}
-		mask <<= 1;
-	}*/
+		mask = ror(mask, 2);
+	} while (mask != 0xff);
 	return false;
 }
 
@@ -568,7 +578,7 @@ void _load(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(var);
-		if (!is_illegal(to_string(p.second - sp))) {
+		if (!is_illegal(to_string(p.second - sp),true)) {
 			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			li("LR", p.second - sp);
 			OUTPUT("LDR " + target + ",[SP,LR]");
@@ -610,7 +620,7 @@ void _loadarr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (!is_illegal(offset)) {
+			if (!is_illegal(offset,true)) {
 				//OUTPUT("LDR LR,=" + offset);
 				li("LR", stoi(offset));
 				OUTPUT("LDR " + target + ",[" + var + ",LR]");
@@ -622,7 +632,7 @@ void _loadarr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (!is_illegal(to_string(im))) {
+			if (!is_illegal(to_string(im),true)) {
 				//OUTPUT("LDR LR,=" + to_string(im));
 				li("LR", im);
 				OUTPUT("LDR " + target + ",[SP,LR]");
@@ -643,7 +653,7 @@ void _store(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(loca);
-		if (!is_illegal(to_string(p.second - sp))) {
+		if (!is_illegal(to_string(p.second - sp),true)) {
 			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			li("LR", p.second - sp);
 			OUTPUT("STR " + value + ",[SP,LR]");
@@ -691,7 +701,7 @@ void _storearr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (!is_illegal(offset)) {
+			if (!is_illegal(offset,true)) {
 				//OUTPUT("LDR LR,=" + offset);
 				li("LR", stoi(offset));
 				OUTPUT("STR " + value + ",[" + var + ",LR]");
@@ -703,7 +713,7 @@ void _storearr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (!is_illegal(to_string(im))) {
+			if (!is_illegal(to_string(im),true)) {
 				//OUTPUT("LDR LR,=" + to_string(im));
 				li("LR", im);
 				OUTPUT("STR " + value + ",[SP,LR]");
@@ -1490,7 +1500,7 @@ void _arrayinit(CodeItem* ir)
 	li("LR", stoi(iniv));
 	for (int i = stoi(ir->getExtend()); i < length; i += 1) {
 		int off = p.second - sp + i*4;
-		if (!is_illegal(to_string(off))) {
+		if (!is_illegal(to_string(off),true)) {
 			//OUTPUT("LDR R12,=" + to_string(off));
 			li("R12", off);
 			OUTPUT("STR LR,[SP,R12]");
