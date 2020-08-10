@@ -18,10 +18,13 @@ class Circle {
 public:
 	set<int> cir_blks;	//循环的基本块结点
 	set<int> cir_outs;	//循环的退出结点
-	int cir_begin;
+	int cir_begin;		//循环的开始结点
 	Circle() {}
 	Circle(set<int>& blks) : cir_blks(blks) {}
 };
+
+//存放每个函数的循环，顺序是总是最内层的循环在前面
+extern vector<vector<Circle>> func2circles;
 
 //===========================================
 

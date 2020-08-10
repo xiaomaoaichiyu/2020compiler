@@ -152,7 +152,7 @@ void SSA::ssa_optimize() {
 		delete_dead_codes();
 	}
 
-	if (0) { // 关闭循环优化
+	if (1) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
 
@@ -996,6 +996,7 @@ string calculate(irCodeType op, string ope1, string ope2) {
 // 循环优化：不变式外提、强度削弱、归纳变量删除
 //============================================================
 
+vector<vector<Circle>> func2circles;
 vector<Circle> circles;
 
 void printCircle() {
@@ -1106,17 +1107,18 @@ void SSA::back_edge() {
 			}
 			add_a_circle(circle);
 		}
+		func2circles.push_back(circles);
 		printCircle();
 		//输出当前函数的所有循环
 		//print
-		for (auto circle : circles) {
-			mark_invariant(i, circle);				//确定不变式
-			ofstream ly1("xunhuan1.txt");
-			printCircleIr(this->blockCore, ly1);
-			code_outside(i, circle);				//不变式外提
-			ofstream ly2("xunhuan2.txt");
-			printCircleIr(this->blockCore, ly2);
-		}
+		//for (auto circle : circles) {
+		//	mark_invariant(i, circle);				//确定不变式
+		//	ofstream ly1("xunhuan1.txt");
+		//	printCircleIr(this->blockCore, ly1);
+		//	code_outside(i, circle);				//不变式外提
+		//	ofstream ly2("xunhuan2.txt");
+		//	printCircleIr(this->blockCore, ly2);
+		//}
 	}
 	//printCircle();
 }
