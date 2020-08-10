@@ -1637,7 +1637,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 					}
 					if (tmpVar.find(ope2) != tmpVar.end()) {
 						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
-						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
 						func2tmpIndex.at(funcNum)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
@@ -1664,7 +1664,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 					}
 					if (tmpVar.find(ope2) != tmpVar.end()) {
 						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
-						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
+						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
 						func2tmpIndex.at(funcNum)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
