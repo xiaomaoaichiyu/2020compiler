@@ -392,17 +392,32 @@ string SSA::getRetValName(string name) {
 // 函数内联
 void SSA::inline_function() {
 	int i, j;
-	int size1 = blockCore.size();
+	int size1 = codetotal.size();
+	bool switch_optimize_return = true;
 	// init & 建立函数名与对应序号的对应关系
 	for (i = 0; i < size1; i++) {
 		addrIndex.push_back(0);
 		labelIndex.push_back(0);
 		set<string> s; inlineArrayName.push_back(s);
 		funCallCount.push_back(0);
+		if (switch_optimize_return) exitStatementNum[i] = 0;	// optimize return
 		if (i == 0) continue;
 		string funName = codetotal[i][0].getResult();	// define
 		funName2Num[funName] = i;
 		funNum2Name[i] = funName;
+	}
+	/* optimize return */
+	if (switch_optimize_return) {
+		for (i = 1; i < size1; i++) {
+			int size2 = codetotal[i].size();
+			for (j = 0; j < size2; j++)
+				if (codetotal[i][j].getCodetype() == RET) exitStatementNum[i]++;
+		}
+		for (i = 1; i < size1; i++)
+			if (exitStatementNum[i] == 0)
+				cout << "函数内联不应出现的情况：第i个函数没有返回语句." << endl;
+		for (i = 1; i < size1; i++)
+			exitStatementNum[i] = 2;
 	}
 	// 函数内联主体部分
 	for (i = 1; i < size1; i++) {	// 遍历函数
@@ -427,6 +442,7 @@ void SSA::inline_function() {
 				int funNum = funName2Num[funName];	// 该函数对应的序号
 				symbolTable funSt;									// 函数对应的符号表结构
 				set<int> alreadyNeilian;				//丛睿轩添加的...	记录当前以内联的符号
+				
 				if (step1) {	/* step1: 判断调用函数是否可以内联 */
 					for (int iter1 = 1; iter1 < total.size(); iter1++) {
 						if (total[iter1][0].getName().compare(funName) == 0) {
@@ -463,6 +479,13 @@ void SSA::inline_function() {
 				if (debug) cout << "step1 done." << endl;
 				int paraNum = funSt.getparaLength();	// 参数个数
 				vector<string> paraTable;					// 参数列表
+
+				/* optimize para use */
+				
+				map<string, string> paraNotNeed;
+
+				/* optimize para use over*/
+
 				if (step2) {	/* step2: 处理参数及传参指令 */
 					for (int k = 1; k < total[funNum].size(); k++) {
 						symbolTable st = total[funNum][k];
@@ -501,6 +524,24 @@ void SSA::inline_function() {
 				}
 				if (debug) cout << "step2 done." << endl;
 				ci = codetotal[i][j];
+				/* optimize return*/
+				bool ifNeedReturn = funSt.getValuetype() == INT;
+				if (switch_optimize_return) {
+					if (ifNeedReturn) {
+						ci = codetotal[i][j];
+						if (ci.getCodetype() != CALL || ci.getOperand1().compare(funName) != 0 || !ifTempVariable(ci.getResult())) {
+							cout << "函数内联不应该发生的情况：optimize return时call指令有问题." << endl; break;
+						}
+						string tmpRet = ci.getResult();
+						ifNeedReturn = false;
+						for (int k = j + 1; k < codetotal[i].size(); k++) {
+							CodeItem tci = codetotal[i][k];
+							if (tci.getResult().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
+							if (tci.getOperand1().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
+							if (tci.getOperand2().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
+						}
+					}
+				}
 				if (step3) {	/* step3. 插入调用函数的除函数和参数声明之外的指令 */
 					map<string, string> label2NewLabel;	// 调用函数内部重命名后的标签名
 					for (int k = 1; k <= paraNum; k++) {
@@ -579,9 +620,38 @@ void SSA::inline_function() {
 						}
 						else if (ci.getCodetype() == RET) {
 							if (funSt.getValuetype() == INT && ci.getOperand2().compare("int") == 0) {	// 有返回值函数
-								CodeItem nci(STORE, ci.getOperand1(), getRetValName(funName), "");
-								codetotal[i].insert(codetotal[i].begin() + j, nci);
-								j++;
+								/* optimize return */
+								if (switch_optimize_return && !ifNeedReturn) {}
+								else if (switch_optimize_return && ifNeedReturn && exitStatementNum[funNum] == 1) {
+									string retVal = ci.getOperand1();
+									string tmpRet = "***";
+									for (int oo = j; oo < codetotal[i].size(); oo++) {
+										CodeItem tci = codetotal[i][oo];
+										if (tci.getCodetype() == CALL) tmpRet = ci.getResult();
+										else {
+											if (tci.getResult().compare(tmpRet) == 0) {
+												CodeItem ntci(tci.getCodetype(), retVal, ci.getOperand1(), ci.getOperand2());
+												codetotal[i][oo] = ntci;
+												break;
+											}
+											else if (tci.getOperand1().compare(tmpRet) == 0) {
+												CodeItem ntci(tci.getCodetype(), ci.getResult(), retVal, ci.getOperand2());
+												codetotal[i][oo] = ntci;
+												break;
+											}
+											else if (tci.getOperand2().compare(tmpRet) == 0) {
+												CodeItem ntci(tci.getCodetype(), ci.getResult(), ci.getOperand1(), retVal);
+												codetotal[i][oo] = ntci;
+												break;
+											}
+										}
+									}
+								}
+								else {
+									CodeItem nci(STORE, ci.getOperand1(), getRetValName(funName), "");
+									codetotal[i].insert(codetotal[i].begin() + j, nci);
+									j++;
+								}
 							}
 							else if (funSt.getValuetype() == VOID && ci.getOperand2().compare("void") == 0) {	// 无返回值函数
 								
@@ -609,7 +679,9 @@ void SSA::inline_function() {
 					if (ci.getCodetype() != CALL || ci.getOperand1().compare(funName) != 0) {
 						cout << "函数内联不应该发生的情况：压完参数后没有跟call函数指令. " << endl; break;
 					}
-					if (funSt.getValuetype() == INT) {
+					/* optimize return*/
+					if ((switch_optimize_return && ifNeedReturn && exitStatementNum[funNum] > 1) ||
+						(!switch_optimize_return && funSt.getValuetype() == INT)) {
 						string retValName = getRetValName(funName);
 						if (newInsertAllocName.find(retValName) == newInsertAllocName.end()) {
 							newInsertAllocName.insert(retValName);
