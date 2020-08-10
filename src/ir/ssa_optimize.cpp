@@ -1127,6 +1127,7 @@ string getTmpVar(string funcName) {
 }
 
 void SSA::back_edge() {
+	func2circles.push_back(vector<Circle>());
 	for (int i = 1; i < blockCore.size(); i++) {
 		circles.clear();
 		tmpVarIdx = 0;
