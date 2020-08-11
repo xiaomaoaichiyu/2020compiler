@@ -1793,6 +1793,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 						auto ope1_2 = code1.at(k).getOperand2();auto ope2_2 = code2.at(k).getOperand2();
 						if (op1 != op2) {
 							flag = false;
+							break;
 						}
 						else {
 							switch (op1)
@@ -1828,10 +1829,10 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 							}
 							default:
 								break;
-							}
-							if (flag == false) {
-								break;
-							}
+							}	
+						}
+						if (flag == false) {
+							break;
 						}
 					}
 				}
