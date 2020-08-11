@@ -1152,8 +1152,66 @@ string getTmpVar(string funcName) {
 	return FORMAT("%tmpVar-{}+{}", tmpVarIdx++, funcName);
 }
 
-void SSA::back_edge() {
+void SSA::circleVar() {
 	func2circles.push_back(vector<Circle>());
+	for (int i = 1; i < blockCore.size(); i++) {
+		circles.clear();
+		tmpVarIdx = 0;
+		//每一个函数的基本块
+		auto blocks = blockCore.at(i);
+		vector<pair<int, int>> backEdges;		//存储找到的回边
+		for (auto blk : blocks) {
+			int num = blk.number;
+			auto succs = blk.succeeds;
+			auto doms = blk.domin;
+			for (auto suc : succs) {
+				//后继结点是必经节点说明是一条回边
+				if (doms.find(suc) != doms.end()) {
+					backEdges.push_back(pair<int, int>(num, suc));
+					if (suc > num) {
+						WARN_MSG("wrong in back_edge find!");
+					}
+				}
+			}
+		}
+		//查找循环的基本块，每个回边对应着一个循环，后续应该合并某些循环，不合并效率可能比较低？
+		for (auto backEdge : backEdges) {
+			Circle circle;
+			int end = backEdge.first;
+			int begin = backEdge.second;
+			circle.cir_blks.insert(end);
+			circle.cir_blks.insert(begin);
+			circle.cir_begin = begin;
+			queue<int> work;
+			work.push(end);
+			while (!work.empty()) {
+				int tmp = work.front();
+				work.pop();
+				auto preds = blocks.at(tmp).pred;
+				for (auto pred : preds) {
+					if (pred != begin && circle.cir_blks.find(pred) == circle.cir_blks.end()) {
+						work.push(pred);
+						circle.cir_blks.insert(pred);
+					}
+				}
+			}
+			for (auto one : circle.cir_blks) {//找循环退出块
+				auto succs = blocks.at(one).succeeds;
+				for (auto suc : succs) {
+					if (circle.cir_blks.find(suc) == circle.cir_blks.end()) {
+						circle.cir_outs.insert(one);
+						circle.cir_quits.insert(suc);
+					}
+				}
+			}
+			add_a_circle(circle);
+		}
+		func2circles.push_back(circles);
+		printCircle();
+	}
+}
+
+void SSA::back_edge() {
 	for (int i = 1; i < blockCore.size(); i++) {
 		circles.clear();
 		tmpVarIdx = 0;
@@ -1207,7 +1265,6 @@ void SSA::back_edge() {
 			}
 			add_a_circle(circle);
 		}
-		func2circles.push_back(circles);
 		printCircle();
 		for (auto circle : circles) {
 			mark_invariant(i, circle);				//确定不变式

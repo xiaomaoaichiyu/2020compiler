@@ -205,7 +205,7 @@ private:
 	bool condition2(set<int>& quitBlk, set<int>& cir_blks, string var, int func);
 	void strength_reduction();	//强度削弱
 	void protocol_variable_deletion(); //规约变量删除
-
+	void circleVar();
 	
 	void const_propagation();	//常量传播
 	void copy_propagation();	//复写传播
