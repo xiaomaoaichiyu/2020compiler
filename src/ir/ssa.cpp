@@ -1498,13 +1498,13 @@ void SSA::calVarWeight(vector<map<int, int>> circleDepth) {
 
 string SSA::removeKVar(int funNum) {
 	string ans = clash_graph[funNum].begin()->first;
-	int minWeight = INT_MAX;
+	int minWeight = -1;
 	for (auto i : clash_graph[funNum]) {
 		if (varWeight[funNum].find(i.first) == varWeight[funNum].end()) {
 			cout << "移除冲突图节点时错误的情况：没有找到变量的权重." << endl;
 			break;
 		}
-		if (varWeight[funNum][i.first] < minWeight) {
+		if (minWeight == -1 || varWeight[funNum][i.first] < minWeight) {
 			ans = i.first;
 			minWeight = varWeight[funNum][i.first];
 		}
