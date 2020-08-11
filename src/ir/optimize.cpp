@@ -661,7 +661,7 @@ void irOptimize() {
 	SSA ssa;
 	ssa.generate();
 	inlineArray = ssa.getInlineArrayName();
-
+	
 	try {
 		//寄存器分配优化
 		
@@ -680,7 +680,7 @@ void irOptimize() {
 			//图着色寄存器分配
 			registerAllocation3(var2reg);
 		}
-
+		
 		//1. 寄存器直接指派
 		if (0) {
 			convertCondition();		//优化条件跳转

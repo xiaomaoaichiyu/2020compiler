@@ -411,6 +411,7 @@ void SSA::post_order(int funNum, int node) {
 
 // 后序遍历必经节点树
 void SSA::build_post_order() {
+	postOrder.clear();
 	int size1 = blockCore.size();
 	int i;
 	// 申请空间
@@ -430,6 +431,7 @@ void SSA::pre_order(int funNum, int node) {
 
 // 前序遍历必经节点树
 void SSA::build_pre_order() {
+	preOrder.clear();
 	int size1 = blockCore.size();
 	int i;
 	// 申请空间
@@ -1347,36 +1349,29 @@ void SSA::generate_active_var_analyse() {
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
-
 	// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
 	build_idom_tree();
-
 	// 根据直接必经节点找到必经节点树中每个节点的后序节点
 	build_reverse_idom_tree();
-
 	// 后序遍历必经节点树
 	build_post_order();
-
 	// 前序遍历必经节点树
 	build_pre_order();
-
 	// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
 	build_dom_frontier();
-
 	// 计算ud链，即分析每个基本块的use和def变量
 	build_def_use_chain();
-
 	// 活跃变量分析，生成in、out集合
 	active_var_analyse();
-
 }
 
 void SSA::registerAllocation() {
 
 	// 活跃变量分析
 	generate_active_var_analyse();
-
+	
 	circleVar();
+	
 	//printCircle();
 	int size1 = blockCore.size();
 	vector<map<int, int>> circleDepth(size1, map<int, int>());
