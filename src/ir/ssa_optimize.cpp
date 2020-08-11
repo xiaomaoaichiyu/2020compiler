@@ -269,6 +269,31 @@ void SSA::simplify_add_minus_multi_div_mod() {
 			CodeItem ci0 = codetotal[i][j - 1]; // 前一条中间代码
 			if (ci.getCodetype() == ADD) {
 				if (ci.getOperand1().compare("0") == 0) {
+					string primary = ci.getResult();
+					string replace = ci.getOperand2();
+					codetotal[i].erase(codetotal[i].begin() + j);
+					j--;
+					for (k = j + 1; k < codetotal[i].size(); k++) {
+						CodeItem nci = codetotal[i][k];
+						bool update = false;
+						if (nci.getResult().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), replace, nci.getOperand1(), nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand1().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), replace, nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand2().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), replace);
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (update) break;
+					}
+					/*
 					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
 						&& (ci0.getResult().compare(ci.getOperand2()) == 0)) {
 						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
@@ -276,9 +301,34 @@ void SSA::simplify_add_minus_multi_div_mod() {
 						codetotal[i].erase(codetotal[i].begin() + j);
 						codetotal[i].erase(codetotal[i].begin() + j);
 						j--;
-					}
+					}*/
 				}
 				else if (ci.getOperand2().compare("0") == 0) {
+					string primary = ci.getResult();
+					string replace = ci.getOperand1();
+					codetotal[i].erase(codetotal[i].begin() + j);
+					j--;
+					for (k = j + 1; k < codetotal[i].size(); k++) {
+						CodeItem nci = codetotal[i][k];
+						bool update = false;
+						if (nci.getResult().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), replace, nci.getOperand1(), nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand1().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), replace, nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand2().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), replace);
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (update) break;
+					}
+					/*
 					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
 						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
 						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
@@ -286,11 +336,36 @@ void SSA::simplify_add_minus_multi_div_mod() {
 						codetotal[i].erase(codetotal[i].begin() + j);
 						codetotal[i].erase(codetotal[i].begin() + j);
 						j --;
-					}
+					}*/
 				}
 			}
 			else if (ci.getCodetype() == SUB) {
 				if (ci.getOperand2().compare("0") == 0) {
+					string primary = ci.getResult();
+					string replace = ci.getOperand1();
+					codetotal[i].erase(codetotal[i].begin() + j);
+					j--;
+					for (k = j + 1; k < codetotal[i].size(); k++) {
+						CodeItem nci = codetotal[i][k];
+						bool update = false;
+						if (nci.getResult().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), replace, nci.getOperand1(), nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand1().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), replace, nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand2().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), replace);
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (update) break;
+					}
+					/*
 					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
 						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
 						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
@@ -298,21 +373,70 @@ void SSA::simplify_add_minus_multi_div_mod() {
 						codetotal[i].erase(codetotal[i].begin() + j);
 						codetotal[i].erase(codetotal[i].begin() + j);
 						j --;
-					}
+					}*/
 				}
 			}
 			else if (ci.getCodetype() == MUL) {
 				if (ci.getOperand1().compare("1") == 0) {
-					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
+					string primary = ci.getResult();
+					string replace = ci.getOperand2();
+					codetotal[i].erase(codetotal[i].begin() + j);
+					j--;
+					for (k = j + 1; k < codetotal[i].size(); k++) {
+						CodeItem nci = codetotal[i][k];
+						bool update = false;
+						if (nci.getResult().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), replace, nci.getOperand1(), nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand1().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), replace, nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand2().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), replace);
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (update) break;
+					}
+					/*if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
 						&& (ci0.getResult().compare(ci.getOperand2()) == 0)) {	// 只有这句不同
 						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
 						codetotal[i].insert(codetotal[i].begin() + j - 1, nci);
 						codetotal[i].erase(codetotal[i].begin() + j);
 						codetotal[i].erase(codetotal[i].begin() + j);
 						j --;
-					}
+					}*/
 				}
 				else if (ci.getOperand2().compare("1") == 0) {
+					string primary = ci.getResult();
+					string replace = ci.getOperand1();
+					codetotal[i].erase(codetotal[i].begin() + j);
+					j--;
+					for (k = j + 1; k < codetotal[i].size(); k++) {
+						CodeItem nci = codetotal[i][k];
+						bool update = false;
+						if (nci.getResult().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), replace, nci.getOperand1(), nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand1().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), replace, nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand2().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), replace);
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (update) break;
+					}
+					/*
 					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
 						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
 						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
@@ -320,11 +444,36 @@ void SSA::simplify_add_minus_multi_div_mod() {
 						codetotal[i].erase(codetotal[i].begin() + j);
 						codetotal[i].erase(codetotal[i].begin() + j);
 						j --;
-					}
+					}*/
 				}
 			}
 			else if (ci.getCodetype() == DIV) {
 				if (ci.getOperand2().compare("1") == 0) {
+					string primary = ci.getResult();
+					string replace = ci.getOperand1();
+					codetotal[i].erase(codetotal[i].begin() + j);
+					j--;
+					for (k = j + 1; k < codetotal[i].size(); k++) {
+						CodeItem nci = codetotal[i][k];
+						bool update = false;
+						if (nci.getResult().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), replace, nci.getOperand1(), nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand1().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), replace, nci.getOperand2());
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (nci.getOperand2().compare(primary) == 0) {
+							nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), replace);
+							codetotal[i][k] = nci;
+							update = true;
+						}
+						if (update) break;
+					}
+					/*
 					if ((ci0.getCodetype() == LOAD || ci0.getCodetype() == LOADARR)
 						&& (ci0.getResult().compare(ci.getOperand1()) == 0)) {	// 只有这句不同
 						CodeItem nci(ci0.getCodetype(), ci.getResult(), ci0.getOperand1(), ci0.getOperand2());
@@ -332,7 +481,7 @@ void SSA::simplify_add_minus_multi_div_mod() {
 						codetotal[i].erase(codetotal[i].begin() + j);
 						codetotal[i].erase(codetotal[i].begin() + j);
 						j --;
-					}
+					}*/
 				}
 			}
 			else if (ci.getCodetype() == REM) {
@@ -1099,7 +1248,7 @@ vector<Circle> circles;
 
 void SSA::printCircle() {
 	if (TIJIAO) {
-		int i = 0;
+		static int i = 1;
 		cout << "function_" << i++ << endl;
 		for (auto circle : circles) {
 			cout << "circle's blocks: { ";
@@ -1207,7 +1356,7 @@ void SSA::circleVar() {
 			add_a_circle(circle);
 		}
 		func2circles.push_back(circles);
-		printCircle();
+		//printCircle();
 	}
 }
 

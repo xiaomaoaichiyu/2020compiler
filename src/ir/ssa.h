@@ -250,6 +250,12 @@ private:
 
 	void printCircle();
 
+	std::vector<std::map<std::string, int>> varWeight;	// 变量的权重
+
+	void calVarWeight(std::vector<std::map<int, int>> circleDepth);
+
+	std::string removeKVar(int funNum);
+
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
