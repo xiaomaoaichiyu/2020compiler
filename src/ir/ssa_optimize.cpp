@@ -1182,14 +1182,14 @@ void SSA::back_edge() {
 		}
 		func2circles.push_back(circles);
 		printCircle();
-		//for (auto circle : circles) {
-		//	mark_invariant(i, circle);				//确定不变式
-		//	ofstream ly1("xunhuan1.txt");
-		//	printCircleIr(this->blockCore, ly1);
-		//	code_outside(i, circle);				//不变式外提
-		//	ofstream ly2("xunhuan2.txt");
-		//	printCircleIr(this->blockCore, ly2);
-		//}
+		for (auto circle : circles) {
+			mark_invariant(i, circle);				//确定不变式
+			ofstream ly1("xunhuan1.txt");
+			printCircleIr(this->blockCore, ly1);
+			code_outside(i, circle);				//不变式外提
+			ofstream ly2("xunhuan2.txt");
+			printCircleIr(this->blockCore, ly2);
+		}
 	}
 }
 
@@ -1726,13 +1726,127 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				break;
 			}
 		}
+		//tmpvar-1 可以被tmpvar-0替换，那么存放 tmpvar-1 -> tmpvar-0
+		map<string, string> nouse2use; //存放可以被消除的变量到替换的变量
+		vector<vector<CodeItem>> codes;
+		vector<CodeItem> code;
+		//循环开始块的去重，相同的计算===============================
+		for (int j = 0; j < ir.size(); j++) {
+			if (ir.at(j).getCodetype() == PHI) {
+				continue;
+			}
+			if (ir.at(j).getCodetype() == LABEL && ir.at(j).getResult().substr(7, 4) == "cond") {
+				break;
+			}
+			auto instr = ir.at(j);
+			auto op = instr.getCodetype();
+			auto res = instr.getResult();
+			if (op == STORE && tmpVar.find(res) != tmpVar.end()) {
+				code.push_back(instr);
+				codes.push_back(code);
+				code.clear();
+			}
+			else {
+				code.push_back(instr);
+			}
+		}
+		//标记相同的tmpvar
+		for (int i = 0; i < codes.size(); i++) {
+			for (int j = i + 1; j < codes.size(); j++) {
+				bool flag = true;
+				if (codes.at(i).size() != codes.at(j).size()) {
+					flag = false;
+				}
+				else {
+					auto& code1 = codes.at(i);
+					auto& code2 = codes.at(j);
+					for (int k = 0; k < code1.size(); k++) {
+						auto op1 = code1.at(k).getCodetype();auto op2 = code2.at(k).getCodetype();
+						auto res1 = code1.at(k).getResult();auto res2 = code2.at(k).getResult();
+						auto ope1_1 = code1.at(k).getOperand1();auto ope2_1 = code2.at(k).getOperand1();
+						auto ope1_2 = code1.at(k).getOperand2();auto ope2_2 = code2.at(k).getOperand2();
+						if (op1 != op2) {
+							flag = false;
+						}
+						else {
+							switch (op1)
+							{
+							case ADD:case SUB:case DIV:case MUL:case REM:case AND:case OR:case NOT:case EQL:case NEQ:
+							case SGT:case SGE:case SLT:case SLE: {
+								if (ope1_1 == ope2_1 || (isTmp(ope1_1) && isTmp(ope2_1))) {}
+								else {
+									flag = false;
+								}
+								if (ope1_2 == ope2_2 || (isTmp(ope1_2) && isTmp(ope2_2))) {}
+								else {
+									flag = false;
+								}
+								break;
+							}
+							case STORE: {
+								if (k == code1.size()-1 
+									&& ope1_1.size() > 8 && ope2_1.size() > 8
+									&& ope1_1.substr(1,7) == ope2_1.substr(1, 7)) {
+									nouse2use[ope2_1] = ope1_1;
+								}
+								else {
+									WARN_MSG("wrong in here!");
+								}
+								break;
+							}
+							case LOAD: {
+								if (ope1_1 != ope2_1) {
+									flag = false;
+								}
+								break;
+							}
+							default:
+								break;
+							}
+							if (flag == false) {
+								break;
+							}
+						}
+					}
+				}
+				if (flag == true) {
+					codes.erase(codes.begin() + j);
+					j--;
+				}
+			}
+		}
+		//删除多余的tmpvar
+		for (int j = 0; j < ir.size(); j++) {
+			if (!(ir.at(j).getCodetype() == LABEL && ir.at(j).getResult().substr(7, 4) == "cond")) {
+				continue;
+			}
+			else {
+				ir.erase(ir.begin(), ir.begin() + j);
+				for (auto one : codes) {
+					ir.insert(ir.begin(), one.begin(), one.end());
+				}
+				break;
+			}
+		}
+		for (auto idx : circle.cir_blks) {
+			auto& ir = blocks.at(idx).Ir;
+			for (int j = 0; j < ir.size(); j++) {
+				auto& instr = ir.at(j);
+				auto ope1 = instr.getOperand1();
+				if (instr.getCodetype() == LOAD && nouse2use.find(ope1) != nouse2use.end()) {
+					instr.setOperand1(nouse2use[ope1]);
+				}
+			}
+		}
 		//添加alloc
 		for (int j = 0; j < blocks.at(1).Ir.size(); j++) {
 			auto instr = blocks.at(1).Ir.at(j);
 			if (instr.getCodetype() == ALLOC) {
 				for (auto var : tmpVar) {
-					CodeItem tmp(ALLOC, tmp2var[var], "_", "1");
-					blocks.at(1).Ir.insert(blocks.at(1).Ir.begin() + j, tmp);
+					if (nouse2use.find(tmp2var[var]) == nouse2use.end()) {
+						CodeItem tmp(ALLOC, tmp2var[var], "_", "1");
+						blocks.at(1).Ir.insert(blocks.at(1).Ir.begin() + j, tmp);
+					}
 				}
 				break;
 			}
@@ -1740,29 +1854,15 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 		//添加符号表
 		auto& fuhaobiao = total.at(funcNum);
 		for (auto var : tmpVar) {
-			symbolTable tmp(VARIABLE, INT, tmp2var[var], 0, 0);
-			fuhaobiao.push_back(tmp);
+			if (nouse2use.find(tmp2var[var]) == nouse2use.end()) {
+				symbolTable tmp(VARIABLE, INT, tmp2var[var], 0, 0);
+				fuhaobiao.push_back(tmp);
+			}
 		}
 	}
 	catch (exception e) {
 		WARN_MSG("code outside wrong!!");
 	}
-	//删除标记为outcode的代码
-	//try {
-	//	for (auto& blk : blocks) {
-	//		auto& ir = blk.Ir;
-	//		for (auto it = ir.begin(); it != ir.end();) {
-	//			if (it->getCodeOut() == 1) {	//被外提的代码，删除
-	//				it = ir.erase(it);
-	//				continue;
-	//			}
-	//			it++;
-	//		}
-	//	}
-	//}
-	//catch (exception e) {
-	//	WARN_MSG("delete code out wrong!!");
-	//}
 }
 
 
