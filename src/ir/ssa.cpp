@@ -1301,8 +1301,8 @@ void SSA::generate() {
 		TestIrCode("ir2.txt");
 
 		// 函数内联
-		if (i == 0) registerAllocation();
-		if (i == 0) count_global_reg_allocated();
+		//if (i == 0) registerAllocation();
+		//if (i == 0) count_global_reg_allocated();
 		//for (auto i : globalRegAllocated) cout << i << endl;
 		if (i == 0) optimize_para_transfer();
 		if (i == 0) inline_function();
@@ -1354,6 +1354,32 @@ void SSA::registerAllocation() {
 
 	// 活跃变量分析
 	generate_active_var_analyse();
+
+	circleVar();
+	//printCircle();
+	int size1 = blockCore.size();
+	vector<map<int, int>> circleDepth(size1, map<int, int>());
+	for (int i = 1; i < size1; i++) {
+		int size2 = blockCore[i].size();
+		for (int j = 0; j < size2; j++) circleDepth[i][j] = 0;	// 初始化每个基本块的循环深度为0
+	}
+	if (func2circles.size() != size1) { cout << "fun2circles大小与blockCore大小不相等." << endl; }
+	for (int i = 1; i < size1; i++) {
+		int size2 = func2circles[i].size();
+		for (int j = 0; j < size2; j++) {
+			if (func2circles[i][j].cir_blks.empty()) continue;
+			for (set<int>::iterator iter = func2circles[i][j].cir_blks.begin(); iter != func2circles[i][j].cir_blks.end(); iter++) {
+				circleDepth[i][*iter]++;
+			}
+		}
+	}
+	bool debug = true;
+	if (debug) {
+		for (int i = 1; i < size1; i++) {
+			cout << "-------------- function " << i << " --------------" << endl;
+			for (auto iter : circleDepth[i]) cout << iter.first << " " << iter.second << endl;
+		}
+	}
 
 	ofstream ly1("ssa1.txt");
 	printCircleIr(this->blockCore, ly1);

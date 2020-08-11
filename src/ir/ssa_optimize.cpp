@@ -1097,9 +1097,9 @@ string calculate(irCodeType op, string ope1, string ope2) {
 vector<vector<Circle>> func2circles;
 vector<Circle> circles;
 
-void printCircle() {
+void SSA::printCircle() {
 	if (TIJIAO) {
-		static int i = 0;
+		int i = 0;
 		cout << "function_" << i++ << endl;
 		for (auto circle : circles) {
 			cout << "circle's blocks: { ";

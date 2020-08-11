@@ -248,6 +248,8 @@ private:
 
 	void Test_TempVariable();
 
+	void printCircle();
+
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
