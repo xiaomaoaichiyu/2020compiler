@@ -1200,7 +1200,8 @@ void SSA::back_edge() {
 				auto succs = blocks.at(one).succeeds;
 				for (auto suc : succs) {
 					if (circle.cir_blks.find(suc) == circle.cir_blks.end()) {
-						circle.cir_outs.insert(suc);
+						circle.cir_outs.insert(one);
+						circle.cir_quits.insert(suc);
 					}
 				}
 			}
@@ -1495,9 +1496,9 @@ bool SSA::condition1(set<int>& outBlk, set<int>& cir_blks, int instrBlk, int fun
 
 //b)
 //循环不变式外提条件1：变量离开循环后不活跃
-bool SSA::condition2(set<int>& outBlk, set<int>& cir_blks, string var, int func) {
+bool SSA::condition2(set<int>& quitBlk, set<int>& cir_blks, string var, int func) {
 	//1. 不活跃
-	for (auto one : outBlk) {
+	for (auto one : quitBlk) {
 		if (blockCore.at(func).at(one).in.find(var) != blockCore.at(func).at(one).in.end()) {
 			return false;
 		}
@@ -1552,7 +1553,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 						instr.setInvariant("");
 					}
 					else if (condition1(circle.cir_outs, circle.cir_blks, idx, funcNum)
-						|| condition2(circle.cir_outs, circle.cir_blks, var, funcNum)) {
+						|| condition2(circle.cir_quits, circle.cir_blks, var, funcNum)) {
 						auto tmp = instr;
 						tmp.setInvariant("");
 						irTmp.push_back(tmp);
@@ -1756,6 +1757,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 		map<string, string> nouse2use; //存放可以被消除的变量到替换的变量
 		vector<vector<CodeItem>> codes;
 		vector<CodeItem> code;
+		vector<CodeItem> varCodes;
 		//循环开始块的去重，相同的计算===============================
 		for (int j = 0; j < ir.size(); j++) {
 			if (ir.at(j).getCodetype() == PHI) {
@@ -1767,10 +1769,17 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 			auto instr = ir.at(j);
 			auto op = instr.getCodetype();
 			auto res = instr.getResult();
-			if (op == STORE && tmpVar.find(res) != tmpVar.end()) {
-				code.push_back(instr);
-				codes.push_back(code);
-				code.clear();
+			if (op == STORE) {
+				if (tmpVar.find(res) != tmpVar.end()) {
+					code.push_back(instr);
+					codes.push_back(code);
+					code.clear();
+				}
+				else {
+					code.push_back(instr);
+					varCodes.insert(varCodes.end(), code.begin(), code.end());
+					code.clear();
+				}
 			}
 			else {
 				code.push_back(instr);
@@ -1852,6 +1861,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				for (auto one : codes) {
 					ir.insert(ir.begin(), one.begin(), one.end());
 				}
+				ir.insert(ir.begin(), varCodes.begin(), varCodes.end());
 				break;
 			}
 		}
