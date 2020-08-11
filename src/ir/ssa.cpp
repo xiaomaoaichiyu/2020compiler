@@ -1313,6 +1313,7 @@ void SSA::generate() {
 		// 输出中间代码
 		TestIrCode("ir3.txt");
 	}
+	Test_TempVariable();
 }
 
 // 仅进行活跃变量分析
@@ -1367,4 +1368,39 @@ void SSA::registerAllocation() {
 	allocate_global_reg();
 	Test_Allocate_Global_Reg(debug_reg);
 	debug_reg.close();
+}
+
+// 判断临时变量是否只被定义一次+使用一次
+// call有返回值函数时，即使返回值不被使用，该语句的result字段也是一个临时变量，应考虑这种情况不要占临时寄存器!
+void SSA::Test_TempVariable() {
+	int size1 = codetotal.size();
+	vector<map<string, int>> v(size1, map<string, int>());
+	for (int i = 1; i < size1; i++) {
+		int size2 = codetotal[i].size();
+		for (int j = 0; j < size2; j++) {
+			CodeItem ci = codetotal[i][j];
+			string tempName;
+			tempName = ci.getResult();
+			if (ifTempVariable(tempName)) {
+				if (v[i].find(tempName) == v[i].end()) v[i][tempName] = 1;
+				else v[i][tempName]++;
+			}
+			tempName = ci.getOperand1();
+			if (ifTempVariable(tempName)) {
+				if (v[i].find(tempName) == v[i].end()) v[i][tempName] = 1;
+				else v[i][tempName]++;
+			}
+			tempName = ci.getOperand2();
+			if (ifTempVariable(tempName)) {
+				if (v[i].find(tempName) == v[i].end()) v[i][tempName] = 1;
+				else v[i][tempName]++;
+			}
+		}
+	}
+	for (int i = 1; i < size1; i++) {
+		cout << "---------- function " << i << " ----------" << endl;
+		for (auto iter : v[i]) 
+			if (iter.second != 2)
+				cout << iter.first << " " << iter.second << endl;
+	}
 }

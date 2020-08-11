@@ -246,6 +246,8 @@ private:
 
 	void optimize_para_transfer();
 
+	void Test_TempVariable();
+
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;
