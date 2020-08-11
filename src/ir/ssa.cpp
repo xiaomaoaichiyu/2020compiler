@@ -1083,8 +1083,9 @@ void SSA::init() {
 	for (i = 0; i < size1; i++) {
 		int size2 = total[i].size();
 		map<string, symbolTable> tmp;
-		for (j = 1; j < size2; j++)
-			tmp[total[i][j].getName()] = total[i][j];
+		for (j = 1; j < size2; j++)	// 跳过fun
+			if (total[i][j].getForm() == VARIABLE || total[i][j].getForm() == PARAMETER)
+				tmp[total[i][j].getName()] = total[i][j];
 		varName2St.push_back(tmp);
 	}
 }
@@ -1154,6 +1155,7 @@ void SSA::allocate_global_reg() {
 			}
 			if (varName.compare("") == 0) {	// 所有节点均大于K，无法分配
 				varName = clash_graph[i].begin()->first;
+				cout << "在函数" << codetotal[i][0].getResult() << "内变量" << varName << "无法分配到全局寄存器" << endl;
 			}
 			if (debug) cout << varName;
 			// 删除该节点
@@ -1208,103 +1210,109 @@ int SSA::str2int(string name) {
 // 入口函数
 void SSA::generate() {
 
-	// 初始化varName2St结构体
-	init();
+	for (int i = 0; i < 2; i++)
+	{
+		// 初始化varName2St结构体
+		init();
 
-	// 简化条件判断为常值的跳转指令
-	simplify_br();
+		// 简化条件判断为常值的跳转指令
+		simplify_br();
 
-	// 在睿轩生成的中间代码上做优化
-	pre_optimize();
+		// 在睿轩生成的中间代码上做优化
+		pre_optimize();
 
-	// 计算每个基本块的起始语句
-	find_primary_statement();
-	// 为每个函数划分基本块
-	divide_basic_block();
-	// 为每个基本块删除共同代码(丛睿轩加的)
-	optimize_delete_same_exp();
-	// 建立基本块间的前序和后序关系
-	build_pred_and_succeeds();
-	// 消除无法到达基本块
-	simplify_basic_block();
+		// 计算每个基本块的起始语句
+		find_primary_statement();
+		// 为每个函数划分基本块
+		divide_basic_block();
+		// 为每个基本块删除共同代码(丛睿轩加的)
+		optimize_delete_same_exp();
+		// 建立基本块间的前序和后序关系
+		build_pred_and_succeeds();
+		// 消除无法到达基本块
+		simplify_basic_block();
 
-	// 死代码删除2
-	build_def_use_chain();
-	active_var_analyse();
-	delete_dead_codes_2();
+		// 死代码删除2
+		build_def_use_chain();
+		active_var_analyse();
+		delete_dead_codes_2();
 
-	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
-	build_dom_tree();
+		// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
+		if (i == 0) build_dom_tree();
 
-	// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
-	build_idom_tree();
+		// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
+		if (i == 0) build_idom_tree();
 
-	// 根据直接必经节点找到必经节点树中每个节点的后序节点
-	build_reverse_idom_tree();
+		// 根据直接必经节点找到必经节点树中每个节点的后序节点
+		if (i == 0) build_reverse_idom_tree();
 
-	// 后序遍历必经节点树
-	build_post_order();
+		// 后序遍历必经节点树
+		if (i == 0) build_post_order();
 
-	// 前序遍历必经节点树
-	build_pre_order();
+		// 前序遍历必经节点树
+		if (i == 0) build_pre_order();
 
-	// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
-	build_dom_frontier();
+		// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
+		if (i == 0) build_dom_frontier();
 
-	// 计算ud链，即分析每个基本块的use和def变量
-	build_def_use_chain();
+		// 计算ud链，即分析每个基本块的use和def变量
+		build_def_use_chain();
 
-	// 活跃变量分析，生成in、out集合
-	active_var_analyse();
+		// 活跃变量分析，生成in、out集合
+		active_var_analyse();
 
-	// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
-	build_var_chain();
+		// 计算函数内每个局部变量对应的迭代必经边界，用于\phi函数的插入，参考《高级编译器设计与实现》P186
+		if (i == 0) build_var_chain();
 
-	// 在需要添加基本块的开始添加\phi函数
-	add_phi_function();
-	// 变量重命名
-	renameVar();
-	
-	// 处理\phi函数
-	deal_phi_function();
+		// 在需要添加基本块的开始添加\phi函数
+		if (i == 0) add_phi_function();
+		// 变量重命名
+		if (i == 0) renameVar();
 
-	// 优化
-	ssa_optimize();
+		// 处理\phi函数
+		if (i == 0) deal_phi_function();
 
-	// 测试输出上面各个函数
-	Test_SSA();
+		// 优化
+		if (i == 0) ssa_optimize();
+		if (i == 1) delete_dead_codes();
 
-	// 恢复变量命名
-	rename_back();
+		// 测试输出上面各个函数
+		if (i == 0) Test_SSA();
 
-	optimize_arrayinit();
+		// 恢复变量命名
+		if (i == 0) rename_back();
 
-	optimize_br_label();
+		optimize_arrayinit();
 
-	//复写传播
-	//copy_propagation();
+		optimize_br_label();
 
-	// dag图
-	//build_dag();
+		//复写传播
+		//copy_propagation();
 
-	//将SSA格式代码转换到codetotal格式
-	turn_back_codetotal();
+		// dag图
+		//build_dag();
 
-	// 输出中间代码
-	TestIrCode("ir2.txt");
+		//将SSA格式代码转换到codetotal格式
+		turn_back_codetotal();
 
-	// 函数内联
-	registerAllocation();
-	count_global_reg_allocated();
-	for (auto i : globalRegAllocated) cout << i << endl;
-	inline_function();
+		optimize_alloc();
 
-	// 恢复为之前中间代码形式后再做一次无用代码删除
-	pre_optimize();
+		// 输出中间代码
+		TestIrCode("ir2.txt");
 
-	// 输出中间代码
-	TestIrCode("ir3.txt");
+		// 函数内联
+		if (i == 0) registerAllocation();
+		if (i == 0) count_global_reg_allocated();
+		//for (auto i : globalRegAllocated) cout << i << endl;
+		if (i == 0) optimize_para_transfer();
+		if (i == 0) inline_function();
 
+		// 恢复为之前中间代码形式后再做一次无用代码删除
+		pre_optimize();
+
+		// 输出中间代码
+		TestIrCode("ir3.txt");
+	}
 }
 
 // 仅进行活跃变量分析
@@ -1327,6 +1335,11 @@ void SSA::generate_active_var_analyse() {
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
 	simplify_basic_block();
+
+	// 死代码删除2
+	build_def_use_chain();
+	active_var_analyse();
+	delete_dead_codes_2();
 
 	// 计算ud链，即分析每个基本块的use和def变量
 	build_def_use_chain();
