@@ -1142,6 +1142,12 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 				instr.setInstr(resReg, ope1Reg, ope2Reg);
 			}
 			else if (op == REM) {
+				//if (isNumber(ope2)) {	//是立即数
+
+				//}
+				//else {
+
+				//}
 				if (!isNumber(ope2)) {	//不是立即数
 					ope2Reg = getTmpReg(regpool, ope2, funcTmp);
 				}

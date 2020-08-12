@@ -508,7 +508,7 @@ void countVars() {
 //检查irCode类型
 // 1: 计算类型
 int checkType(irCodeType op) {
-	if (op == ADD ||  op == SUB || op == DIV || op == MUL || op ==REM ||
+	if (op == ADD ||  op == SUB || op == DIV || op == MUL ||
 		op == AND || op == OR || op == NOT ||
 		op == EQL || op == NEQ || op == SGT || op == SGE || op == SLT || op ==SLE) {
 		return 1;
