@@ -1372,7 +1372,7 @@ void SSA::registerAllocation() {
 	generate_active_var_analyse();
 	
 	circleVar();
-	
+	Test_SSA();
 	//printCircle();
 	int size1 = blockCore.size();
 	vector<map<int, int>> circleDepth(size1, map<int, int>());
@@ -1390,7 +1390,7 @@ void SSA::registerAllocation() {
 			}
 		}
 	}
-	bool debug = false;
+	bool debug = true;
 	if (debug) {
 		for (int i = 1; i < size1; i++) {
 			cout << "-------------- circleDepth function " << i << " --------------" << endl;
@@ -1457,6 +1457,13 @@ void SSA::Test_TempVariable() {
 	}
 }
 
+int myPow(int x, int y) {
+	int ans = 1;
+	if (y == 0) return 0;
+	while (y--) ans *= x;
+	return ans;
+}
+
 void SSA::calVarWeight(vector<map<int, int>> circleDepth) {
 	int size1 = blockCore.size();
 	int loopWeight = 5;	// 循环权重
@@ -1473,19 +1480,19 @@ void SSA::calVarWeight(vector<map<int, int>> circleDepth) {
 				if (ifLocalVariable(varName)) {
 					if (varWeight[i].find(varName) == varWeight[i].end()) varWeight[i][varName] = 1;
 					else varWeight[i][varName]++;
-					varWeight[i][varName] += (loopWeight * blockWeight);
+					varWeight[i][varName] += myPow(loopWeight, blockWeight);
 				}
 				varName = iter->getOperand1();
 				if (ifLocalVariable(varName)) {
 					if (varWeight[i].find(varName) == varWeight[i].end()) varWeight[i][varName] = 1;
 					else varWeight[i][varName]++;
-					varWeight[i][varName] += (loopWeight * blockWeight);
+					varWeight[i][varName] += myPow(loopWeight, blockWeight);
 				}
 				varName = iter->getOperand2();
 				if (ifLocalVariable(varName)) {
 					if (varWeight[i].find(varName) == varWeight[i].end()) varWeight[i][varName] = 1;
 					else varWeight[i][varName]++;
-					varWeight[i][varName] += (loopWeight * blockWeight);
+					varWeight[i][varName] += myPow(loopWeight, blockWeight);
 				}
 			}
 		}
