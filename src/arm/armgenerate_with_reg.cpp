@@ -201,6 +201,17 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
+			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位，但是next从9开始
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(11, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
 			str_num1 = str.substr(4, 2);
 			str_num2 = str.substr(7, 3);
 			next_num1 = strNext.substr(8, 2); //例：MOV R2,R10   STR R1,[R2,R0] 
@@ -210,6 +221,17 @@ bool is_nonsence(int index)
 				cout << str << endl;
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
+			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况二：默认寄存器都是2位，但是next从9开始
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(11, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
@@ -227,6 +249,17 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
+			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况三：默认寄存器都是2位，但是next从9开始
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(12, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
 			str_num1 = str.substr(4, 3);
 			str_num2 = str.substr(8, 3);
 			next_num1 = strNext.substr(8, 3);  //例：MOV R12,R10   STR R1,[R12,R0] 
@@ -236,6 +269,17 @@ bool is_nonsence(int index)
 				cout << str << endl;
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
+			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
+			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况四：默认寄存器都是2位，但是next从9开始
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(12, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
