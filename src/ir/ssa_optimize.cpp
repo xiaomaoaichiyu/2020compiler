@@ -186,8 +186,12 @@ void SSA::simplify_alloc() {
 		for (j = 1; j < codetotal[i].size(); j++) {
 			CodeItem ci = codetotal[i][j];
 			if (ci.getCodetype() == ALLOC && ifUse.find(ci.getResult()) == ifUse.end()) {
+				string varName = ci.getResult();
 				codetotal[i].erase(codetotal[i].begin() + j);
 				j--;
+				for (int k = 1; k < total[i].size(); k++)
+					if (total[i][k].getName().compare(varName) == 0)
+						total[i].erase(total[i].begin() + k);
 			}
 			if (ci.getCodetype() != ALLOC && ci.getCodetype() != DEFINE && ci.getCodetype() != PARA)
 				break;
@@ -2612,14 +2616,13 @@ void SSA::count_global_reg_allocated() {
 
 void SSA::optimize_alloc() {
 	for (int i = 1; i < codetotal.size(); i++) {
+		cout << "function___" << i << endl;
 		map<string, int> useCount;
-		for (auto iter : varName2St[i]) { // 添加所有的参数和局部变量
-				useCount[iter.first] = 0;
-		}
 		for (int j = codetotal[i].size() - 1; j >= 0; j--) {
 			CodeItem ci = codetotal[i][j];
 			if (ci.getCodetype() == ALLOC) {
 				if (useCount.find(ci.getResult()) != useCount.end() && useCount[ci.getResult()] == 0) {
+					cout << "delete " << ci.getResult() << endl;
 					// 符号表删除
 					for (int k = 0; k < total[i].size(); k++) {
 						if (total[i][k].getName().compare(ci.getResult()) == 0) {
@@ -2642,11 +2645,20 @@ void SSA::optimize_alloc() {
 			else {
 				string varName;
 				varName = ci.getResult();
-				if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+				if (ifLocalVariable(varName)) {
+					if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+					else useCount[varName] = 1;
+				}
 				varName = ci.getOperand1();
-				if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+				if (ifLocalVariable(varName)) {
+					if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+					else useCount[varName] = 1;
+				}
 				varName = ci.getOperand2();
-				if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+				if (ifLocalVariable(varName)) {
+					if (useCount.find(varName) != useCount.end()) useCount[varName]++;
+					else useCount[varName] = 1;
+				}
 			}
 		}
 	}

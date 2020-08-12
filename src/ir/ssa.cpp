@@ -1107,7 +1107,7 @@ void SSA::build_clash_graph() {
 		for (map<string, symbolTable>::iterator iter = varName2St[i].begin(); iter != varName2St[i].end(); iter++)
 			if ((iter->second).getDimension() > 0 && (iter->second).getForm() != PARAMETER) continue;	// 局部数组不考虑
 			// else if (inlineArrayName.size() > i && inlineArrayName[i].find(iter->first) != inlineArrayName[i].end()) continue;	// 参数数组地址不考虑
-			else tmpMap[iter->first] = set<string>();
+			else { tmpMap[iter->first] = set<string>(); }
 		if (debug) cout << "step1";
 		// 遍历基本块
 		int size2 = blockCore[i].size();
@@ -1225,7 +1225,7 @@ void SSA::generate() {
 
 		// 在睿轩生成的中间代码上做优化
 		pre_optimize();
-
+		
 		// 计算每个基本块的起始语句
 		find_primary_statement();
 		// 为每个函数划分基本块
@@ -1302,10 +1302,8 @@ void SSA::generate() {
 		//将SSA格式代码转换到codetotal格式
 		turn_back_codetotal();
 
-		optimize_alloc();
-
 		// 输出中间代码
-		TestIrCode("ir2.txt");
+		if (i == 1) TestIrCode("ir2.txt");
 
 		// 函数内联
 		//if (i == 0) registerAllocation();
@@ -1313,12 +1311,13 @@ void SSA::generate() {
 		//for (auto i : globalRegAllocated) cout << i << endl;
 		if (i == 0) optimize_para_transfer();
 		if (i == 0) inline_function();
-
+		
 		// 恢复为之前中间代码形式后再做一次无用代码删除
 		pre_optimize();
 
 		// 输出中间代码
-		TestIrCode("ir3.txt");
+		
+		if (i == 1) TestIrCode("ir3.txt");
 	}
 	//Test_TempVariable();
 }
@@ -1507,4 +1506,36 @@ string SSA::removeKVar(int funNum) {
 		}
 	}
 	return ans;
+}
+
+void SSA::clearNoCallFun() {
+	int size1 = codetotal.size();
+	vector<bool> funCall(size1, false);
+	int mainnum = funName2Num["@main"];
+	funCall[mainnum] = true;
+	for (int i = 1; i < size1; i++) {
+		int size2 = codetotal[i].size();
+		for (int j = 0; j < size2; j++) {
+			CodeItem ci = codetotal[i][j];
+			if (ci.getCodetype() == CALL) {
+				string funName = ci.getOperand1();
+				if (funName2Num.find(funName) == funName2Num.end()) { 
+					continue;
+				}
+				int funNum = funName2Num[funName];
+				funCall[funNum] = true;
+			}
+		}
+	}
+	for (int i = 1; i < size1; i++) {
+		if (!funCall[i]) {
+			CodeItem first_ci = codetotal[i][0];
+			codetotal[i].clear();
+			codetotal[i].push_back(first_ci);
+			symbolTable first_st = total[i][0];
+			total[i].clear();
+			total[i].push_back(first_st);
+			varName2St[i].clear();
+		}
+	}
 }
