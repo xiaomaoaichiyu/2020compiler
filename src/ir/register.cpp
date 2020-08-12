@@ -1031,25 +1031,19 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		auto vars = stackVars.at(k);
 		auto arr = var2Arr.at(k);
 		auto regAlloc = var2gReg.at(k);
-		set<string> leftGregs = { "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11"};
-		for (auto one : regAlloc) {
-			if (leftGregs.find(one.second) != leftGregs.end()) {
-				leftGregs.erase(one.second);
+		set<string> leftGregs;
+		for (auto it = noUseReg.begin(); it != noUseReg.end();) {
+			int seq = A2I(it->substr(1));
+			if (seq != 0 && seq != 1 && seq != 2 && seq != 3 && seq != 12) {
+				leftGregs.insert(*it);
+				it = noUseReg.erase(it);
+				continue;
 			}
+			it++;
 		}
 		vector<CodeItem> funcTmp;
 
 		//初始化
-
-		// R12作为临时寄存器
-		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12"};	//临时寄存器池
-		vector<string> tmpRegs;
-		for (auto lzh : noUseReg) { tmpRegs.push_back(lzh); }
-		
-		// R12不作为临时寄存器
-		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//临时寄存器池
-		
-		RegPool regpool(tmpRegs);
 		vreg2varReg.clear();
 		first.clear();
 		var2reg.clear();
@@ -1081,8 +1075,13 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 					first[vars.at(i)] = true;
 				}
 			}
-		}
-		//全局变量使用临时变量来加载和使用
+		}//全局变量使用临时变量来加载和使用
+
+		//临时寄存器池
+		vector<string> tmpRegs;
+		for (auto lzh : noUseReg) { tmpRegs.push_back(lzh); }
+		for (auto one : leftGregs) { tmpRegs.push_back(one); }
+		RegPool regpool(tmpRegs);
 
 		string funcName = "";
 		for (int i = 0; i < func.size(); i++) {
