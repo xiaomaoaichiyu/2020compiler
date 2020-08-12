@@ -1,6 +1,7 @@
 #include "./register.h"
 #include "./optimize.h"
 #include <algorithm>
+#include <regex>
 //=================================================================
 // ¼Ä´æÆ÷³Ø
 //=================================================================
@@ -1015,6 +1016,16 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 	func2Vr.push_back(map<string, int>());
 	LIRTmp.push_back(LIR.at(0));
 
+	/* lzh add */
+	set<string> useGlobal;
+	for (int lzh = 0; lzh < var2gReg.size(); lzh++) {
+		for (auto lzhh : var2gReg[lzh])
+			useGlobal.insert(lzhh.second);
+	}
+	set<string> allGloabl = { "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12" };
+	set<string> noUseReg;
+	set_difference(allGloabl.begin(), allGloabl.end(), useGlobal.begin(), useGlobal.end(), inserter(noUseReg, noUseReg.begin()));
+
 	for (int k = 1; k < LIR.size(); k++) {
 		auto func = LIR.at(k);
 		auto vars = stackVars.at(k);
@@ -1031,7 +1042,9 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		//³õÊ¼»¯
 
 		// R12×÷ÎªÁÙÊ±¼Ä´æÆ÷
-		vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12"};	//ÁÙÊ±¼Ä´æÆ÷³Ø
+		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12"};	//ÁÙÊ±¼Ä´æÆ÷³Ø
+		vector<string> tmpRegs;
+		for (auto lzh : noUseReg) { tmpRegs.push_back(lzh); }
 		
 		// R12²»×÷ÎªÁÙÊ±¼Ä´æÆ÷
 		//vector<string> tmpRegs = { "R0", "R1", "R2", "R3" };	//ÁÙÊ±¼Ä´æÆ÷³Ø

@@ -411,6 +411,7 @@ void SSA::post_order(int funNum, int node) {
 
 // 后序遍历必经节点树
 void SSA::build_post_order() {
+	postOrder.clear();
 	int size1 = blockCore.size();
 	int i;
 	// 申请空间
@@ -430,6 +431,7 @@ void SSA::pre_order(int funNum, int node) {
 
 // 前序遍历必经节点树
 void SSA::build_pre_order() {
+	preOrder.clear();
 	int size1 = blockCore.size();
 	int i;
 	// 申请空间
@@ -1154,7 +1156,10 @@ void SSA::allocate_global_reg() {
 				}
 			}
 			if (varName.compare("") == 0) {	// 所有节点均大于K，无法分配
-				varName = clash_graph[i].begin()->first;
+				if (varWeight.empty())
+					varName = clash_graph[i].begin()->first;
+				else
+					varName = removeKVar(i);
 				cout << "在函数" << codetotal[i][0].getResult() << "内变量" << varName << "无法分配到全局寄存器" << endl;
 			}
 			if (debug) cout << varName;
@@ -1276,6 +1281,8 @@ void SSA::generate() {
 		if (i == 0) ssa_optimize();
 		if (i == 1) delete_dead_codes();
 
+		init();
+
 		// 测试输出上面各个函数
 		if (i == 0) Test_SSA();
 
@@ -1313,7 +1320,7 @@ void SSA::generate() {
 		// 输出中间代码
 		TestIrCode("ir3.txt");
 	}
-	Test_TempVariable();
+	//Test_TempVariable();
 }
 
 // 仅进行活跃变量分析
@@ -1342,20 +1349,31 @@ void SSA::generate_active_var_analyse() {
 	active_var_analyse();
 	delete_dead_codes_2();
 
+	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
+	build_dom_tree();
+	// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
+	build_idom_tree();
+	// 根据直接必经节点找到必经节点树中每个节点的后序节点
+	build_reverse_idom_tree();
+	// 后序遍历必经节点树
+	build_post_order();
+	// 前序遍历必经节点树
+	build_pre_order();
+	// 计算流图必经边界，参考《高级编译器设计与实现》 P185 Dom_Front算法
+	build_dom_frontier();
 	// 计算ud链，即分析每个基本块的use和def变量
 	build_def_use_chain();
-
 	// 活跃变量分析，生成in、out集合
 	active_var_analyse();
-
 }
 
 void SSA::registerAllocation() {
 
 	// 活跃变量分析
 	generate_active_var_analyse();
-
+	
 	circleVar();
+	
 	//printCircle();
 	int size1 = blockCore.size();
 	vector<map<int, int>> circleDepth(size1, map<int, int>());
@@ -1373,11 +1391,20 @@ void SSA::registerAllocation() {
 			}
 		}
 	}
-	bool debug = true;
+	bool debug = false;
 	if (debug) {
 		for (int i = 1; i < size1; i++) {
-			cout << "-------------- function " << i << " --------------" << endl;
+			cout << "-------------- circleDepth function " << i << " --------------" << endl;
 			for (auto iter : circleDepth[i]) cout << iter.first << " " << iter.second << endl;
+		}
+	}
+
+	calVarWeight(circleDepth);
+
+	if (debug) {
+		for (int i = 1; i < size1; i++) {
+			cout << "-------------- varWeight function " << i << " --------------" << endl;
+			for (auto iter : varWeight[i]) cout << iter.first << " " << iter.second << endl;
 		}
 	}
 
@@ -1429,4 +1456,55 @@ void SSA::Test_TempVariable() {
 			if (iter.second != 2)
 				cout << iter.first << " " << iter.second << endl;
 	}
+}
+
+void SSA::calVarWeight(vector<map<int, int>> circleDepth) {
+	int size1 = blockCore.size();
+	int loopWeight = 5;	// 循环权重
+	for (int i = 0; i < size1; i++) {
+		varWeight.push_back(map<string, int>());
+	}
+	for (int i = 1; i < size1; i++) {
+		int size2 = blockCore[i].size();
+		for (int j = 1; j < size2 - 1; j++) {
+			int blockWeight = circleDepth[i][j];	// 该基本块的权重
+			for (vector<CodeItem>::iterator iter = blockCore[i][j].Ir.begin(); iter != blockCore[i][j].Ir.end(); iter++) {
+				string varName;
+				varName = iter->getResult();
+				if (ifLocalVariable(varName)) {
+					if (varWeight[i].find(varName) == varWeight[i].end()) varWeight[i][varName] = 1;
+					else varWeight[i][varName]++;
+					varWeight[i][varName] += (loopWeight * blockWeight);
+				}
+				varName = iter->getOperand1();
+				if (ifLocalVariable(varName)) {
+					if (varWeight[i].find(varName) == varWeight[i].end()) varWeight[i][varName] = 1;
+					else varWeight[i][varName]++;
+					varWeight[i][varName] += (loopWeight * blockWeight);
+				}
+				varName = iter->getOperand2();
+				if (ifLocalVariable(varName)) {
+					if (varWeight[i].find(varName) == varWeight[i].end()) varWeight[i][varName] = 1;
+					else varWeight[i][varName]++;
+					varWeight[i][varName] += (loopWeight * blockWeight);
+				}
+			}
+		}
+	}
+}
+
+string SSA::removeKVar(int funNum) {
+	string ans = clash_graph[funNum].begin()->first;
+	int minWeight = -1;
+	for (auto i : clash_graph[funNum]) {
+		if (varWeight[funNum].find(i.first) == varWeight[funNum].end()) {
+			cout << "移除冲突图节点时错误的情况：没有找到变量的权重." << endl;
+			break;
+		}
+		if (minWeight == -1 || varWeight[funNum][i.first] < minWeight) {
+			ans = i.first;
+			minWeight = varWeight[funNum][i.first];
+		}
+	}
+	return ans;
 }
