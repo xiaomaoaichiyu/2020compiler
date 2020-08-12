@@ -1391,7 +1391,7 @@ void SSA::registerAllocation() {
 			}
 		}
 	}
-	bool debug = true;
+	bool debug = false;
 	if (debug) {
 		for (int i = 1; i < size1; i++) {
 			cout << "-------------- circleDepth function " << i << " --------------" << endl;
