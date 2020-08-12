@@ -1418,7 +1418,7 @@ void SSA::back_edge() {
 			}
 			add_a_circle(circle);
 		}
-		printCircle();
+		//printCircle();
 		for (auto circle : circles) {
 			mark_invariant(i, circle);				//确定不变式
 			ofstream ly1("xunhuan1.txt");
