@@ -1281,6 +1281,8 @@ void SSA::generate() {
 		if (i == 0) ssa_optimize();
 		if (i == 1) delete_dead_codes();
 
+		init();
+
 		// 测试输出上面各个函数
 		if (i == 0) Test_SSA();
 
@@ -1389,7 +1391,7 @@ void SSA::registerAllocation() {
 			}
 		}
 	}
-	bool debug = false;
+	bool debug = true;
 	if (debug) {
 		for (int i = 1; i < size1; i++) {
 			cout << "-------------- circleDepth function " << i << " --------------" << endl;
