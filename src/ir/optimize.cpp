@@ -486,9 +486,9 @@ void countVars() {
 		map<string, bool> arr;
 		for (int j = 1; j < func.size(); j++) {
 			auto instr = func.at(j);
-			if (instr.getCodetype() == ALLOC) {
+			if (instr.getCodetype() == ALLOC) {	
 				vars.push_back(instr.getResult());
-				if (instr.getOperand2() != "1") {
+				if (instr.getOperand2() != "1") {	//局部数组才设置为true
 					arr[instr.getResult()] = true;
 				}
 				else {
