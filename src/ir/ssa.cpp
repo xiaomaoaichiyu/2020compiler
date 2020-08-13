@@ -639,7 +639,7 @@ void SSA::build_var_chain() {
 
 // 查找该节点开始对应的name变量的基本块位置
 int SSA::phi_loc_block(int funNum, int blkNum, string name, vector<bool> visited, int insertBlk) {
-	if (visited[blkNum] || blkNum == insertBlk) return 0;
+	if (visited[blkNum]) return 0;
 	else visited[blkNum] = true;
 	// 如果该基本块中定义了name变量
 	if (blockCore[funNum][blkNum].def2.find(name) != blockCore[funNum][blkNum].def2.end()) 
@@ -701,7 +701,7 @@ void SSA::add_phi_function() {
 						blockCore[i][*iter].phi.push_back(pf);
 					}
 					else {
-						// 若\phi函数参数只有一个值则不用插入 
+						// 若\phi函数参数只有一个值则不用插入
 						update = true;
 						tmp_diff.insert(*iter);
 					}
@@ -1380,7 +1380,6 @@ void SSA::registerAllocation() {
 	generate_active_var_analyse();
 	
 	circleVar();
-	Test_SSA();
 	//printCircle();
 	int size1 = blockCore.size();
 	vector<map<int, int>> circleDepth(size1, map<int, int>());
