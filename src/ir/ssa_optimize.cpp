@@ -674,7 +674,8 @@ void SSA::inline_function() {
 							ci = codetotal[i][j];
 							if (ci.getCodetype() == PUSH) {
 								string paraName = paraTable[iter2 - 1];
-								if (switch_optimize_para_transfer && !paraIfNeed[funNum][paraName] && codetotal[i][j - 1].getCodetype() == LOAD) {
+								if (switch_optimize_para_transfer && !paraIfNeed[funNum][paraName] && codetotal[i][j - 1].getCodetype() == LOAD
+									&& ifLocalVariable(codetotal[i][j - 1].getOperand1())) {
 									paraNotNeed[paraName] = codetotal[i][j - 1].getOperand1();
 									j--;
 									codetotal[i].erase(codetotal[i].begin() + j);	// 删除load
@@ -849,14 +850,21 @@ void SSA::inline_function() {
 							}
 							else {
 								CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), ci.getOperand2());
+								bool oooooo = false;
 								if (switch_optimize_para_transfer && paraNotNeed.find(nci.getResult()) != paraNotNeed.end()) {
 									nci = CodeItem(nci.getCodetype(), paraNotNeed[nci.getResult()], nci.getOperand1(), nci.getOperand2());
+									oooooo = true;
 								}
 								if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand1()) != paraNotNeed.end()) {
 									nci = CodeItem(nci.getCodetype(), nci.getResult(), paraNotNeed[nci.getOperand1()], nci.getOperand2());
+									oooooo = true;
 								}
 								if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand2()) != paraNotNeed.end()) {
 									nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), paraNotNeed[nci.getOperand2()]);
+									oooooo = true;
+								}
+								if (switch_optimize_para_transfer && oooooo && nci.getOperand2().compare("para") == 0) {
+									nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), "array");
 								}
 								codetotal[i].insert(codetotal[i].begin() + j, nci);
 								j++;
