@@ -576,9 +576,6 @@ void SSA::inline_function() {
 	}
 	// 函数内联主体部分
 	for (i = 1; i < size1; i++) {	// 遍历函数
-		vector<CodeItem> newInsertAllocIr;	// 要在该函数开始添加的alloc中间代码
-		set<string> newInsertAllocName;		// 要在该函数开始添加的alloc变量名
-		vector<symbolTable> newInsertSymbolTable;	// 要在该函数符号表中插入的
 		bool step1 = true, step2 = true, step3 = true, step4 = true, step5 = true, step6 = true, debug = false;	// debug
 		/*
 		 step1: 判断调用函数是否可以内联
@@ -588,313 +585,339 @@ void SSA::inline_function() {
 		 step5. 删除call指令
 		 step6. 添加alloc指令到函数开始位置，更新符号表
 		 */
-		for (j = 1; j < codetotal[i].size(); j++) {
-			CodeItem ci = codetotal[i][j];
-			/* step0: 找到函数调用 */
-			if (ci.getCodetype() == NOTE && ci.getOperand1().compare("func") == 0 && ci.getOperand2().compare("begin") == 0
-				&& funName2Num.find(ci.getResult()) != funName2Num.end()) {
-				string funName = ci.getResult();				// 函数名
-				int funNum = funName2Num[funName];	// 该函数对应的序号
-				symbolTable funSt;									// 函数对应的符号表结构
-				set<int> alreadyNeilian;				//丛睿轩添加的...	记录当前以内联的符号
+		bool update = true;
+		while (update) {
+			update = false;
+			vector<CodeItem> newInsertAllocIr;	// 要在该函数开始添加的alloc中间代码
+			set<string> newInsertAllocName;		// 要在该函数开始添加的alloc变量名
+			vector<symbolTable> newInsertSymbolTable;	// 要在该函数符号表中插入的
+			for (j = 1; j < codetotal[i].size(); j++) {
+				CodeItem ci = codetotal[i][j];
+				/* step0: 找到函数调用 */
+				if (ci.getCodetype() == NOTE && ci.getOperand1().compare("func") == 0 && ci.getOperand2().compare("begin") == 0
+					&& funName2Num.find(ci.getResult()) != funName2Num.end()) {
+					string funName = ci.getResult();				// 函数名
+					int funNum = funName2Num[funName];	// 该函数对应的序号
+					symbolTable funSt;									// 函数对应的符号表结构
+					set<int> alreadyNeilian;				//丛睿轩添加的...	记录当前以内联的符号
 
-				map<string, string> paraNotNeed;
+					map<string, string> paraNotNeed;
 
-				if (step1) {	/* step1: 判断调用函数是否可以内联 */
-					for (int iter1 = 1; iter1 < total.size(); iter1++) {
-						if (total[iter1][0].getName().compare(funName) == 0) {
-							funSt = total[iter1][0];	// 正常情况下一定会有这一步
+					if (step1) {	/* step1: 判断调用函数是否可以内联 */
+						for (int iter1 = 1; iter1 < total.size(); iter1++) {
+							if (total[iter1][0].getName().compare(funName) == 0) {
+								funSt = total[iter1][0];	// 正常情况下一定会有这一步
+								break;
+							}
+						}
+						if (funSt.getName().compare(funName) != 0) {
+							cout << "函数内联不应该发生的情况：没有在符号表中找到函数定义." << endl;
 							break;
 						}
+						else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
+							continue;
+						}
+						//else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
+						/*else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && codetotal[funNum].size()>200) {
+							continue;		//第一个条件说明当前函数没被内联过
+						}
+						else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
+							continue;
+						}*/
+						else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
+							continue;
+						}
+						else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
+						//else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && globalRegAllocated[i] + globalRegAllocated[funNum] > 10) {
+							continue;
+						}
+						/*else if (globalRegAllocated[i] == 8) {	// 只有sort样例中不内联
+							continue;
+						}*/
+						else {
+							cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
+						}
 					}
-					if (funSt.getName().compare(funName) != 0) {
-						cout << "函数内联不应该发生的情况：没有在符号表中找到函数定义." << endl;
-						break;
-					}
-					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
-						continue;
-					}
-					//else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
-					/*else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && codetotal[funNum].size()>200) {
-						continue;		//第一个条件说明当前函数没被内联过
-					}
-					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
-						continue;
-					}*/
-					else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
-						continue;
-					}
-					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
-					//else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && globalRegAllocated[i] + globalRegAllocated[funNum] > 10) {
-						continue;
-					}
-					/*else if (globalRegAllocated[i] == 8) {	// 只有sort样例中不内联
-						continue;
-					}*/
-					else {
-						cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
-					}
-				}
-				alreadyNeilian.insert(funNum);		//丛睿轩添加的
-				if (debug) cout << "step1 done." << endl;
-				int paraNum = funSt.getparaLength();	// 参数个数
-				vector<string> paraTable;					// 参数列表
 
-				if (step2) {	/* step2: 处理参数及传参指令 */
-					for (int k = 1; k < total[funNum].size(); k++) {
-						symbolTable st = total[funNum][k];
-						if (st.getForm() == PARAMETER) {	// 从符号表中获得该函数下的所有参数名
-							string paraName = st.getDimension() == 0 ? st.getName() : getNewInsertAddr(i, st.getName());
-							if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
-								newInsertAllocName.insert(paraName);
-								// 将要内联函数的形参全部转换成alloc指令
-								CodeItem nci(ALLOC, paraName, "", "1");
-								newInsertAllocIr.insert(newInsertAllocIr.begin(), nci);
-								// 插入到符号表
-								symbolTable nst(VARIABLE, INT, paraName, 0, 0);
-								newInsertSymbolTable.insert(newInsertSymbolTable.begin(), nst);
+					alreadyNeilian.insert(funNum);		//丛睿轩添加的
+					if (debug) cout << "step1 done." << endl;
+					int paraNum = funSt.getparaLength();	// 参数个数
+					vector<string> paraTable;					// 参数列表
+
+					if (step2) {	/* step2: 处理参数及传参指令 */
+						for (int k = 1; k < total[funNum].size(); k++) {
+							symbolTable st = total[funNum][k];
+							if (st.getForm() == PARAMETER) {	// 从符号表中获得该函数下的所有参数名
+								string paraName = st.getDimension() == 0 ? st.getName() : getNewInsertAddr(i, st.getName());
+								if (newInsertAllocName.find(paraName) == newInsertAllocName.end()) {
+									newInsertAllocName.insert(paraName);
+									// 将要内联函数的形参全部转换成alloc指令
+									CodeItem nci(ALLOC, paraName, "", "1");
+									newInsertAllocIr.insert(newInsertAllocIr.begin(), nci);
+									// 插入到符号表
+									symbolTable nst(VARIABLE, INT, paraName, 0, 0);
+									newInsertSymbolTable.insert(newInsertSymbolTable.begin(), nst);
+								}
+								paraTable.push_back(paraName);
 							}
-							paraTable.push_back(paraName);
+							else break;
 						}
-						else break;
-					}
-					if (paraTable.size() != paraNum) {
-						cout << "函数内联不应该发生的情况：参数表和符号表中函数对应的参数数量不一致. " << endl;
-						break;
-					}
-					//cout << ci.getContent() << endl;
-					CodeItem nci(ci.getCodetype(), ci.getResult(), "inline", ci.getOperand2());
-					codetotal[i][j] = nci;
-					j++;	// 跳过note指令，后面应跟传参指令
-					for (int iter2 = paraNum; iter2 > 0; j++) {	// 中间代码倒序，而符号表顺序
-						ci = codetotal[i][j];
-						if (ci.getCodetype() == PUSH) {
-							string paraName = paraTable[iter2 - 1];
-							if (switch_optimize_para_transfer && !paraIfNeed[funNum][paraName] && codetotal[i][j - 1].getCodetype() == LOAD) {
-								paraNotNeed[paraName] = codetotal[i][j - 1].getOperand1();
-								j--;
-								codetotal[i].erase(codetotal[i].begin() + j);	// 删除load
-								codetotal[i].erase(codetotal[i].begin() + j);	// 删除push
-								j--;
-							}
-							else {
-								CodeItem nci(STORE, ci.getOperand1(), paraName, "");
-								codetotal[i][j] = nci;
-							}
-							iter2--;
+						if (paraTable.size() != paraNum) {
+							cout << "函数内联不应该发生的情况：参数表和符号表中函数对应的参数数量不一致. " << endl;
+							break;
 						}
-						else { continue; }
-					}
-				}
-				if (debug) cout << "step2 done." << endl;
-				ci = codetotal[i][j];
-				/* optimize return*/
-				bool ifNeedReturn = funSt.getValuetype() == INT;
-				if (switch_optimize_return) {
-					if (ifNeedReturn) {
-						ci = codetotal[i][j];
-						if (ci.getCodetype() != CALL || ci.getOperand1().compare(funName) != 0 || !ifTempVariable(ci.getResult())) {
-							cout << "函数内联不应该发生的情况：optimize return时call指令有问题." << endl; break;
-						}
-						string tmpRet = ci.getResult();
-						ifNeedReturn = false;
-						for (int k = j + 1; k < codetotal[i].size(); k++) {
-							CodeItem tci = codetotal[i][k];
-							if (tci.getResult().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
-							if (tci.getOperand1().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
-							if (tci.getOperand2().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
-						}
-					}
-				}
-				if (step3) {	/* step3. 插入调用函数的除函数和参数声明之外的指令 */
-					map<string, string> label2NewLabel;	// 调用函数内部重命名后的标签名
-					for (int k = 1; k <= paraNum; k++) {
-						ci = codetotal[funNum][k];
-						if (ci.getCodetype() != PARA || (ci.getOperand1().compare("int*") != 0 && ci.getResult().compare(paraTable[k - 1]) != 0)) {
-							cout << "函数内联不应该发生的情况：函数定义的参数与参数表不一致. " << endl; break;
-						}
-					}
-					for (int k = paraNum + 1; k < codetotal[funNum].size(); k++) {
-						ci = codetotal[funNum][k];
-						if (ci.getCodetype() == ALLOC) {	// 处理要内联函数中的alloc指令，对于一个函数内多次内联同一个函数的情况不要加重了
-							string varName = ci.getResult();
-							if (newInsertAllocName.find(varName) == newInsertAllocName.end()) {
-								newInsertAllocName.insert(varName);
-								newInsertAllocIr.push_back(ci);
-								symbolTable nst;
-								for (vector<symbolTable>::iterator iter = total[funNum].begin(); iter != total[funNum].end(); iter++)
-									if (iter->getName().compare(varName) == 0) {
-										nst = *iter; break;
-									}
-								if (nst.getName().compare(varName) == 0) {	// 插入到符号表
-									newInsertSymbolTable.push_back(nst);
+						//cout << ci.getContent() << endl;
+						CodeItem nci(ci.getCodetype(), ci.getResult(), "inline", ci.getOperand2());
+						codetotal[i][j] = nci;
+						j++;	// 跳过note指令，后面应跟传参指令
+						for (int iter2 = paraNum; iter2 > 0; j++) {	// 中间代码倒序，而符号表顺序
+							ci = codetotal[i][j];
+							if (ci.getCodetype() == PUSH) {
+								string paraName = paraTable[iter2 - 1];
+								if (switch_optimize_para_transfer && !paraIfNeed[funNum][paraName] && codetotal[i][j - 1].getCodetype() == LOAD) {
+									paraNotNeed[paraName] = codetotal[i][j - 1].getOperand1();
+									j--;
+									codetotal[i].erase(codetotal[i].begin() + j);	// 删除load
+									codetotal[i].erase(codetotal[i].begin() + j);	// 删除push
+									j--;
 								}
 								else {
-									cout << "函数内联不应该发生的情况：被内联函数的局部变量在符号表中没有找到. " << endl; break;
+									CodeItem nci(STORE, ci.getOperand1(), paraName, "");
+									codetotal[i][j] = nci;
 								}
+								iter2--;
 							}
-						}
-						else if (ci.getCodetype() == BR) {
-							if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1())) {	// 有条件跳转
-								string newLabel1, newLabel2;
-								if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
-									newLabel1 = getNewInsertLabel(i, ci.getResult());
-									label2NewLabel[ci.getResult()] = newLabel1;
-								}
-								else {
-									newLabel1 = label2NewLabel[ci.getResult()];
-								}
-								if (label2NewLabel.find(ci.getOperand2()) == label2NewLabel.end()) {
-									newLabel2 = getNewInsertLabel(i, ci.getOperand2());
-									label2NewLabel[ci.getOperand2()] = newLabel2;
-								}
-								else {
-									newLabel2 = label2NewLabel[ci.getOperand2()];
-								}
-								CodeItem nci(BR, newLabel1, ci.getOperand1(), newLabel2);
-								codetotal[i].insert(codetotal[i].begin() + j, nci);
-								j++;
-							}
-							else {
-								string newLabel;
-								if (label2NewLabel.find(ci.getOperand1()) == label2NewLabel.end()) {
-									newLabel = getNewInsertLabel(i, ci.getOperand1());
-									label2NewLabel[ci.getOperand1()] = newLabel;
-								}
-								else {
-									newLabel = label2NewLabel[ci.getOperand1()];
-								}
-								CodeItem nci(BR, ci.getResult(), newLabel, ci.getOperand2());
-								codetotal[i].insert(codetotal[i].begin() + j, nci);
-								j++;
-							}
-						}
-						else if (ci.getCodetype() == LABEL) {
-							string newLabel;
-							if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
-								newLabel = getNewInsertLabel(i, ci.getResult());
-								label2NewLabel[ci.getResult()] = newLabel;
-							}
-							else {
-								newLabel = label2NewLabel[ci.getResult()];
-							}
-							CodeItem nci(LABEL, newLabel, "", "");
-							codetotal[i].insert(codetotal[i].begin() + j, nci);
-							j++;
-						}
-						else if (ci.getCodetype() == RET) {
-							if (funSt.getValuetype() == INT && ci.getOperand2().compare("int") == 0) {	// 有返回值函数
-								/* optimize return */
-								if (switch_optimize_return && !ifNeedReturn) {}
-								else if (switch_optimize_return && ifNeedReturn && exitStatementNum[funNum] == 1) {
-									string retVal = ci.getOperand1();
-									string tmpRet = "***";
-									for (int oo = j; oo < codetotal[i].size(); oo++) {
-										CodeItem tci = codetotal[i][oo];
-										if (tci.getCodetype() == CALL) tmpRet = ci.getResult();
-										else {
-											if (tci.getResult().compare(tmpRet) == 0) {
-												CodeItem ntci(tci.getCodetype(), retVal, ci.getOperand1(), ci.getOperand2());
-												codetotal[i][oo] = ntci;
-												break;
-											}
-											else if (tci.getOperand1().compare(tmpRet) == 0) {
-												CodeItem ntci(tci.getCodetype(), ci.getResult(), retVal, ci.getOperand2());
-												codetotal[i][oo] = ntci;
-												break;
-											}
-											else if (tci.getOperand2().compare(tmpRet) == 0) {
-												CodeItem ntci(tci.getCodetype(), ci.getResult(), ci.getOperand1(), retVal);
-												codetotal[i][oo] = ntci;
-												break;
-											}
+							else if (ci.getCodetype() == NOTE && ci.getOperand1().compare("func") == 0 && ci.getOperand2().compare("begin") == 0) {
+								update = true;
+								// 遇到某个函数返回值作为该函数的参数
+								string t_funName = ci.getResult();
+								int t_cnt = 1;
+								while (t_cnt) {
+									j++;
+									ci = codetotal[i][j];
+									if (ci.getCodetype() == NOTE && ci.getResult().compare(t_funName) == 0 && ci.getOperand1().compare("func") == 0) {
+										if (ci.getOperand2().compare("begin") == 0) {
+											t_cnt++;
+										}
+										else {	// end
+											t_cnt--;
 										}
 									}
 								}
+							}
+							else { continue; }
+						}
+					}
+					if (debug) cout << "step2 done." << endl;
+					ci = codetotal[i][j];
+					/* optimize return*/
+					bool ifNeedReturn = funSt.getValuetype() == INT;
+					if (switch_optimize_return) {
+						if (ifNeedReturn) {
+							ci = codetotal[i][j];
+							if (ci.getCodetype() != CALL || ci.getOperand1().compare(funName) != 0 || !ifTempVariable(ci.getResult())) {
+								cout << "函数内联不应该发生的情况：optimize return时call指令有问题." << endl; break;
+							}
+							string tmpRet = ci.getResult();
+							ifNeedReturn = false;
+							for (int k = j + 1; k < codetotal[i].size(); k++) {
+								CodeItem tci = codetotal[i][k];
+								if (tci.getResult().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
+								if (tci.getOperand1().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
+								if (tci.getOperand2().compare(tmpRet) == 0) { ifNeedReturn = true; break; }
+							}
+						}
+					}
+					if (step3) {	/* step3. 插入调用函数的除函数和参数声明之外的指令 */
+						map<string, string> label2NewLabel;	// 调用函数内部重命名后的标签名
+						for (int k = 1; k <= paraNum; k++) {
+							ci = codetotal[funNum][k];
+							if (ci.getCodetype() != PARA || (ci.getOperand1().compare("int*") != 0 && ci.getResult().compare(paraTable[k - 1]) != 0)) {
+								cout << "函数内联不应该发生的情况：函数定义的参数与参数表不一致. " << endl; break;
+							}
+						}
+						for (int k = paraNum + 1; k < codetotal[funNum].size(); k++) {
+							ci = codetotal[funNum][k];
+							if (ci.getCodetype() == ALLOC) {	// 处理要内联函数中的alloc指令，对于一个函数内多次内联同一个函数的情况不要加重了
+								string varName = ci.getResult();
+								if (newInsertAllocName.find(varName) == newInsertAllocName.end()) {
+									newInsertAllocName.insert(varName);
+									newInsertAllocIr.push_back(ci);
+									symbolTable nst;
+									for (vector<symbolTable>::iterator iter = total[funNum].begin(); iter != total[funNum].end(); iter++)
+										if (iter->getName().compare(varName) == 0) {
+											nst = *iter; break;
+										}
+									if (nst.getName().compare(varName) == 0) {	// 插入到符号表
+										newInsertSymbolTable.push_back(nst);
+									}
+									else {
+										cout << "函数内联不应该发生的情况：被内联函数的局部变量在符号表中没有找到. " << endl; break;
+									}
+								}
+							}
+							else if (ci.getCodetype() == BR) {
+								if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1())) {	// 有条件跳转
+									string newLabel1, newLabel2;
+									if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
+										newLabel1 = getNewInsertLabel(i, ci.getResult());
+										label2NewLabel[ci.getResult()] = newLabel1;
+									}
+									else {
+										newLabel1 = label2NewLabel[ci.getResult()];
+									}
+									if (label2NewLabel.find(ci.getOperand2()) == label2NewLabel.end()) {
+										newLabel2 = getNewInsertLabel(i, ci.getOperand2());
+										label2NewLabel[ci.getOperand2()] = newLabel2;
+									}
+									else {
+										newLabel2 = label2NewLabel[ci.getOperand2()];
+									}
+									CodeItem nci(BR, newLabel1, ci.getOperand1(), newLabel2);
+									codetotal[i].insert(codetotal[i].begin() + j, nci);
+									j++;
+								}
 								else {
-									CodeItem nci(STORE, ci.getOperand1(), getRetValName(funName), "");
+									string newLabel;
+									if (label2NewLabel.find(ci.getOperand1()) == label2NewLabel.end()) {
+										newLabel = getNewInsertLabel(i, ci.getOperand1());
+										label2NewLabel[ci.getOperand1()] = newLabel;
+									}
+									else {
+										newLabel = label2NewLabel[ci.getOperand1()];
+									}
+									CodeItem nci(BR, ci.getResult(), newLabel, ci.getOperand2());
 									codetotal[i].insert(codetotal[i].begin() + j, nci);
 									j++;
 								}
 							}
-							else if (funSt.getValuetype() == VOID && ci.getOperand2().compare("void") == 0) {	// 无返回值函数
-								
+							else if (ci.getCodetype() == LABEL) {
+								string newLabel;
+								if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
+									newLabel = getNewInsertLabel(i, ci.getResult());
+									label2NewLabel[ci.getResult()] = newLabel;
+								}
+								else {
+									newLabel = label2NewLabel[ci.getResult()];
+								}
+								CodeItem nci(LABEL, newLabel, "", "");
+								codetotal[i].insert(codetotal[i].begin() + j, nci);
+								j++;
 							}
-							else { cout << "函数内联不应该发生的情况：返回值不合法的函数定义. " << endl; break; }
-							CodeItem nci(BR, "", getFunEndLabel(funNum, funName), "");
-							codetotal[i].insert(codetotal[i].begin() + j, nci);
-							j++;
+							else if (ci.getCodetype() == RET) {
+								if (funSt.getValuetype() == INT && ci.getOperand2().compare("int") == 0) {	// 有返回值函数
+									/* optimize return */
+									if (switch_optimize_return && !ifNeedReturn) {}
+									else if (switch_optimize_return && ifNeedReturn && exitStatementNum[funNum] == 1) {
+										string retVal = ci.getOperand1();
+										string tmpRet = "***";
+										for (int oo = j; oo < codetotal[i].size(); oo++) {
+											CodeItem tci = codetotal[i][oo];
+											if (tci.getCodetype() == CALL) tmpRet = ci.getResult();
+											else {
+												if (tci.getResult().compare(tmpRet) == 0) {
+													CodeItem ntci(tci.getCodetype(), retVal, ci.getOperand1(), ci.getOperand2());
+													codetotal[i][oo] = ntci;
+													break;
+												}
+												else if (tci.getOperand1().compare(tmpRet) == 0) {
+													CodeItem ntci(tci.getCodetype(), ci.getResult(), retVal, ci.getOperand2());
+													codetotal[i][oo] = ntci;
+													break;
+												}
+												else if (tci.getOperand2().compare(tmpRet) == 0) {
+													CodeItem ntci(tci.getCodetype(), ci.getResult(), ci.getOperand1(), retVal);
+													codetotal[i][oo] = ntci;
+													break;
+												}
+											}
+										}
+									}
+									else {
+										CodeItem nci(STORE, ci.getOperand1(), getRetValName(funName), "");
+										codetotal[i].insert(codetotal[i].begin() + j, nci);
+										j++;
+									}
+								}
+								else if (funSt.getValuetype() == VOID && ci.getOperand2().compare("void") == 0) {	// 无返回值函数
+
+								}
+								else { cout << "函数内联不应该发生的情况：返回值不合法的函数定义. " << endl; break; }
+								CodeItem nci(BR, "", getFunEndLabel(funNum, funName), "");
+								codetotal[i].insert(codetotal[i].begin() + j, nci);
+								j++;
+							}
+							else {
+								CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), ci.getOperand2());
+								if (switch_optimize_para_transfer && paraNotNeed.find(nci.getResult()) != paraNotNeed.end()) {
+									nci = CodeItem(nci.getCodetype(), paraNotNeed[nci.getResult()], nci.getOperand1(), nci.getOperand2());
+								}
+								if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand1()) != paraNotNeed.end()) {
+									nci = CodeItem(nci.getCodetype(), nci.getResult(), paraNotNeed[nci.getOperand1()], nci.getOperand2());
+								}
+								if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand2()) != paraNotNeed.end()) {
+									nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), paraNotNeed[nci.getOperand2()]);
+								}
+								codetotal[i].insert(codetotal[i].begin() + j, nci);
+								j++;
+							}
+						}
+					}
+					if (debug) cout << "step3 done." << endl;
+					if (step4) {	/* step4.添加函数调用结束标签 */
+						CodeItem nci(LABEL, getNewFunEndLabel(funNum, funName), "", "");
+						codetotal[i].insert(codetotal[i].begin() + j, nci);
+						j++;
+					}
+					if (debug) cout << "step4 done." << endl;
+					if (step5) {	/* step5. 删除call指令 */
+						ci = codetotal[i][j];
+						if (ci.getCodetype() != CALL || ci.getOperand1().compare(funName) != 0) {
+							cout << "函数内联不应该发生的情况：压完参数后没有跟call函数指令. " << endl; break;
+						}
+						/* optimize return*/
+						if ((switch_optimize_return && ifNeedReturn && exitStatementNum[funNum] > 1) ||
+							(!switch_optimize_return && funSt.getValuetype() == INT)) {
+							string retValName = getRetValName(funName);
+							if (newInsertAllocName.find(retValName) == newInsertAllocName.end()) {
+								newInsertAllocName.insert(retValName);
+								CodeItem nci(ALLOC, retValName, "", "1");
+								newInsertAllocIr.push_back(nci);
+								symbolTable nst(VARIABLE, INT, retValName, 0, 0);
+								newInsertSymbolTable.push_back(nst);
+							}
+							if (ifTempVariable(ci.getResult())) {
+								CodeItem nci(LOAD, ci.getResult(), getRetValName(funName), "");
+								codetotal[i][j] = nci;
+							}
+							else { cout << "函数内联不应该发生的情况：返回值定义和调用不统一. " << endl; break; }
 						}
 						else {
-							CodeItem nci(ci.getCodetype(), ci.getResult(), ci.getOperand1(), ci.getOperand2());
-							if (switch_optimize_para_transfer && paraNotNeed.find(nci.getResult()) != paraNotNeed.end()) {
-								nci = CodeItem(nci.getCodetype(), paraNotNeed[nci.getResult()], nci.getOperand1(), nci.getOperand2());
-							}
-							if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand1()) != paraNotNeed.end()) {
-								nci = CodeItem(nci.getCodetype(), nci.getResult(), paraNotNeed[nci.getOperand1()], nci.getOperand2());
-							}
-							if (switch_optimize_para_transfer && paraNotNeed.find(nci.getOperand2()) != paraNotNeed.end()) {
-								nci = CodeItem(nci.getCodetype(), nci.getResult(), nci.getOperand1(), paraNotNeed[nci.getOperand2()]);
-							}
-							codetotal[i].insert(codetotal[i].begin() + j, nci);
-							j++;
+							codetotal[i].erase(codetotal[i].begin() + j);
+							j--;
 						}
 					}
-				}
-				if (debug) cout << "step3 done." << endl;
-				if (step4) {	/* step4.添加函数调用结束标签 */
-					CodeItem nci(LABEL, getNewFunEndLabel(funNum, funName), "", "");
-					codetotal[i].insert(codetotal[i].begin() + j, nci);
+					if (debug) cout << "step5 done." << endl;
 					j++;
-				}
-				if (debug) cout << "step4 done." << endl;
-				if (step5) {	/* step5. 删除call指令 */
 					ci = codetotal[i][j];
-					if (ci.getCodetype() != CALL || ci.getOperand1().compare(funName) != 0) {
-						cout << "函数内联不应该发生的情况：压完参数后没有跟call函数指令. " << endl; break;
-					}
-					/* optimize return*/
-					if ((switch_optimize_return && ifNeedReturn && exitStatementNum[funNum] > 1) ||
-						(!switch_optimize_return && funSt.getValuetype() == INT)) {
-						string retValName = getRetValName(funName);
-						if (newInsertAllocName.find(retValName) == newInsertAllocName.end()) {
-							newInsertAllocName.insert(retValName);
-							CodeItem nci(ALLOC, retValName, "", "1");
-							newInsertAllocIr.push_back(nci);
-							symbolTable nst(VARIABLE, INT, retValName, 0, 0);
-							newInsertSymbolTable.push_back(nst);
-						}
-						if (ifTempVariable(ci.getResult())) {
-							CodeItem nci(LOAD, ci.getResult(), getRetValName(funName), "");
-							codetotal[i][j] = nci;
-						}
-						else { cout << "函数内联不应该发生的情况：返回值定义和调用不统一. " << endl; break; }
+					if (ci.getCodetype() == NOTE &&
+						ci.getResult().compare(funName) == 0 && ci.getOperand1().compare("func") == 0) {
+						CodeItem nci(ci.getCodetype(), ci.getResult(), "inline", ci.getOperand2());
+						codetotal[i][j] = nci;
 					}
 					else {
-						codetotal[i].erase(codetotal[i].begin() + j);
-						j--;
+						cout << "函数内联不应该发生的情况：调用函数之后没有note结束标签. " << endl;
 					}
 				}
-				if (debug) cout << "step5 done." << endl;
-				j++;
-				ci = codetotal[i][j];
-				if (ci.getCodetype() == NOTE && 
-					ci.getResult().compare(funName) == 0 && ci.getOperand1().compare("func") == 0) {
-					CodeItem nci(ci.getCodetype(),ci.getResult(), "inline", ci.getOperand2());
-					codetotal[i][j] = nci;
-				}
-				else {
-					cout << "函数内联不应该发生的情况：调用函数之后没有note结束标签. " << endl;
-				}
 			}
+			if (step6) {	/* step6.添加alloc指令到函数开始位置，更新符号表 */
+				for (j = 1; j < codetotal[i].size(); j++)
+					if (codetotal[i][j].getCodetype() != PARA && codetotal[i][j].getCodetype() != ALLOC) break;
+				codetotal[i].insert(codetotal[i].begin() + j, newInsertAllocIr.begin(), newInsertAllocIr.end());
+				total[i].insert(total[i].end(), newInsertSymbolTable.begin(), newInsertSymbolTable.end());
+			}
+			if (debug) cout << "step6 done." << endl;
 		}
-		if (step6) {	/* step6.添加alloc指令到函数开始位置，更新符号表 */
-			for (j = 1; j < codetotal[i].size(); j++) 
-				if (codetotal[i][j].getCodetype() != PARA && codetotal[i][j].getCodetype() != ALLOC) break;
-			codetotal[i].insert(codetotal[i].begin() + j, newInsertAllocIr.begin(), newInsertAllocIr.end());
-			total[i].insert(total[i].end(), newInsertSymbolTable.begin(), newInsertSymbolTable.end());
-		}
-		if (debug) cout << "step6 done." << endl;
 	}
 }
 
