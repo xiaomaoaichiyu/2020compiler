@@ -132,6 +132,7 @@ private:
 	std::vector<std::map<std::string, std::string>> var2reg;
 	std::vector<std::map<std::string, std::set<std::string>>> clash_graph;
 	std::vector<std::stack<std::string>> allocRegList;
+	std::vector<std::stack<std::string>> noAllocRegList;
 
 	void find_primary_statement();								// 找到基本块的每个起始语句
 	void divide_basic_block();										// 划分基本块
