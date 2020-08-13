@@ -452,35 +452,35 @@ void MIR2LIRpass() {
 			}
 		}
 		//删除多余的call的res字段
-		//map<string, bool> callres2use;
-		//for (auto instr : dst) {
-		//	auto op = instr.getCodetype();
-		//	switch (op)
-		//	{
-		//	case ADD:case SUB:case DIV:case MUL:case REM:case AND:case OR:case NOT:case EQL:case NEQ:case SGT:case SGE:case SLT:case SLE:
-		//	case STORE:case STOREARR:
-		//	case LOAD:case LOADARR:case PUSH:case POP:case BR:case MOV:case LEA: {
-		//		if (callres2use.find(instr.getResult()) != callres2use.end()) callres2use[instr.getResult()] = true;
-		//		if (callres2use.find(instr.getOperand1()) != callres2use.end()) callres2use[instr.getOperand1()] = true;
-		//		if (callres2use.find(instr.getOperand2()) != callres2use.end()) callres2use[instr.getOperand2()] = true;
-		//		break;
-		//	}
-		//	case GETREG: {
-		//		if (isVreg(instr.getOperand1())) {
-		//			callres2use[instr.getOperand1()] = false;	//先设置为不会被使用
-		//		}
-		//		break;
-		//	}
-		//	default:
-		//		break;
-		//	}
-		//}
-		//for (auto& instr : dst) {
-		//	if (instr.getCodetype() == GETREG 
-		//		&& callres2use.find(instr.getOperand1()) != callres2use.end() && callres2use[instr.getOperand1()] == false) {
-		//		instr.setOperand1("");
-		//	}
-		//}
+		map<string, bool> callres2use;
+		for (auto instr : dst) {
+			auto op = instr.getCodetype();
+			switch (op)
+			{
+			case ADD:case SUB:case DIV:case MUL:case REM:case AND:case OR:case NOT:case EQL:case NEQ:case SGT:case SGE:case SLT:case SLE:
+			case STORE:case STOREARR:
+			case LOAD:case LOADARR:case PUSH:case POP:case BR:case MOV:case LEA: {
+				if (callres2use.find(instr.getResult()) != callres2use.end()) callres2use[instr.getResult()] = true;
+				if (callres2use.find(instr.getOperand1()) != callres2use.end()) callres2use[instr.getOperand1()] = true;
+				if (callres2use.find(instr.getOperand2()) != callres2use.end()) callres2use[instr.getOperand2()] = true;
+				break;
+			}
+			case GETREG: {
+				if (isVreg(instr.getOperand1())) {
+					callres2use[instr.getOperand1()] = false;	//先设置为不会被使用
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		for (auto& instr : dst) {
+			if (instr.getCodetype() == GETREG 
+				&& callres2use.find(instr.getOperand1()) != callres2use.end() && callres2use[instr.getOperand1()] == false) {
+				instr.setOperand1("");
+			}
+		}
 		func2vrIndex.push_back(vrIndex);
 		LIR.push_back(dst);
 	}
@@ -667,27 +667,49 @@ void convertCondition() {
 	}
 }
 
+
+string get_Vreg_of_tmp(map<string, string>& container, string tmp, int funcNum) {
+	if (!isTmp(tmp)) {	//不是%临时变量则返回原值
+		if (tmp.find('^') != -1 && tmp.size() > 1 && tmp.at(0) == '%') {
+			return tmp.substr(0, tmp.find('^'));
+		}
+		else {
+			return tmp;
+		}
+	}
+	
+	if (container.find(tmp) != container.end()) {
+		return container[tmp];
+	}
+	else {
+		string res = FORMAT("VR{}", func2tmpIndex.at(funcNum));
+		func2tmpIndex.at(funcNum)++;
+		container[tmp] = res;
+		return res;
+	}
+}
+
 void code_getIn(vector<map<string, string>>& var2greg) {
-	for (int i = 1; i < LIR.size(); i++) {
-		auto var2gloReg = var2greg.at(i);
-		auto tmpvar2codes = func2tmpvar2Codes.at(i);
+	for (int k = 1; k < LIR.size(); k++) {
+		auto var2gloReg = var2greg.at(k);
+		auto tmpvar2codes = func2tmpvar2Codes.at(k);
 		map<string, bool> tmpvar2back;
 		for (auto one : tmpvar2codes) {
 			//外提后的代码没有分配到寄存器
-			if (var2gloReg.find(one.first) != var2gloReg.end() && var2gloReg[one.first] == "memory") {
+			if (var2gloReg.find(one.first) == var2gloReg.end() /*&& var2gloReg[one.first] == "memory"*/) {
 				int flag = 0;	//是否回提的标志
 				//看外提的代码时候有变量没有寄存器
 				for (auto instr : one.second) {
 					auto ope1 = instr.getOperand1();
 					if (instr.getCodetype() == LOAD
-						&& var2gloReg.find(ope1) != var2gloReg.end() && var2gloReg[ope1] != "memory") {
+						&& var2gloReg.find(ope1) == var2gloReg.end() /*&& var2gloReg[ope1] != "memory"*/) {
 						flag++;
 					}
 				}
 				if (one.second.size() > 5) {	//5条指令作为分界线
 					flag++;
 				}
-				if (flag == 0) {	//回提
+				if (flag <= 1) {	//回提
 					tmpvar2back[one.first] = true;
 				}
 				else {
@@ -696,9 +718,42 @@ void code_getIn(vector<map<string, string>>& var2greg) {
 			}
 		}
 		//删除对应的store和load
-		auto& src = LIR.at(i);
+		auto& src = LIR.at(k);
+		map<string, string> tmp2VRreg;
 		for (int i = 0; i < src.size(); i++) {
-
+			auto& instr = src.at(i);
+			auto op = instr.getCodetype();
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			if (op == STORE && tmpvar2back.find(ope1) != tmpvar2back.end() && tmpvar2back[ope1] == true) {
+				//暂时先用store区分删除的界限
+				do {
+					src.erase(src.begin() + i);
+					i--;
+				} while (src.at(i).getCodetype() != STORE);
+			}
+			else if (op == LOAD && tmpvar2back.find(ope1) != tmpvar2back.end() && tmpvar2back[ope1] == true) {
+				string resback;
+				for (auto instrTmp : tmpvar2codes[ope1]) {
+					if (instrTmp.getCodetype() == STORE) {
+						break;
+					}
+					auto res = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getResult(), k);
+					auto ope1 = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getOperand1(), k);
+					auto ope2 = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getOperand2(), k);
+					instrTmp.setInstr(res, ope1, ope2);
+					resback = res;
+					src.insert(src.begin() + i, instrTmp);
+					i++;
+				}
+				src.erase(src.begin() + i);
+				auto one = src.at(i);
+				if (one.getResult() == res) src.at(i).setResult(resback);
+				if (one.getOperand1() == res) src.at(i).setOperand1(resback);
+				if (one.getOperand2() == res) src.at(i).setOperand2(resback);
+				i--;
+			}
 		}
 	}
 }
@@ -728,10 +783,8 @@ void irOptimize() {
 			//各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
 			vector<map<string, string>> var2reg = ssa.getvar2reg();
 			convertCondition();		//优化条件跳转
+			code_getIn(var2reg);  //不变式回提，将多余的且效果可能并不会很好的不变式回提
 			printLIR("LIR2.txt");
-
-			//不变式回提，将多余的且效果可能并不会很好的不变式回提
-			//code_getIn(var2reg);
 			//图着色寄存器分配
 			registerAllocation3(var2reg);
 		}
