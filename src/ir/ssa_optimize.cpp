@@ -1899,16 +1899,16 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				case AND:case OR:case NOT:
 				case EQL:case NEQ:case SGT:case SGE:case SLT:case SLE: {
 					if (tmpVar.find(ope1) != tmpVar.end()) {
-						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope1], "");
-						instr.setOperand1(FORMAT("%{}", func2tmpIndex.at(funcNum)));
-						func2tmpIndex.at(funcNum)++;
+						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)), tmp2var[ope1], "");
+						instr.setOperand1(FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)));
+						func2tmpIndex.at(func2tmpIndex.size() - 1)++;
 						ir.insert(ir.begin() + j, tmp1);
 						j++;
 					}
 					if (tmpVar.find(ope2) != tmpVar.end()) {
-						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
-						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
-						func2tmpIndex.at(funcNum)++;
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)), tmp2var[ope2], "");
+						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)));
+						func2tmpIndex.at(func2tmpIndex.size() - 1)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
 					}
@@ -1916,9 +1916,9 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				}
 				case STORE: {
 					if (tmpVar.find(res) != tmpVar.end()) {
-						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[res], "");
-						instr.setResult(FORMAT("%{}", func2tmpIndex.at(funcNum)));
-						func2tmpIndex.at(funcNum)++;
+						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)), tmp2var[res], "");
+						instr.setResult(FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)));
+						func2tmpIndex.at(func2tmpIndex.size() - 1)++;
 						ir.insert(ir.begin() + j, tmp1);
 						j++;
 					}
@@ -1926,16 +1926,16 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				}
 				case STOREARR: {
 					if (tmpVar.find(res) != tmpVar.end()) {
-						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[res], "");
-						instr.setResult(FORMAT("%{}", func2tmpIndex.at(funcNum)));
-						func2tmpIndex.at(funcNum)++;
+						CodeItem tmp1(LOAD, FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)), tmp2var[res], "");
+						instr.setResult(FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)));
+						func2tmpIndex.at(func2tmpIndex.size() - 1)++;
 						ir.insert(ir.begin() + j, tmp1);
 						j++;
 					}
 					if (tmpVar.find(ope2) != tmpVar.end()) {
-						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
-						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
-						func2tmpIndex.at(funcNum)++;
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)), tmp2var[ope2], "");
+						ir.at(j).setOperand2(FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)));
+						func2tmpIndex.at(func2tmpIndex.size() - 1)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
 					}
@@ -1943,9 +1943,9 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				}
 				case LOADARR: {
 					if (tmpVar.find(ope2) != tmpVar.end()) {
-						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope2], "");
-						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(funcNum)));
-						func2tmpIndex.at(funcNum)++;
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)), tmp2var[ope2], "");
+						instr.setOperand2(FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)));
+						func2tmpIndex.at(func2tmpIndex.size() - 1)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
 					}
@@ -1953,9 +1953,9 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				}
 				case BR: case PUSH: case RET: {
 					if (tmpVar.find(ope1) != tmpVar.end()) {
-						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(funcNum)), tmp2var[ope1], "");
-						instr.setOperand1(FORMAT("%{}", func2tmpIndex.at(funcNum)));
-						func2tmpIndex.at(funcNum)++;
+						CodeItem tmp2(LOAD, FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)), tmp2var[ope1], "");
+						instr.setOperand1(FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1)));
+						func2tmpIndex.at(func2tmpIndex.size() - 1)++;
 						ir.insert(ir.begin() + j, tmp2);
 						j++;
 					}
