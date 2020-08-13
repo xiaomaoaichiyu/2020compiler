@@ -1138,8 +1138,10 @@ void SSA::allocate_global_reg() {
 	int size1 = clash_graph.size();
 	bool debug = false;
 	allocRegList.clear();
+	noAllocRegList.clear();
 	var2reg.clear();
 	for (i = 0; i < size1; i++) allocRegList.push_back(stack<string>());
+	for (i = 0; i < size1; i++) noAllocRegList.push_back(stack<string>());
 	// 图着色移走节点
 	for (i = 1; i < size1; i++) {
 		if (debug) cout << "i=" << i;
@@ -1160,6 +1162,7 @@ void SSA::allocate_global_reg() {
 					varName = clash_graph[i].begin()->first;
 				else
 					varName = removeKVar(i);
+				noAllocRegList[i].push(varName);
 				cout << "在函数" << codetotal[i][0].getResult() << "内变量" << varName << "无法分配到全局寄存器" << endl;
 			}
 			if (debug) cout << varName;
@@ -1174,11 +1177,16 @@ void SSA::allocate_global_reg() {
 	// 按照逆序分配寄存器
 	for (i = 0; i < size1; i++) var2reg.push_back(map<string, string>());
 	for (i = 1; i < size1; i++) {
-		if (allocRegList[i].empty()) continue;
+		if (allocRegList[i].empty() && noAllocRegList.empty()) continue;
 		while (!allocRegList[i].empty()) {
 			string varName = allocRegList[i].top();
 			allocRegList[i].pop();
 			var2reg[i][varName] = get_new_global_reg(i, varName);
+		}
+		while (!noAllocRegList[i].empty()) {
+			string varName = noAllocRegList[i].top();
+			noAllocRegList[i].pop();
+			var2reg[i][varName] = "memory";
 		}
 	}
 }
