@@ -61,6 +61,7 @@ void SSA::simpify_duplicate_assign() {
 			CodeItem ci1 = codetotal[i][j];
 			CodeItem ci2 = codetotal[i][j + 1];
 			if (ci1.getCodetype() == ci2.getCodetype()
+				&& (ci1.getCodetype() == STORE || ci1.getCodetype() == STOREARR)
 				&& ci1.getResult().compare(ci2.getResult()) == 0
 				&& ci1.getOperand1().compare(ci2.getOperand1()) == 0
 				&& ci1.getOperand2().compare(ci2.getOperand2()) == 0) {
@@ -569,7 +570,7 @@ void SSA::inline_function() {
 		}
 		for (i = 1; i < size1; i++)
 			if (exitStatementNum[i] == 0)
-				cout << "函数内联不应出现的情况：第i个函数没有返回语句." << endl;
+				cout << "函数内联不应出现的情况：第" << i << "个函数没有返回语句." << endl;
 		for (i = 1; i < size1; i++)
 			exitStatementNum[i] = 2;
 	}
