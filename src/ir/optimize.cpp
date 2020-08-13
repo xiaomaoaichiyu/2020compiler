@@ -696,13 +696,13 @@ void code_getIn(vector<map<string, string>>& var2greg) {
 		map<string, bool> tmpvar2back;
 		for (auto one : tmpvar2codes) {
 			//外提后的代码没有分配到寄存器
-			if (var2gloReg.find(one.first) == var2gloReg.end() /*&& var2gloReg[one.first] == "memory"*/) {
+			if (var2gloReg.find(one.first) != var2gloReg.end() && var2gloReg[one.first] == "memory") {
 				int flag = 0;	//是否回提的标志
 				//看外提的代码时候有变量没有寄存器
 				for (auto instr : one.second) {
 					auto ope1 = instr.getOperand1();
 					if (instr.getCodetype() == LOAD
-						&& var2gloReg.find(ope1) == var2gloReg.end() /*&& var2gloReg[ope1] != "memory"*/) {
+						&& var2gloReg.find(ope1) != var2gloReg.end() && var2gloReg[ope1] != "memory") {
 						flag++;
 					}
 				}
@@ -752,6 +752,10 @@ void code_getIn(vector<map<string, string>>& var2greg) {
 				if (one.getResult() == res) src.at(i).setResult(resback);
 				if (one.getOperand1() == res) src.at(i).setOperand1(resback);
 				if (one.getOperand2() == res) src.at(i).setOperand2(resback);
+				i--;
+			}
+			else if (op == ALLOC && tmpvar2back.find(res) != tmpvar2back.end() && tmpvar2back[res] == true) {
+				src.erase(src.begin() + i);
 				i--;
 			}
 		}
