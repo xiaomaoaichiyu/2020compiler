@@ -677,6 +677,7 @@ void irOptimize() {
 			vector<map<string, string>> var2reg = ssa.getvar2reg();
 			convertCondition();		//优化条件跳转
 			printLIR("LIR2.txt");
+			cout << "ok";
 			//图着色寄存器分配
 			registerAllocation3(var2reg);
 		}
