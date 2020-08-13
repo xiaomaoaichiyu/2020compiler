@@ -2566,25 +2566,25 @@ void youhuaDivCompare()
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope2);
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 							else if (c2.getCodetype() == SLE) {  //div %2  %1  %0；sle %3 %2 10000    小于等于    
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value+1));
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 							else if (c2.getCodetype() == SGE) {  //div %2  %1  %0；sge %3 %2 10000    大于等于    
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope2);
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 							else if (c2.getCodetype() == SGT) {  //div %2  %1  %0；sgt %3 %2 10000    大于    
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value + 1));
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 						}
 						else {
@@ -2624,25 +2624,25 @@ void youhuaDivCompare()
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value+1));
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 							else if (c2.getCodetype() == SLE) {  //div %2  %1  %0；sle %3 %2 10000    小于等于    
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope1);
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SGE, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 							else if (c2.getCodetype() == SGE) {  //div %2  %1  %0；sge %3 10000 %2    大于等于    
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, numToString(value + 1));
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 							else if (c2.getCodetype() == SGT) {  //div %2  %1  %0；sgt %3 10000 %2    大于    
 								CodeItem citem1 = CodeItem(MUL, c1.getResult(), num2, ope1);
 								codetotal[i].insert(codetotal[i].begin() + j, citem1);
 								CodeItem citem2 = CodeItem(SLT, c2.getResult(), num1, c1.getResult());
-								codetotal[i].insert(codetotal[i].begin() + j, citem2);
+								codetotal[i].insert(codetotal[i].begin() + j+1, citem2);
 							}
 						}
 						else {
