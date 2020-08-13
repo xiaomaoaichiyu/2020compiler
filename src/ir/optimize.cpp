@@ -720,6 +720,7 @@ void code_getIn(vector<map<string, string>>& var2greg) {
 		//删除对应的store和load
 		auto& src = LIR.at(k);
 		map<string, string> tmp2VRreg;
+		map<string, string> vr2vr;
 		for (int i = 0; i < src.size(); i++) {
 			auto& instr = src.at(i);
 			auto op = instr.getCodetype();
@@ -739,24 +740,26 @@ void code_getIn(vector<map<string, string>>& var2greg) {
 					if (instrTmp.getCodetype() == STORE) {
 						break;
 					}
-					auto res = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getResult(), k);
-					auto ope1 = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getOperand1(), k);
-					auto ope2 = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getOperand2(), k);
-					instrTmp.setInstr(res, ope1, ope2);
-					resback = res;
+					auto resTmp = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getResult(), k);
+					auto ope1Tmp = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getOperand1(), k);
+					auto ope2Tmp = get_Vreg_of_tmp(tmp2VRreg, instrTmp.getOperand2(), k);
+					instrTmp.setInstr(resTmp, ope1Tmp, ope2Tmp);
+					resback = resTmp;
 					src.insert(src.begin() + i, instrTmp);
 					i++;
 				}
+				vr2vr[res] = resback;
 				src.erase(src.begin() + i);
-				auto one = src.at(i);
-				if (one.getResult() == res) src.at(i).setResult(resback);
-				if (one.getOperand1() == res) src.at(i).setOperand1(resback);
-				if (one.getOperand2() == res) src.at(i).setOperand2(resback);
 				i--;
 			}
 			else if (op == ALLOC && tmpvar2back.find(res) != tmpvar2back.end() && tmpvar2back[res] == true) {
 				src.erase(src.begin() + i);
 				i--;
+			}
+			else {
+				if (vr2vr.find(res) != vr2vr.end()) src.at(i).setResult(vr2vr[res]);
+				if (vr2vr.find(ope1) != vr2vr.end()) src.at(i).setOperand1(vr2vr[ope1]);
+				if (vr2vr.find(ope2) != vr2vr.end()) src.at(i).setOperand2(vr2vr[ope2]);
 			}
 		}
 	}

@@ -1058,9 +1058,9 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		callRegs.clear();		//存储 r[0-3] <-> VR[0-9]
 		paraReg2push.clear();	//参数寄存器被压栈保存的（其实是str保存）
 
-		//根据图着色信息分配寄存器
+		//根据图着色信息分配寄存器		
 		for (int i = 0; i < vars.size(); i++) {
-			if (regAlloc.find(vars.at(i)) != regAlloc.end()) {
+			if (regAlloc.find(vars.at(i)) != regAlloc.end() && regAlloc[vars.at(i)] != "memory") {
 				var2reg[vars.at(i)] = regAlloc[vars.at(i)];
 				first[vars.at(i)] = true;
 			}
@@ -1261,7 +1261,6 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 							instr.setInstr(resReg, var2reg[ope1], ope2Reg);
 						}
 						else {
-
 							instr.setInstr(resReg, ope1Reg, ope2Reg);
 						}
 					}
