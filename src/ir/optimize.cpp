@@ -682,8 +682,8 @@ string get_Vreg_of_tmp(map<string, string>& container, string tmp, int funcNum) 
 		return container[tmp];
 	}
 	else {
-		string res = FORMAT("VR{}", func2tmpIndex.at(funcNum));
-		func2tmpIndex.at(funcNum)++;
+		string res = FORMAT("VR{}", func2vrIndex.at(funcNum));
+		func2vrIndex.at(funcNum)++;
 		container[tmp] = res;
 		return res;
 	}
@@ -760,6 +760,18 @@ void code_getIn(vector<map<string, string>>& var2greg) {
 				if (vr2vr.find(res) != vr2vr.end()) src.at(i).setResult(vr2vr[res]);
 				if (vr2vr.find(ope1) != vr2vr.end()) src.at(i).setOperand1(vr2vr[ope1]);
 				if (vr2vr.find(ope2) != vr2vr.end()) src.at(i).setOperand2(vr2vr[ope2]);
+			}
+		}
+		for (auto one : tmpvar2back) {
+			if (one.second == true) {
+				auto& fuhaobiao = total.at(k);
+				for (auto it = fuhaobiao.begin(); it != fuhaobiao.end();) {
+					if (it->getName() == one.first) {
+						it = fuhaobiao.erase(it);
+						continue;
+					}
+					it++;
+				}
 			}
 		}
 	}
