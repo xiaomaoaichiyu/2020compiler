@@ -104,7 +104,7 @@ vector<set<string>> inlineArray;	//内联函数数组传参新定义变量名
 void MIR2LIRpass() {
 	LIR.push_back(codetotal.at(0));
 	func2vrIndex.push_back(0);
- 	for (int i = 1; i < codetotal.size(); i++) {
+ 	for (int i = 1; i < codetotal.size(); i++) {	//遍历处理每个函数
 		vector<CodeItem> src = codetotal.at(i);
 		vector<CodeItem> dst;
 		vrIndex = 0;
@@ -383,7 +383,7 @@ void MIR2LIRpass() {
 				if (isTmp(res)) {
 					res = dealTmpOpe(res);
 					CodeItem tmp(GETREG, "", res, "");
-					instr.setInstr(res, ope1, ope2);
+					instr.setInstr("", ope1, ope2);
 					dst.push_back(instr);
 					dst.push_back(tmp);
 				}
@@ -449,6 +449,36 @@ void MIR2LIRpass() {
 			}
 			else {
 				dst.push_back(instr);
+			}
+		}
+		//删除多余的call的res字段
+		map<string, bool> callres2use;
+		for (auto instr : dst) {
+			auto op = instr.getCodetype();
+			switch (op)
+			{
+			case ADD:case SUB:case DIV:case MUL:case REM:case AND:case OR:case NOT:case EQL:case NEQ:case SGT:case SGE:case SLT:case SLE:
+			case STORE:case STOREARR:
+			case LOAD:case LOADARR:case PUSH:case POP:case BR:case MOV:case LEA: {
+				if (callres2use.find(instr.getResult()) != callres2use.end()) callres2use[instr.getResult()] = true;
+				if (callres2use.find(instr.getOperand1()) != callres2use.end()) callres2use[instr.getOperand1()] = true;
+				if (callres2use.find(instr.getOperand2()) != callres2use.end()) callres2use[instr.getOperand2()] = true;
+				break;
+			}
+			case GETREG: {
+				if (isVreg(instr.getOperand1())) {
+					callres2use[instr.getOperand1()] = false;	//先设置为不会被使用
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		for (auto& instr : dst) {
+			if (instr.getCodetype() == GETREG 
+				&& callres2use.find(instr.getOperand1()) != callres2use.end() && callres2use[instr.getOperand1()] == false) {
+				instr.setOperand1("");
 			}
 		}
 		func2vrIndex.push_back(vrIndex);
@@ -640,7 +670,7 @@ void convertCondition() {
 void code_getIn(vector<map<string, string>>& var2greg) {
 	for (int i = 1; i < LIR.size(); i++) {
 		auto var2gReg = var2greg.at(i);
-		auto tmpvar2codes = func2tmpCodes.at(i);
+		auto tmpvar2codes = func2tmpvar2Codes.at(i);
 	}
 }
 
