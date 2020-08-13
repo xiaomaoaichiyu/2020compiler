@@ -633,21 +633,14 @@ void convertCondition() {
 					prev.setInstr("", "", "");
 				}
 			}
-			/*CodeItem& next = func.at(j + 1);
-			if (isCondition(instr.getCodetype()) && next.getCodetype() == BR) {
-				instr.setResult(next.getResult());
-				instr.setCodetype(converse(instr.getCodetype()));
-				func.erase(func.begin() + j + 1);
-			}
-			if (instr.getCodetype() == AND && next.getCodetype() == BR) {
-				instr.setResult(next.getResult());
-				func.erase(func.begin() + j + 1);
-			}
-			if (instr.getCodetype() == OR && next.getCodetype() == BR) {
-				instr.setResult(next.getResult());
-				func.erase(func.begin() + j + 1);
-			}*/
 		}
+	}
+}
+
+void code_getIn(vector<map<string, string>>& var2greg) {
+	for (int i = 1; i < LIR.size(); i++) {
+		auto var2gReg = var2greg.at(i);
+		auto tmpvar2codes = func2tmpCodes.at(i);
 	}
 }
 
@@ -677,6 +670,9 @@ void irOptimize() {
 			vector<map<string, string>> var2reg = ssa.getvar2reg();
 			convertCondition();		//优化条件跳转
 			printLIR("LIR2.txt");
+
+			//不变式回提，将多余的且效果可能并不会很好的不变式回提
+			//code_getIn(var2reg);
 			//图着色寄存器分配
 			registerAllocation3(var2reg);
 		}

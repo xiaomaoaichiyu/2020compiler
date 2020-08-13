@@ -27,6 +27,8 @@ public:
 //存放每个函数的循环，顺序是总是最内层的循环在前面
 extern vector<vector<Circle>> func2circles;
 
+extern vector<vector<vector<CodeItem>>> func2tmpCodes;
+
 //===========================================
 
 // dag

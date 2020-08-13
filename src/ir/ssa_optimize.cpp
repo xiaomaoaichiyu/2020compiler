@@ -1730,8 +1730,12 @@ bool SSA::condition2(set<int>& quitBlk, set<int>& cir_blks, string var, int func
 //循环不变式外提条件2：循环中没有A的其他定制语句，SSA格式天然满足？？？
 //循环不变式外提条件3：循环对于A的引用，只有s对于A的定值能够到达，SSA格式天然满足？？？
 
+vector<vector<vector<CodeItem>>> func2tmpCodes;
 
 void SSA::code_outside(int funcNum, Circle& circle) {
+	if (func2tmpCodes.empty()) {
+		func2tmpCodes.push_back(vector<vector<CodeItem>>());
+	}
 	//外提代码
 	auto& blocks = blockCore.at(funcNum);
 	string funcName = blocks.at(1).Ir.at(0).getResult().substr(1);
@@ -2061,6 +2065,7 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 				}
 			}
 		}
+		func2tmpCodes.push_back(codes);
 		//删除多余的tmpvar
 		for (int j = 0; j < ir.size(); j++) {
 			if (!(ir.at(j).getCodetype() == LABEL && ir.at(j).getResult().substr(7, 4) == "cond")) {
