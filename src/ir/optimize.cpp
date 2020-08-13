@@ -802,7 +802,7 @@ void irOptimize() {
 			//各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
 			vector<map<string, string>> var2reg = ssa.getvar2reg();
 			convertCondition();		//优化条件跳转
-			code_getIn(var2reg);  //不变式回提，将多余的且效果可能并不会很好的不变式回提
+			//code_getIn(var2reg);  //不变式回提，将多余的且效果可能并不会很好的不变式回提
 			printLIR("LIR2.txt");
 			//图着色寄存器分配
 			registerAllocation3(var2reg);
