@@ -640,9 +640,13 @@ void SSA::inline_function() {
 							CodeItem ttt = codetotal[i][iter2];
 							if (ttt.getCodetype() == NOTE
 								&& (ttt.getOperand1().compare("func") == 0 || ttt.getOperand1().compare("inline") == 0)) {
-								if (ttt.getResult().compare(funName) != 0 || ttt.getOperand2().compare("begin") == 0) {
-									ifCallAsParam = true;
+								if (ttt.getResult().compare(funName) == 0) {
+									if (ttt.getOperand2().compare("begin") == 0) ifCallAsParam = true;
+									break;
 								}
+								/*if (ttt.getResult().compare(funName) != 0 || ttt.getOperand2().compare("begin") == 0) {
+									ifCallAsParam = true;
+								}*/
 								break;
 							}
 						}
@@ -709,6 +713,7 @@ void SSA::inline_function() {
 									ci = codetotal[i][j];
 									if (ci.getCodetype() == NOTE && ci.getResult().compare(t_funName) == 0 && ci.getOperand1().compare("func") == 0) {
 										if (ci.getOperand2().compare("begin") == 0) {
+											cout << "inline function: impossible case. error" << endl;
 											t_cnt++;
 										}
 										else {	// end
