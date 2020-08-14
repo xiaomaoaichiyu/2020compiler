@@ -2466,11 +2466,15 @@ void SSA::optimize_delete_same_exp()
 								while (blockCore[o][p].Ir[zi].getCodetype() == NOTE) {
 									zi--;//NOTE的res并不是临时寄存器，产生错误
 								}
-								if (j2 - j1 < 10 || judgeTemp(blockCore[o][p].Ir[zj].getResult()) == false || judgeTemp(blockCore[o][p].Ir[zi].getResult()) == false 
-									|| (blockCore[o][p].Ir[j1].getCodetype()!=NOTE&& blockCore[o][p].Ir[j1].getCodetype()!=LOAD&& blockCore[o][p].Ir[j1].getCodetype()!=LOADARR)) {
-									continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量 而且开头必须是NOTE或LOAD类型，这样可以保证从计算开始到最后相同的代码都相同；否则会出现前面不同但后面相同使用共同结果
+								if (j2 - j1 < 6 || judgeTemp(blockCore[o][p].Ir[zj].getResult()) == false || judgeTemp(blockCore[o][p].Ir[zi].getResult()) == false 
+									|| blockCore[o][p].Ir[j1].getCodetype()!=NOTE) {
+									continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量 而且开头必须是NOTE类型，保证计算前半部分一定相同
 								}
 								else {		//可以删除了
+									
+									cout << blockCore[o][p].Ir[j1].getContent() << endl;
+									cout << blockCore[o][p].Ir[zj].getContent() << endl;
+									
 									string xiabiao = numtoString(j1) + "-" + numtoString(j2);
 									if (!(newVarName.count(xiabiao) > 0)) {		//第一次找到公共子表达式
 										string replace = "%Rep+"+xiabiao+"-" + numtoString(times++) + "+" + total[o][0].getName();
