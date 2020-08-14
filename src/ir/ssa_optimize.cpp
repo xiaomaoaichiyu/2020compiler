@@ -638,6 +638,18 @@ void SSA::inline_function() {
 						else {
 							cout << "在函数 " << funNum2Name[i] << " 中内联函数 " << funName << endl;
 						}
+						bool ifCallAsParam = false;
+						for (int iter2 = j + 1; iter2 < codetotal[i].size(); iter2++) {
+							CodeItem ttt = codetotal[i][j];
+							if (ttt.getCodetype() == NOTE
+								&& (ttt.getOperand1().compare("func") == 0 || ttt.getOperand1().compare("inline") == 0)) {
+								if (ttt.getResult().compare(funName) != 0 || ttt.getOperand2().compare("begin") == 0) {
+									ifCallAsParam = true;
+								}
+								break;
+							}
+						}
+						if (ifCallAsParam) continue;	// 函数调用作为参数
 					}
 
 					alreadyNeilian.insert(funNum);		//丛睿轩添加的
