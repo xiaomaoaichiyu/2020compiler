@@ -214,6 +214,8 @@ private:
 	void copy_propagation();	//复写传播
 	void while_open();			//循环展开
 
+	void markArray(int funcNum, Circle& circle);
+
 	//ly：循环优化
 
 	// 功能函数，可能在各个地方都会用到

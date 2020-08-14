@@ -1333,6 +1333,7 @@ void SSA::while_open() {
 						if (irTmp.at(irTmp.size()-2).getCodetype() != BR || !isWhile_cond(irTmp.at(irTmp.size()-2).getOperand1())) continue;
 						int n = 30;
 						vector<CodeItem> circleTmp;
+						//if (max > 50 + initVal) continue;
 						while (initVal < max && n--) {
 							map<string, string> one2one;
 							for (int k1 = 5; k1 < irTmp.size() - 2; k1++) {
@@ -1428,7 +1429,7 @@ void SSA::while_open() {
 							}
 							if (flag1 == 0) break;
 						}
-						if (flag1 == 1) {
+						if (n >= 0 && flag1 == 1) {
 							//删除代码
 							func.erase(func.begin() + j, func.begin() + delete_end + 1);
 							for (int k2 = 0; k2 < circleTmp.size() - 1; k2++) {
@@ -1703,7 +1704,44 @@ void SSA::back_edge() {
 }
 
 //================================================
-//达到定义链和 使用定义链
+// 数组元素不变式外提
+//================================================
+// 将循环中的数组常数偏移外提 storearr
+//1. 循环中不存在call使用数组的地址
+//2. 循环中不存在数组的位置偏移赋值
+
+//先不考虑全局数组
+set<string> array2out;
+
+void SSA::markArray(int funcNum, Circle& circle) {
+	auto& blocks = blockCore.at(funcNum);
+	auto& udchain = func2udChains.at(funcNum);
+	array2out.clear();
+	map<string, string> arr2offset;
+	//第一遍标记运算对象为常数和定值点在循环外的
+	for (auto idx : circle.cir_blks) {
+		auto& ir = blocks.at(idx).Ir;
+		for (int j = 0; j < ir.size(); j++) { //先判断数组变量是否被未知偏移定义过
+			auto& instr = ir.at(j);
+			auto op = instr.getCodetype();
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			if (op == STOREARR) {
+				if (!isNumber(ope2)) {	//偏移不是立即数
+
+				}
+				else {
+
+				}
+			}
+		}
+	}
+}
+
+
+//================================================
+//不变式标记 代码外提
 //================================================
 
 void SSA::mark_invariant(int funcNum, Circle& circle) {
@@ -1905,54 +1943,6 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				//case LOADARR: {
-				//	if (!isNumber(ope2)) {
-				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-				//		if (def.var != "") {
-				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-				//				instr.setInvariant();
-				//			}
-				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
-				//				instr.setInvariant();
-				//			}
-				//		}
-				//	}
-				//	else {	//偏移是立即数
-				//		instr.setInvariant();
-				//	}
-				//	break;
-				//}
-				//case STOREARR: {
-				//	if (!isNumber(ope2)) {
-				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-				//		auto def1 = udchain.getDef(Node(idx, j, res), res);
-				//		if (def.var != "" && def1.var != "") {
-				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
-				//				&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
-				//				instr.setInvariant();
-				//			}
-				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1
-				//					 && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {	//定值点被标记了
-				//				instr.setInvariant();
-				//			}
-				//			else if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
-				//					 && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
-				//				instr.setInvariant();
-				//			}
-				//		}
-				//	} 
-				//	else {
-				//		auto def = udchain.getDef(Node(idx, j, res), res);
-				//		if (def.var != "") {
-				//			if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-				//				instr.setInvariant();
-				//			}
-				//			else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
-				//				instr.setInvariant();
-				//			}
-				//		}
-				//	}
-				//}
 				default:
 					break;
 				}
