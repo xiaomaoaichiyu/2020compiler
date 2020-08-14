@@ -1234,6 +1234,9 @@ void SSA::generate() {
 		// 在睿轩生成的中间代码上做优化
 		pre_optimize();
 		
+		//循环展开
+		if (i == 0) while_open();
+
 		// 计算每个基本块的起始语句
 		find_primary_statement();
 		// 为每个函数划分基本块

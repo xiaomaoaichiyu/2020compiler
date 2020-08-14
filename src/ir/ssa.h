@@ -212,6 +212,8 @@ private:
 	
 	void const_propagation();	//常量传播
 	void copy_propagation();	//复写传播
+	void while_open();			//循环展开
+
 	//ly：循环优化
 
 	// 功能函数，可能在各个地方都会用到

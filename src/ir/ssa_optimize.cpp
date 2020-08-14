@@ -1,4 +1,5 @@
 ﻿#include "ssa.h"
+#include "ssa.h"
 #include "../front/symboltable.h"
 #include "../front/syntax.h"
 #include "../util/meow.h"
@@ -1209,6 +1210,51 @@ void SSA::copy_propagation() {
 	}
 }
 
+#define isWhile(x) (x.substr(0, 11) == "%while.cond")
+
+bool checkLabel(string label, string num) {
+	if (label.find('_') != -1 && label.substr(label.find('_')) == num) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+//短常数循环展开
+void SSA::while_open() {
+	for (int i = 0; i < codetotal.size(); i++) {
+		auto& func = codetotal.at(i);
+		for (int j = 0; j < func.size(); j++) {
+			auto& instr = func.at(j);
+			auto op = instr.getCodetype();
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+
+			if (op == LABEL && isWhile(res)) {
+				int flag = 1;
+				string whileNum = res.substr(res.find('_'));
+				vector<CodeItem> irTmp;
+				irTmp.push_back(instr);
+				int num = 50;
+				int k = j + 1;
+				while (num--) {
+					irTmp.push_back(func.at(k));
+					if (func.at(k).getCodetype() == LABEL) {
+						if (checkLabel(func.at(k).getResult(), whileNum)) break;
+						else flag = 0;
+					}
+					k++;
+				}
+				if (flag == 1) {	//循环展开
+
+				}
+			}
+		}
+	}
+}
+
 string calculate(irCodeType op, string ope1, string ope2) {
 	if (op == ADD) {
 		return I2A(A2I(ope1) + A2I(ope2));
@@ -1447,7 +1493,7 @@ void SSA::back_edge() {
 			}
 			add_a_circle(circle);
 		}
-		//printCircle();
+		printCircle();
 		for (auto circle : circles) {
 			mark_invariant(i, circle);				//确定不变式
 			ofstream ly1("xunhuan1.txt");
@@ -1499,13 +1545,15 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 					}
 					break; } 
 				case STORE: {	//先不考虑全局变量和局部变量的区别
-					if (isNumber(res)) {	//赋值是常数，直接设置为不变式
-						instr.setInvariant();
-					}
-					else {	//赋值为变量，查看变量的定义
-						auto def = udchain.getDef(Node(idx, j, res), res);
-						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+					if (!isGlobal(ope1)) {
+						if (isNumber(res)) {	//赋值是常数，直接设置为不变式
 							instr.setInvariant();
+						}
+						else {	//赋值为变量，查看变量的定义
+							auto def = udchain.getDef(Node(idx, j, res), res);
+							if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								instr.setInvariant();
+							}
 						}
 					}
 					break; }
