@@ -135,11 +135,11 @@ void returnStmt();        //返回语句
 void EqExp();			  //相等性表达式
 void RelExp();			  //关系表达式
 
-void Cond();              //条件表达式(逻辑或表达式)
-void LAndExp();			  //逻辑与表达式
+//void Cond();              //条件表达式(逻辑或表达式)
+//void LAndExp();			  //逻辑与表达式
 //短路逻辑
-//void Cond(string label);              //条件表达式(逻辑或表达式)
-//void LAndExp(string label);			  //逻辑与表达式
+void Cond(string label);              //条件表达式(逻辑或表达式)
+void LAndExp(string label);			  //逻辑与表达式
 int orlabelIndex = 0;		//生成or标签
 int andlabelIndex = 0;		//生成and标签
 string newName(string name, int blockindex)
@@ -1738,7 +1738,81 @@ void assignStmt()        //赋值语句 LVal = Exp
 	}
 	//outfile << "<赋值语句>" << endl;
 }
-void ifStmt()            //条件语句
+void ifStmt()            //条件语句 + 短路逻辑
+{
+	//printMessage();    //输出if信息
+	//判断symbol=if
+	wordAnalysis.getsym();
+	symbol = wordAnalysis.getSymbol();
+	token = wordAnalysis.getToken();
+	//printMessage();   //获得(并输出
+	wordAnalysis.getsym();
+	symbol = wordAnalysis.getSymbol();
+	token = wordAnalysis.getToken(); //预读
+	string if_then_label = "%if.then_" + numToString(iflabelIndex);
+	string if_else_label = "%if.else_" + numToString(iflabelIndex);
+	string if_end_label = "%if.end_" + numToString(iflabelIndex);
+	iflabelIndex++;
+	int condSize = codetotal[Funcindex].size();
+	//Cond();
+	Cond(if_then_label);		//短路逻辑
+	//printMessage();    //输出)信息
+	//判断symbol=)
+	wordAnalysis.getsym();
+	symbol = wordAnalysis.getSymbol();
+	token = wordAnalysis.getToken();//预读
+	CodeItem citem = CodeItem(BR, if_else_label, interRegister, if_then_label); //br 条件 %if.then_1 %if.else_1 
+	citem.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem);
+	CodeItem citem2 = CodeItem(LABEL, if_then_label, "", "");	//label if.then
+	citem2.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem2);
+	int nowIndex = codetotal[Funcindex].size() - 2;		//暂存 br 条件 %if.then_1 %if.else_1  下标，可能后续要把%if.else改成 %if.end
+	string next_or_label = "%or.then_" + numToString(orlabelIndex - 1);
+	Stmt();													//stmt1
+	if (symbol == ELSETK) {
+		CodeItem citem3 = CodeItem(BR, "", if_end_label, "");   //BR if.end
+		citem3.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem3);
+		CodeItem citem4 = CodeItem(LABEL, if_else_label, "", "");	//label if.else
+		citem4.setFatherBlock(fatherBlock);
+		codetotal[Funcindex].push_back(citem4);
+		//printMessage();    //输出else信息
+		//短路逻辑   1781~1787
+		while (condSize < codetotal[Funcindex].size()) {
+			if (codetotal[Funcindex][condSize].getResult() == next_or_label) {
+				codetotal[Funcindex][condSize].setResult(if_else_label);
+			}
+			condSize++;
+		}
+		wordAnalysis.getsym();
+		symbol = wordAnalysis.getSymbol();
+		token = wordAnalysis.getToken();//预读
+		Stmt();			//stmt2
+	}
+	else {	//只有if  没有else，只需要把br res %if.then, %if.else中的%if.else标签改成%if.end即可
+		string oper1 = codetotal[Funcindex][nowIndex].getOperand1();
+		codetotal[Funcindex][nowIndex].changeContent(if_end_label, oper1, if_then_label);
+		//短路逻辑   1791~1803
+		while (condSize < codetotal[Funcindex].size()) {
+			if (codetotal[Funcindex][condSize].getResult() == next_or_label) {
+				codetotal[Funcindex][condSize].setResult(if_end_label);
+			}
+			condSize++;
+		}
+	}
+	CodeItem citem5 = CodeItem(BR, "", if_end_label, "");   //BR if.end
+	citem5.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem5);
+	CodeItem citem6 = CodeItem(LABEL, if_end_label, "", "");	//label if.else
+	citem6.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem6);
+
+	//退出前Stmt均预读
+	//outfile << "<条件语句>" << endl;
+}
+/*
+void ifStmt()            //条件语句+无短路逻辑
 {
 	//printMessage();    //输出if信息
 	//判断symbol=if
@@ -1760,7 +1834,7 @@ void ifStmt()            //条件语句
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//预读
-	CodeItem citem = CodeItem(BR, if_else_label, interRegister, if_then_label); //br 条件 %if.then_1 %if.else_1 
+	CodeItem citem = CodeItem(BR, if_else_label, interRegister, if_then_label); //br 条件 %if.then_1 %if.else_1
 	citem.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem);
 	CodeItem citem2 = CodeItem(LABEL, if_then_label, "", "");	//label if.then
@@ -1794,7 +1868,8 @@ void ifStmt()            //条件语句
 	//退出前Stmt均预读
 	//outfile << "<条件语句>" << endl;
 }
-
+*/
+/*
 void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR, op;
@@ -1902,9 +1977,9 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		registerL = interRegister;
 	}
 }
-
+*/
 //短路逻辑
-/*
+
 void Cond(string label)              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR, op;
@@ -1977,7 +2052,7 @@ void Cond(string label)              //条件表达式(逻辑或表达式)  LAnd
 			}
 		}
 	}
-	//outfile << "<条件>" << endl;	注意最后一个或表达式不单独生成中间代码
+	//outfile << "<条件>" << endl;	注意最后一个或表达式不单独生成中间代码,但需生成一个标签
 }
 void LAndExp(string label)			  //逻辑与表达式   EqExp{'&&' EqExp }
 {
@@ -2043,7 +2118,7 @@ void LAndExp(string label)			  //逻辑与表达式   EqExp{'&&' EqExp }
 	}
 	//注意最后一个与表达式不单独生成中间代码
 }
-*/
+
 void EqExp()		  //相等性表达式
 {
 	string registerL, registerR, op;
@@ -2134,7 +2209,7 @@ void RelExp()			  //关系表达式
 		registerL = interRegister;
 	}
 }
-void loopStmt()          //循环语句
+void loopStmt()          //循环语句+短路逻辑
 {
 	//?while '('＜条件＞')'＜语句＞
 	//printMessage();    //输出while信息
@@ -2152,9 +2227,18 @@ void loopStmt()          //循环语句
 	CodeItem citem1 = CodeItem(LABEL, while_cond_label, "", "");	//label %while.cond
 	citem1.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem1);
-	Cond();						//cond
-	//Cond(while_body_label);		//短路逻辑
+	int condSize = codetotal[Funcindex].size();
+	//Cond();						//cond
+	Cond(while_body_label);		//短路逻辑
 	//printMessage();    //输出)信息
+	//短路逻辑  2179~2185
+	string next_or_label = "%or.then_" + numToString(orlabelIndex - 1);
+	while (condSize < codetotal[Funcindex].size()) {
+		if (codetotal[Funcindex][condSize].getResult() == next_or_label) {
+			codetotal[Funcindex][condSize].setResult(while_end_label);
+		}
+		condSize++;
+	}
 	CodeItem citem2 = CodeItem(BR, while_end_label, interRegister, while_body_label); //br 条件 %while.body %while.end  
 	citem2.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem2);
@@ -2178,6 +2262,52 @@ void loopStmt()          //循环语句
 	//退出前均预读
 	//outfile << "<循环语句>" << endl;
 }
+/*
+void loopStmt()          //循环语句+无短路逻辑
+{
+	//?while '('＜条件＞')'＜语句＞
+	//printMessage();    //输出while信息
+	wordAnalysis.getsym();
+	symbol = wordAnalysis.getSymbol();
+	token = wordAnalysis.getToken();
+	//printMessage();   //获得(并输出信息
+	wordAnalysis.getsym();
+	symbol = wordAnalysis.getSymbol();
+	token = wordAnalysis.getToken();//预读
+	string while_cond_label = "%while.cond_" + numToString(whilelabelIndex);
+	string while_body_label = "%while.body_" + numToString(whilelabelIndex);
+	string while_end_label = "%while.end_" + numToString(whilelabelIndex);
+	whilelabelIndex++;
+	CodeItem citem1 = CodeItem(LABEL, while_cond_label, "", "");	//label %while.cond
+	citem1.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem1);
+	Cond();						//cond
+	//Cond(while_body_label);		//短路逻辑
+	//printMessage();    //输出)信息
+	CodeItem citem2 = CodeItem(BR, while_end_label, interRegister, while_body_label); //br 条件 %while.body %while.end
+	citem2.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem2);
+	CodeItem citem3 = CodeItem(LABEL, while_body_label, "", "");	//label %while.body
+	citem3.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem3);
+	whileLabel.push_back(while_end_label);
+	whileLabel.push_back(while_cond_label);
+	wordAnalysis.getsym();
+	symbol = wordAnalysis.getSymbol();
+	token = wordAnalysis.getToken();//预读
+	Stmt();
+	whileLabel.pop_back();
+	whileLabel.pop_back();
+	CodeItem citem4 = CodeItem(BR, "", while_cond_label, ""); //br %while.cond
+	citem4.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem4);
+	CodeItem citem5 = CodeItem(LABEL, while_end_label, "", "");	//label %while.end
+	citem5.setFatherBlock(fatherBlock);
+	codetotal[Funcindex].push_back(citem5);
+	//退出前均预读
+	//outfile << "<循环语句>" << endl;
+}
+*/
 void FuncRParams(string name)    //函数实参数表
 {
 	if (symbol == RPARENT) {
