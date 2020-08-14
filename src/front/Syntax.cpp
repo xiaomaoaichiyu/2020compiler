@@ -1902,6 +1902,7 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		registerL = interRegister;
 	}
 }
+
 //短路逻辑
 /*
 void Cond(string label)              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
@@ -1909,7 +1910,8 @@ void Cond(string label)              //条件表达式(逻辑或表达式)  LAnd
 	string registerL, registerR, op;
 	int nowSize = codetotal[Funcindex].size();
 	int flag = 0;	//flag为1说明多个||的条件中某个条件真值为1，中间代码不必要出现，可直接删除
-	string next_or_label;
+	string next_or_label = "%or.then_" + numToString(orlabelIndex);
+	orlabelIndex++;
 	LAndExp(next_or_label);
 	if (symbol == OR_WORD) {
 		if (interRegister[0] != '@' && interRegister[0] != '%') { //立即数只能为0和1
@@ -1924,8 +1926,6 @@ void Cond(string label)              //条件表达式(逻辑或表达式)  LAnd
 			}
 		}
 		else {
-			next_or_label = "%or.then_" + numToString(orlabelIndex);
-			orlabelIndex++;
 			string tempRegister = interRegister;
 			interRegister = "%" + numToString(Temp);
 			Temp++;
@@ -1946,6 +1946,8 @@ void Cond(string label)              //条件表达式(逻辑或表达式)  LAnd
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
+		next_or_label = "%or.then_" + numToString(orlabelIndex);
+		orlabelIndex++;
 		LAndExp(next_or_label);
 		if (symbol == OR_WORD) {
 			if (interRegister[0] != '@' && interRegister[0] != '%') { //立即数只能为0和1
@@ -1960,8 +1962,6 @@ void Cond(string label)              //条件表达式(逻辑或表达式)  LAnd
 				}
 			}
 			else {
-				next_or_label = "%or.then_" + numToString(orlabelIndex);
-				orlabelIndex++;
 				string tempRegister = interRegister;
 				interRegister = "%" + numToString(Temp);
 				Temp++;
