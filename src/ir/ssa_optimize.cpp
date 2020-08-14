@@ -1218,8 +1218,26 @@ void SSA::copy_propagation() {
 	}
 }
 
-#define isWhile(x) (x.substr(0, 11) == "%while.cond")
+//=======================================================================
+// 循环展开
+//=======================================================================
+bool isWhile_Label(string label) {
+	return (label.size() > 6 && label.substr(0, 6) == "%while");
+}
 
+bool isWhile_cond(string label) {
+	return (label.size() > 11 && label.substr(7,4) == "cond");
+}
+
+bool isWhile_body(string label) {
+	return (label.size() > 11 && label.substr(7, 4) == "body");
+}
+
+bool isWhile_end(string label) {
+	return (label.size() > 11 && label.substr(7, 3) == "end");
+}
+
+//检查label是不是属于num的循环
 bool checkLabel(string label, string num) {
 	if (label.find('_') != -1 && label.substr(label.find('_')) == num) {
 		return true;
@@ -1229,34 +1247,202 @@ bool checkLabel(string label, string num) {
 	}
 }
 
+bool searchInitVal(string var, vector<CodeItem>& func, int begin, int* value) {
+	for (int i = begin; i >= 0; i--) {
+		if (func.at(i).getCodetype() == LABEL || func.at(i).getCodetype() == BR) {
+			return false;
+		}
+		if (func.at(i).getCodetype() == STORE && func.at(i).getOperand1() == var) {
+			if (isNumber(func.at(i).getResult())) {
+				*value = A2I(func.at(i).getResult());
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+	}
+}
+
+//找不到返回-1
+int isVar_i(int pos, vector<CodeItem>& func, string var) {
+	if (pos + 2 < func.size()) {
+		auto one = func.at(pos);
+		auto two = func.at(pos + 1);
+		auto three = func.at(pos + 2);
+		if (one.getCodetype() == LOAD && two.getCodetype() == ADD && three.getCodetype() == STORE) {
+			auto one_ope1 = one.getOperand1();auto one_res = one.getResult();
+			auto two_res = two.getResult();
+		}
+	}
+	return -1;
+}
+
+//搞一个临时变量 "%[数字]"
+string get_a_tmpvar() {
+	string res = FORMAT("%{}", func2tmpIndex.at(func2tmpIndex.size() - 1));
+	func2tmpIndex.at(func2tmpIndex.size() - 1)++;
+	return res;
+}
+
 //短常数循环展开
 void SSA::while_open() {
-	for (int i = 0; i < codetotal.size(); i++) {
+	for (int i = 1; i < codetotal.size(); i++) {
 		auto& func = codetotal.at(i);
 		for (int j = 0; j < func.size(); j++) {
 			auto& instr = func.at(j);
 			auto op = instr.getCodetype();
 			auto res = instr.getResult();
-			auto ope1 = instr.getOperand1();
-			auto ope2 = instr.getOperand2();
-
-			if (op == LABEL && isWhile(res)) {
+			if (op == LABEL && isWhile_cond(res)) {
 				int flag = 1;
-				string whileNum = res.substr(res.find('_'));
+				int delete_end = 0;
+				string whileNum = res.substr(res.find('_'));	//标记循环的开始结尾
 				vector<CodeItem> irTmp;
 				irTmp.push_back(instr);
-				int num = 50;
+				int num = 50;	//循环指令条数不大于50的展开
 				int k = j + 1;
 				while (num--) {
 					irTmp.push_back(func.at(k));
-					if (func.at(k).getCodetype() == LABEL) {
-						if (checkLabel(func.at(k).getResult(), whileNum)) break;
-						else flag = 0;
+					//是循环while的label
+					if (func.at(k).getCodetype() == LABEL && isWhile_Label(func.at(k).getResult())) {
+						if (checkLabel(func.at(k).getResult(), whileNum)) {
+							if (isWhile_end(func.at(k).getResult())) {
+								delete_end = k;
+								break;	//本循环的最后end，退出
+							}
+						}
+						else { flag = 0; break; }	//其他循环的label，直接放弃
 					}
 					k++;
 				}
-				if (flag == 1) {	//循环展开
-
+				if (flag == 1) {	//循环展开，这里暂时只展开递增的常数循环
+					int flag1 = 1;
+					int max;
+					int initVal;
+					string var = "";
+					if (irTmp.size() > 4 && irTmp.at(4).getCodetype() == LABEL
+						&& isWhile_Label(irTmp.at(4).getResult()) && isWhile_body(irTmp.at(4).getResult())) {
+						if (irTmp.at(1).getCodetype() != LOAD) continue;
+						var = irTmp.at(1).getOperand1();
+						if (irTmp.at(2).getCodetype() != SLT || !isNumber(irTmp.at(2).getOperand2())) continue;
+						max = A2I(irTmp.at(2).getOperand2());
+						if (irTmp.at(3).getCodetype() != BR) continue;
+						if (!searchInitVal(var, func, j-1, &initVal)) continue;	//找归纳变量初始值
+						if (irTmp.at(irTmp.size() - 1).getCodetype() != LABEL || !isWhile_end(irTmp.at(irTmp.size()-1).getResult())) continue;
+						if (irTmp.at(irTmp.size()-2).getCodetype() != BR || !isWhile_cond(irTmp.at(irTmp.size()-2).getOperand1())) continue;
+						int n = 30;
+						vector<CodeItem> circleTmp;
+						while (initVal < max && n--) {
+							map<string, string> one2one;
+							for (int k1 = 5; k1 < irTmp.size() - 2; k1++) {
+								int jump = 0;
+								auto instr1 = irTmp.at(k1);
+								auto op = instr1.getCodetype();	auto res = instr1.getResult();
+								auto ope1 = instr1.getOperand1();auto ope2 = instr1.getOperand2();
+								switch (op)
+								{
+								case STORE: {
+									if (ope1 == var && one2one.find(res) != one2one.end() && isNumber(one2one[res])) {
+										initVal = A2I(one2one[res]);
+										jump = 1;
+									}
+									else {
+										instr1.setResult(one2one[res]);
+									}
+									break;
+								}
+								case LOAD: {
+									if (ope1 == var) {
+										one2one[res] = I2A(initVal);
+										jump = 1;//跳过这一条指令
+									}
+									else {
+										string tmp = get_a_tmpvar();
+										one2one[res] = tmp;
+										instr1.setResult(tmp);
+									}
+									break;
+								}
+								case STOREARR: {
+									if (!isNumber(ope2)) {	//偏移不是立即数
+										instr1.setOperand2(one2one[ope2]);
+									}
+									instr1.setResult(one2one[res]);
+									break;
+								}
+								case LOADARR: {
+									if (!isNumber(ope2)) {	//偏移不是立即数
+										instr1.setOperand2(one2one[ope2]);					
+									}
+									string tmp = get_a_tmpvar();
+									one2one[res] = tmp;
+									instr1.setResult(tmp);
+									break;
+								}
+								case ADD:case SUB:case DIV:case MUL:case REM:
+								case AND:case OR:case NOT:
+								case EQL:case NEQ:case SGT:case SGE:case SLT:case SLE: {
+									if (isNumber(ope1)) {	//ope1是立即数
+										if (isNumber(one2one[ope2])) {
+											one2one[res] = calculate(op, ope1, one2one[ope2]);
+											jump = 1;
+										}
+										else {
+											string tmp = get_a_tmpvar();
+											one2one[res] = tmp;
+											instr1.setResult(tmp);
+											instr1.setOperand2(one2one[ope2]);
+										}
+									}
+									else if (isNumber(ope2)) { //ope2是立即数
+										if (isNumber(one2one[ope1])) {
+											one2one[res] = calculate(op, one2one[ope1], ope2);
+											jump = 1;
+										}
+										else {
+											string tmp = get_a_tmpvar();
+											one2one[res] = tmp;
+											instr1.setResult(tmp);
+											instr1.setOperand1(one2one[ope1]);
+										}
+									}
+									else {	//二者都不是立即数
+										string tmp = get_a_tmpvar();
+										one2one[res] = tmp;
+										instr1.setInstr(tmp, one2one[ope1], one2one[ope2]);
+									}
+									break;
+								}
+								case CALL:case RET:case PUSH:case POP:case LABEL:case BR: {
+									//展开的循环不允许有call、if、br等
+									flag1 = 0;
+									break;
+								}
+								default:
+									break;
+								}
+								if (flag1 == 0) break;
+								if (jump == 0) circleTmp.push_back(instr1);
+							}
+							if (flag1 == 0) break;
+						}
+						if (flag1 == 1) {
+							//删除代码
+							func.erase(func.begin() + j, func.begin() + delete_end + 1);
+							for (int k2 = 0; k2 < circleTmp.size() - 1; k2++) {
+								if (circleTmp.at(k2).getCodetype() == NOTE && circleTmp.at(k2 + 1).getCodetype() == NOTE
+									&& circleTmp.at(k2).getResult() == circleTmp.at(k2+1).getResult()
+									&& circleTmp.at(k2).getOperand1() == "array" && circleTmp.at(k2).getOperand2() == "begin"
+									&& circleTmp.at(k2+1).getOperand1() == "array" && circleTmp.at(k2+1).getOperand2() == "end") {
+									circleTmp.erase(circleTmp.begin() + k2, circleTmp.begin() + k2 + 2);
+									k2--;
+								}
+							}
+							//插入代码
+							func.insert(func.begin() + j, circleTmp.begin(), circleTmp.end());
+							j = j + circleTmp.size() - 1;
+						}
+					}
 				}
 			}
 		}
