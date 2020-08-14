@@ -2746,7 +2746,8 @@ void deleteSameExp(int index)
 						j2++;		i2++;
 					}		//上下搜索公共子表达式
 					j2 = j2 - 1; i2 = i2 - 1; j1 = j1 + 1; i1 = i1 + 1;
-					if (j2 - j1 < 6 || isTemp(codetotal[index][i2].getResult())==false || isTemp(codetotal[index][j2].getResult()) == false) {
+					if (j2 - j1 < 6 || isTemp(codetotal[index][i2].getResult())==false || isTemp(codetotal[index][j2].getResult()) == false
+						||(codetotal[index][j1].getCodetype() != NOTE && codetotal[index][j1].getCodetype() != LOAD && codetotal[index][j1].getCodetype() != LOADARR)) {
 						continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量
 					}
 					else {		//可以删除了

@@ -154,7 +154,7 @@ bool judgeglobal(string a)		//丛加的
 }
 bool judgeLoadOp(string a)		//丛加的
 {
-	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL") {
+	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL" || a == "MOV") {
 		return true;
 	}
 	return false;
@@ -289,6 +289,8 @@ bool is_nonsence(int index)
 	//传参优化	上一条是指令运算结果，比如LDR、ADD、SUB、ASR、LSL、MUL为上一条指令可求出结果的指令，只能以R0为相同寄存器
 	//例：LDR R0,=C  MOV R3,R0  ——> LDR R3,=C		丛加的
 	//注：这里只涉及R0~R3的情况，所以截取2单位长度没问题
+
+	//MOV R10 R0    MOV R7 R1
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
@@ -297,7 +299,9 @@ bool is_nonsence(int index)
 			string next_num2 = strNext.substr(7, 2);
 			string next_num3 = strNext.substr(7, 3);		//防止next_num2实际是R11、R12只是因为取两位才为R1
 			string num1 = str.substr(4, 2);
-			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")&&next_num2==next_num3) {
+			string right_num1 = str.substr(4, 3);
+			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")
+				&&next_num2==next_num3 &&(right_num1!="R10"&& right_num1 != "R11")) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -310,7 +314,9 @@ bool is_nonsence(int index)
 			next_num2 = strNext.substr(8, 2);
 			next_num3 = strNext.substr(8, 3);				//防止next_num2实际是R11、R12只是因为取两位才为R1
 			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
-			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") && next_num2 == next_num3) {
+			right_num1 = str.substr(4, 3);
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
+				&& next_num2 == next_num3 && (right_num1 != "R10" && right_num1 != "R11")) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
