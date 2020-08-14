@@ -525,8 +525,8 @@ string SSA::getNewInsertAddr(int funNum, string name) {
 } 
 
 string SSA::getNewInsertLabel(int funNum, string name) {
-	string ans = name + "." + to_string(labelIndex[funNum]);
-	labelIndex[funNum]++;
+	string ans = name + "." + to_string(labelIndex[0]);
+	labelIndex[0]++;
 	return ans;
 }
 
