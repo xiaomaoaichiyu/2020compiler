@@ -1344,11 +1344,12 @@ void SSA::while_open() {
 								{
 								case STORE: {
 									if (ope1 == var && one2one.find(res) != one2one.end() && isNumber(one2one[res])) {
-										initVal = A2I(one2one[res]);
+										if (isNumber(res)) initVal = A2I(res);
+										else initVal = A2I(one2one[res]);
 										jump = 1;
 									}
 									else {
-										instr1.setResult(one2one[res]);
+										if (!isNumber(res)) instr1.setResult(one2one[res]);
 									}
 									break;
 								}
@@ -1368,7 +1369,7 @@ void SSA::while_open() {
 									if (!isNumber(ope2)) {	//偏移不是立即数
 										instr1.setOperand2(one2one[ope2]);
 									}
-									instr1.setResult(one2one[res]);
+									if (!isNumber(res)) instr1.setResult(one2one[res]);
 									break;
 								}
 								case LOADARR: {
@@ -1439,6 +1440,7 @@ void SSA::while_open() {
 									k2--;
 								}
 							}
+							circleTmp.push_back(CodeItem(STORE, I2A(initVal), var, ""));
 							//插入代码
 							func.insert(func.begin() + j, circleTmp.begin(), circleTmp.end());
 							j = j + circleTmp.size() - 1;
