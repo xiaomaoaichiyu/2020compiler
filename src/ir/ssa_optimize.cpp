@@ -2418,8 +2418,9 @@ void SSA::optimize_delete_same_exp()
 								while (blockCore[o][p].Ir[zi].getCodetype() == NOTE) {
 									zi--;//NOTE的res并不是临时寄存器，产生错误
 								}
-								if (j2 - j1 < 10 || judgeTemp(blockCore[o][p].Ir[zj].getResult()) == false || judgeTemp(blockCore[o][p].Ir[zi].getResult()) == false) {
-									continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量
+								if (j2 - j1 < 10 || judgeTemp(blockCore[o][p].Ir[zj].getResult()) == false || judgeTemp(blockCore[o][p].Ir[zi].getResult()) == false 
+									|| (blockCore[o][p].Ir[j1].getCodetype()!=NOTE&& blockCore[o][p].Ir[j1].getCodetype()!=LOAD&& blockCore[o][p].Ir[j1].getCodetype()!=LOADARR)) {
+									continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量 而且开头必须是NOTE或LOAD类型
 								}
 								else {		//可以删除了
 									string xiabiao = numtoString(j1) + "-" + numtoString(j2);
