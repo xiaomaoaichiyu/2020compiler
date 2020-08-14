@@ -2747,10 +2747,14 @@ void deleteSameExp(int index)
 					}		//上下搜索公共子表达式
 					j2 = j2 - 1; i2 = i2 - 1; j1 = j1 + 1; i1 = i1 + 1;
 					if (j2 - j1 < 6 || isTemp(codetotal[index][i2].getResult())==false || isTemp(codetotal[index][j2].getResult()) == false
-						||(codetotal[index][j1].getCodetype() != NOTE && codetotal[index][j1].getCodetype() != LOAD && codetotal[index][j1].getCodetype() != LOADARR)) {
+						||codetotal[index][j1].getCodetype() != NOTE ) {
 						continue;	//公共子表达式要大于6条而且最后一条的res字段应该是临时变量
 					}
 					else {		//可以删除了
+						/*
+						cout << codetotal[index][j1].getContent() << endl;
+						cout << codetotal[index][j2].getContent() << endl;
+						*/
 						string xiabiao = numToString(j1) + "-" + numToString(j2);
 						if (!(newVarName.count(xiabiao) > 0)) {		//第一次找到公共子表达式
 							string replace = "%Rep" + numToString(j1) + "-" + numToString(j2) + "+" + total[index][0].getName();
