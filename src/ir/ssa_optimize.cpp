@@ -160,7 +160,7 @@ void SSA::ssa_optimize(int num) {
 		ofstream ly1("xunhuan3.txt");
 		printCircleIr(this->blockCore, ly1);
 		//循环优化
-		count_UDchains();		//计算使用-定义链
+		if (num == 0) count_UDchains();		//计算使用-定义链
 		back_edge(num);			//循环优化
 
 		// 删除中间代码中的phi
