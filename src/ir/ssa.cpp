@@ -1289,7 +1289,7 @@ void SSA::generate() {
 		if (i == 0) deal_phi_function();
 
 		// 优化
-		if (i == 0) ssa_optimize();
+		ssa_optimize(i);
 		if (i == 1) delete_dead_codes();
 
 		init();

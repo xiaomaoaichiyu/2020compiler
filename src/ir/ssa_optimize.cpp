@@ -134,7 +134,7 @@ void ActiveAnalyse::print_ly_act() {
 }
 
 //ssa形式上的优化
-void SSA::ssa_optimize() {
+void SSA::ssa_optimize(int num) {
 	// 常量传播
 	if (1) {
 		// 重新计算use-def关系
@@ -157,10 +157,11 @@ void SSA::ssa_optimize() {
 	if (1) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		add_phi_to_Ir();
-
+		ofstream ly1("xunhuan3.txt");
+		printCircleIr(this->blockCore, ly1);
 		//循环优化
-		count_UDchains();		//计算使用-定义链
-		back_edge();			//循环优化
+		if (num == 0) count_UDchains();		//计算使用-定义链
+		back_edge(num);			//循环优化
 
 		// 删除中间代码中的phi
 		delete_Ir_phi();
@@ -1067,7 +1068,7 @@ void SSA::const_propagation() {
 				auto ope2 = instr.getOperand2();
 				switch (op) {
 				case ADD: case SUB: case DIV: case MUL: case REM: 
-				case AND: case OR: case NOT:
+				case AND: case OR:
 				case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE: {	//一个def 两个use （not例外）
 					if (var2value.find(ope1) != var2value.end()) {	//操作数1的值是一个立即数，替换
 						instr.setOperand1(var2value[ope1]);
@@ -1078,6 +1079,16 @@ void SSA::const_propagation() {
 					if (isNumber(instr.getOperand1()) && isNumber(instr.getOperand2())) {	//两个操作数都是立即数
 						string tmp = calculate(op, instr.getOperand1(), instr.getOperand2());
 						//instr.setResult(tmp); //设置结果对应的值即可，在死代码删除的时候删去这一指令
+						var2value[res] = tmp;
+					}
+					break;
+				}
+				case NOT: {
+					if (var2value.find(ope1) != var2value.end()) {
+						instr.setOperand1(var2value[ope1]);
+					}
+					if (isNumber(instr.getOperand1())) {
+						string tmp = calculate(op, instr.getOperand1(), instr.getOperand2());
 						var2value[res] = tmp;
 					}
 					break;
@@ -1650,7 +1661,7 @@ void SSA::circleVar() {
 //存放tmpvar对应的代码
 vector<map<string, vector<CodeItem>>> func2tmpvar2Codes;
 
-void SSA::back_edge() {
+void SSA::back_edge(int num) {
 	func2tmpvar2Codes.push_back(map<string, vector<CodeItem>>());
 	for (int i = 1; i < blockCore.size(); i++) {
 		circles.clear();
@@ -1715,6 +1726,13 @@ void SSA::back_edge() {
 			ofstream ly2("xunhuan2.txt");
 			printCircleIr(this->blockCore, ly2);
 		}
+		//if (num == 1) {
+		//	for (auto circle : circles) {
+		//		markArray(i, circle);				//确定不变式
+		//		ofstream ly1("xunhuan3.txt");
+		//		printCircleIr(this->blockCore, ly1);
+		//	}
+		//}
 	}
 }
 
@@ -1727,13 +1745,13 @@ void SSA::back_edge() {
 
 //先不考虑全局数组
 set<string> array2out;
+map<string, set<string>> arr2offset2num;
 
 void SSA::markArray(int funcNum, Circle& circle) {
 	auto& blocks = blockCore.at(funcNum);
 	auto& udchain = func2udChains.at(funcNum);
 	array2out.clear();
-	map<string, string> arr2offset;
-	//第一遍标记运算对象为常数和定值点在循环外的
+	//先找循环中的
 	for (auto idx : circle.cir_blks) {
 		auto& ir = blocks.at(idx).Ir;
 		for (int j = 0; j < ir.size(); j++) { //先判断数组变量是否被未知偏移定义过
@@ -1742,13 +1760,166 @@ void SSA::markArray(int funcNum, Circle& circle) {
 			auto res = instr.getResult();
 			auto ope1 = instr.getOperand1();
 			auto ope2 = instr.getOperand2();
-			if (op == STOREARR) {
-				if (!isNumber(ope2)) {	//偏移不是立即数
-
+			if (op == STOREARR && !isGlobal(ope1)) {
+				if (!isNumber(ope2)) {
+					array2out.erase(ope1);
 				}
 				else {
-
+					if (arr2offset2num.find(ope1) != arr2offset2num.end()) {
+						if (arr2offset2num[ope1].find(ope2) != arr2offset2num[ope1].end()) {
+							arr2offset2num.erase(ope1);
+							array2out.erase(ope2);
+						}
+						else {
+							arr2offset2num[ope1].insert(ope2);
+						}
+					}
+					else {
+						arr2offset2num[ope1] = set<string>();
+						arr2offset2num[ope1].insert(ope2);
+					}
 				}
+			}
+			else if (op == LOAD && array2out.find(ope1) != array2out.end() && ope2 == "array") {
+				array2out.erase(ope1);
+			}
+		}
+	}
+	//标记 storearr 不变式
+	for (auto idx : circle.cir_blks) {
+		auto& ir = blocks.at(idx).Ir;
+		for (int j = 0; j < ir.size(); j++) { //先判断数组变量是否被未知偏移定义过
+			auto& instr = ir.at(j);
+			auto op = instr.getCodetype();
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			switch (op) {
+			case LOAD: {
+				if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
+					instr.setInvariant();
+				}
+				else {	//取变量的值，看变量的定义位置def是否在循环外
+					//如果是phi的取值赋值就直接跳过
+					int pos = ope1.find('^');
+					if (pos != -1
+						&& j + 1 < ir.size()
+						&& ir.at(j + 1).getCodetype() == STORE
+						&& ir.at(j + 1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
+						j++;
+						break;
+					}
+					if (!isGlobal(ope1)) {
+						auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+						if (def.var != "") {
+							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+								instr.setInvariant();
+							}
+							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
+						}
+					}
+				}
+				break; }
+			case ADD: case SUB: case DIV: case MUL: case REM:
+			case AND: case OR: case NOT: case EQL:
+			case NEQ: case SGT: case SGE: case SLT: case SLE: {
+				if (isNumber(ope1)) {
+					auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+					if (def.var != "") {
+						if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+							instr.setInvariant();
+						}
+						else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+							instr.setInvariant();
+						}
+					}
+				}
+				else if (isNumber(ope2)) {
+					auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+					if (def.var != "") {
+						if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+							instr.setInvariant();
+						}
+						else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+							instr.setInvariant();
+						}
+					}
+				}
+				else {	//操作数全是变量		//如果是全局变量的use那么没有定义怎么办？
+					auto def1 = udchain.getDef(Node(idx, j, ope1), ope1);
+					auto def2 = udchain.getDef(Node(idx, j, ope2), ope2);
+					if (def1.var != "" && def2.var != "") {
+						if (circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()
+							&& circle.cir_blks.find(def2.bIdx) == circle.cir_blks.end()) {
+							instr.setInvariant();
+						}
+						else if (circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()
+							&& blocks.at(def2.bIdx).Ir.at(def2.lIdx).getInvariant() == 1) {	//ope1定义在循环外，ope2定义是不变量
+							instr.setInvariant();
+						}
+						else if (circle.cir_blks.find(def2.bIdx) == circle.cir_blks.end()
+							&& blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {	//ope2定义在循环外，ope1定义是不变量
+							instr.setInvariant();
+						}
+						else if (blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1
+							&& blocks.at(def2.bIdx).Ir.at(def2.lIdx).getInvariant() == 1) {	//ope1和ope2定义均是不变量
+							instr.setInvariant();
+						}
+					}
+				}
+				break; }
+			case LOADARR: {
+				if (array2out.find(ope1) != array2out.end()) {
+					if (isNumber(ope2)) {
+						instr.setInvariant();
+					}
+					else {
+						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+						if (def.var != "") {
+							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end() 
+								|| blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
+						}
+					}
+				}
+				break;
+			}case STOREARR: {
+				if (array2out.find(ope1) != array2out.end()) {
+					if (isNumber(ope2)) {
+						auto def1 = udchain.getDef(Node(idx, j, res), res);
+						if (def1.var != "") {
+							if (circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()
+								|| blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
+						}
+					}
+					else {
+						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+						auto def1 = udchain.getDef(Node(idx, j, res), res);
+						if (def.var != "" && def1.var != "") {
+							if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end() && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
+								instr.setInvariant();
+							}
+							else if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end() && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
+							else if (circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end() && blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
+							else if (blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1 && blocks.at(def1.bIdx).Ir.at(def1.lIdx).getInvariant() == 1) {
+								instr.setInvariant();
+							}
+						}
+					}
+				}
+				break;
+			}
+			default:
+				break;
 			}
 		}
 	}
