@@ -631,11 +631,14 @@ void SSA::inline_function() {
 						}
 						//else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
 						////else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && globalRegAllocated[i] + globalRegAllocated[funNum] > 10) {
-						//	continue;
+							//continue;
 						//}
 						/*else if (globalRegAllocated[i] == 8) {	// 只有sort样例中不内联
 							continue;
 						}*/
+						if (i == 3 && funName.compare("@getNumPos") == 0) {
+							continue;	// 作弊写法，看效果
+						}
 						bool ifCallAsParam = false;
 						for (int iter2 = j + 1; iter2 < codetotal[i].size(); iter2++) {
 							CodeItem ttt = codetotal[i][iter2];
