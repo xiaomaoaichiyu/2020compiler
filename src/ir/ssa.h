@@ -183,7 +183,7 @@ private:
 	void load_and_store();// 简化load和store指令相邻的指令
 	void simplify_add_minus_multi_div_mod();	// 简化加减0、乘除模1这样的指令
 	void simplify_br_label();	// 简化紧邻的跳转
-	void ssa_optimize();		// 优化函数入口
+	void ssa_optimize(int num);		// 优化函数入口
 	void delete_dead_codes();	// 删除死代码
 	void inline_function();	// 函数内联
 	std::string getNewInsertAddr(int funNum, std::string name);
@@ -201,7 +201,7 @@ private:
 	
 	//ly：循环优化：代码外提  待做：强度削弱、规约变量删除
 	void count_UDchains();	//计算使用-定义链 用来查找不变式代码
-	void back_edge();	//计算回边+查找循环
+	void back_edge(int num);	//计算回边+查找循环
 	void code_outside(int funcNum, Circle& circle);	//代码外提
 	void mark_invariant(int funcNum, Circle& circle);			//标记不变式
 	bool condition1(set<int>& outBlk, set<int>& cir_blks, int instrBlk, int func);
