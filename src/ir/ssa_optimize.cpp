@@ -1068,7 +1068,7 @@ void SSA::const_propagation() {
 				auto ope2 = instr.getOperand2();
 				switch (op) {
 				case ADD: case SUB: case DIV: case MUL: case REM: 
-				case AND: case OR: case NOT:
+				case AND: case OR:
 				case EQL: case NEQ: case SGT: case SGE: case SLT: case SLE: {	//一个def 两个use （not例外）
 					if (var2value.find(ope1) != var2value.end()) {	//操作数1的值是一个立即数，替换
 						instr.setOperand1(var2value[ope1]);
@@ -1079,6 +1079,16 @@ void SSA::const_propagation() {
 					if (isNumber(instr.getOperand1()) && isNumber(instr.getOperand2())) {	//两个操作数都是立即数
 						string tmp = calculate(op, instr.getOperand1(), instr.getOperand2());
 						//instr.setResult(tmp); //设置结果对应的值即可，在死代码删除的时候删去这一指令
+						var2value[res] = tmp;
+					}
+					break;
+				}
+				case NOT: {
+					if (var2value.find(ope1) != var2value.end()) {
+						instr.setOperand1(var2value[ope1]);
+					}
+					if (isNumber(instr.getOperand1())) {
+						string tmp = calculate(op, instr.getOperand1(), instr.getOperand2());
 						var2value[res] = tmp;
 					}
 					break;
