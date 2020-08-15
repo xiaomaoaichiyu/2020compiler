@@ -154,7 +154,7 @@ bool judgeglobal(string a)		//丛加的
 }
 bool judgeLoadOp(string a)		//丛加的
 {
-	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL" || a == "MOV") {
+	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL") {
 		return true;
 	}
 	return false;
@@ -201,17 +201,6 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
-			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
-			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位，但是next从9开始
-				output_buffer.erase(output_buffer.begin() + index);
-				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
-				cout << str << endl;
-				cout << strNext << endl;
-				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(11, strNext.size());
-				output_buffer.insert(output_buffer.begin() + index, newstr);
-				canOutput = 0;
-				return false;
-			}
 			str_num1 = str.substr(4, 2);
 			str_num2 = str.substr(7, 3);
 			next_num1 = strNext.substr(8, 2); //例：MOV R2,R10   STR R1,[R2,R0] 
@@ -221,17 +210,6 @@ bool is_nonsence(int index)
 				cout << str << endl;
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(10, strNext.size());
-				output_buffer.insert(output_buffer.begin() + index, newstr);
-				canOutput = 0;
-				return false;
-			}
-			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
-			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况二：默认寄存器都是2位，但是next从9开始
-				output_buffer.erase(output_buffer.begin() + index);
-				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
-				cout << str << endl;
-				cout << strNext << endl;
-				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(11, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
@@ -249,17 +227,6 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
-			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
-			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况三：默认寄存器都是2位，但是next从9开始
-				output_buffer.erase(output_buffer.begin() + index);
-				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
-				cout << str << endl;
-				cout << strNext << endl;
-				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(12, strNext.size());
-				output_buffer.insert(output_buffer.begin() + index, newstr);
-				canOutput = 0;
-				return false;
-			}
 			str_num1 = str.substr(4, 3);
 			str_num2 = str.substr(8, 3);
 			next_num1 = strNext.substr(8, 3);  //例：MOV R12,R10   STR R1,[R12,R0] 
@@ -273,24 +240,11 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
-			next_num1 = strNext.substr(9, 2);	//MOV R2,R7      LDR R12,[R2, R12]
-			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况四：默认寄存器都是2位，但是next从9开始
-				output_buffer.erase(output_buffer.begin() + index);
-				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
-				cout << str << endl;
-				cout << strNext << endl;
-				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(12, strNext.size());
-				output_buffer.insert(output_buffer.begin() + index, newstr);
-				canOutput = 0;
-				return false;
-			}
 		}
 	}
 	//传参优化	上一条是指令运算结果，比如LDR、ADD、SUB、ASR、LSL、MUL为上一条指令可求出结果的指令，只能以R0为相同寄存器
 	//例：LDR R0,=C  MOV R3,R0  ——> LDR R3,=C		丛加的
 	//注：这里只涉及R0~R3的情况，所以截取2单位长度没问题
-
-	//MOV R10 R0    MOV R7 R1
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
@@ -299,9 +253,7 @@ bool is_nonsence(int index)
 			string next_num2 = strNext.substr(7, 2);
 			string next_num3 = strNext.substr(7, 3);		//防止next_num2实际是R11、R12只是因为取两位才为R1
 			string num1 = str.substr(4, 2);
-			string right_num1 = str.substr(4, 3);
-			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")
-				&&next_num2==next_num3 &&(right_num1!="R10"&& right_num1 != "R11")) {
+			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")&&next_num2==next_num3) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -314,9 +266,7 @@ bool is_nonsence(int index)
 			next_num2 = strNext.substr(8, 2);
 			next_num3 = strNext.substr(8, 3);				//防止next_num2实际是R11、R12只是因为取两位才为R1
 			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
-			right_num1 = str.substr(4, 3);
-			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
-				&& next_num2 == next_num3 && (right_num1 != "R10" && right_num1 != "R11")) {
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") && next_num2 == next_num3) {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -594,9 +544,12 @@ void _define(CodeItem* ir)
 	}
 	sp -= regN * 4;
 	if (global_reg_list != "") {
-		OUTPUT("PUSH {" + global_reg_list.substr(1) + "}");
+		OUTPUT("PUSH {" + global_reg_list.substr(1) + ",LR}"); //push LR together,right?
 	}
-	OUTPUT("PUSH {LR}");
+	else {
+		OUTPUT("PUSH {LR}");
+	}
+	//OUTPUT("PUSH {LR}");
 }
 
 void _alloc(CodeItem* ir)
@@ -867,17 +820,17 @@ void _div(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op1[0] != 'R') {
 		OUTPUT("PUSH {R0}");
-		OUTPUT("PUSH {R1,R2,R3,R12}");
+		OUTPUT("PUSH {R1,R2,R3}");//remove R12,right?
 		OUTPUT("MOV R1," + op2);
 		//OUTPUT("LDR R0,=" + op1);
 		li("R0", stoi(op1));
 		OUTPUT("BL __aeabi_idiv");
 		if (target == "R0") {
-			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
 			OUTPUT("MOV " + target + ",R0");
 			OUTPUT("POP {R0}");
 		}
@@ -929,7 +882,7 @@ void _div(CodeItem* ir)
 	}
 	{
 		OUTPUT("PUSH {R0}");
-		OUTPUT("PUSH {R1,R2,R3,R12}");
+		OUTPUT("PUSH {R1,R2,R3}");//remove R12,right?
 		if (op2 == "R0") {
 			OUTPUT("MOV LR,R0");
 		}
@@ -948,11 +901,11 @@ void _div(CodeItem* ir)
 		}
 		OUTPUT("BL __aeabi_idiv");
 		if (target == "R0") {
-			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R1,R2,R3,R12}");
+			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
 			OUTPUT("MOV " + target + ",R0");
 			OUTPUT("POP {R0}");
 		}
@@ -967,17 +920,17 @@ void _rem(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op1[0] != 'R') {
 		OUTPUT("PUSH {R1}");
-		OUTPUT("PUSH {R0,R2,R3,R12}");
+		OUTPUT("PUSH {R0,R2,R3}"); //remove R12,right?
 		OUTPUT("MOV R1," + op2);
 		//OUTPUT("LDR R0,=" + op1);
 		li("R0", stoi(op1));
 		OUTPUT("BL __aeabi_idivmod");
 		if (target == "R1") {
-			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("POP {R0,R2,R3}"); //remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("POP {R0,R2,R3}"); //remove R12,right?
 			OUTPUT("MOV " + target + ",R1");
 			OUTPUT("POP {R1}");
 		}
@@ -1040,7 +993,7 @@ void _rem(CodeItem* ir)
 	}
 	{
 		OUTPUT("PUSH {R1}");
-		OUTPUT("PUSH {R0,R2,R3,R12}");
+		OUTPUT("PUSH {R0,R2,R3}");//remove R12,right?
 		if (op2 == "R0") {
 			OUTPUT("MOV LR,R0");
 		}
@@ -1059,11 +1012,11 @@ void _rem(CodeItem* ir)
 		}
 		OUTPUT("BL __aeabi_idivmod");
 		if (target == "R1") {
-			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("POP {R0,R2,R3}");//remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R0,R2,R3,R12}");
+			OUTPUT("POP {R0,R2,R3}");//remove R12,right?
 			OUTPUT("MOV " + target + ",R1");
 			OUTPUT("POP {R1}");
 		}
@@ -1413,12 +1366,15 @@ void _ret(CodeItem* ir)
 		}
 	}*/
 	int fake_sp = sp;
-	OUTPUT("POP {LR}");
+	//OUTPUT("POP {LR}");
 	fake_sp += 4;
 	if (global_reg_list != "") {
-		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
+		OUTPUT("POP {" + global_reg_list.substr(1) + ",LR}"); //pop lr together,right?
 		//fake_sp += func2gReg[symbol_pointer].size() * 4;
 		fake_sp +=  global_reg_size* 4;
+	}
+	else {
+		OUTPUT("POP {LR}");
 	}
 	if (!is_illegal(to_string(sp_without_para-fake_sp))) {
 		//OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
