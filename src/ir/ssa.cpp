@@ -1254,7 +1254,7 @@ void SSA::generate() {
 		delete_dead_codes_2();
 
 		// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
-		if (i == 0) build_dom_tree();
+		build_dom_tree();
 
 		// 确定每个基本块的直接必经关系，参见《高级编译器设计与实现》P134 Idom_Comp算法
 		if (i == 0) build_idom_tree();
