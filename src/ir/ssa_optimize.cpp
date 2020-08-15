@@ -1726,13 +1726,13 @@ void SSA::back_edge(int num) {
 			ofstream ly2("xunhuan2.txt");
 			printCircleIr(this->blockCore, ly2);
 		}
-		if (num == 1) {
-			for (auto circle : circles) {
-				markArray(i, circle);				//确定不变式
-				ofstream ly1("xunhuan3.txt");
-				printCircleIr(this->blockCore, ly1);
-			}
-		}
+		//if (num == 1) {
+		//	for (auto circle : circles) {
+		//		markArray(i, circle);				//确定不变式
+		//		ofstream ly1("xunhuan3.txt");
+		//		printCircleIr(this->blockCore, ly1);
+		//	}
+		//}
 	}
 }
 
