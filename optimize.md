@@ -271,3 +271,44 @@ BNE res
 ...
 ```
 
+
+
+### 短路逻辑
+
+短路优化逻辑说明：
+
+​	短路优化只对||和&&出现，而且Sys语言文法规定构成Cond的逻辑符号里，||优先级最高，其次是&&
+
+​	因此多个条件||相连，只要有一个或元素成立就跳出判读，执行条件成立语句
+
+​	多个&&相连，只要有一个与元素不成立就跳出当前&&，返回到上一层的||进行下一个条件的判断
+
+短路优化逻辑实现：
+
+​	新引入%an.then和%or.then类型标签，同时**中间代码删除AND和OR类型中间代码，直接对构成与和或的元素判断是否成立**。
+
+$if(a||b)​$
+
+```assembly
+Not  %1   %a					#必须取反，保证下面的Br条件成立的%or.then标签紧跟在Br后面
+Br   %if.then   %1   %or.then
+Label  %or.then
+Br   %if.end	 %b   %if.then 
+Label  %if.then
+...
+Label  %if.end
+```
+
+​					
+
+$if(a\&\&b)$
+
+```assembly
+Br   %if.end   %1   %an.then
+Label  %an.then
+Br   %if.end	 %b   %if.then 
+Label  %if.then
+...
+Label  %if.end
+```
+
