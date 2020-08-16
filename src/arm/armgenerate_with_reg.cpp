@@ -164,6 +164,9 @@ bool is_nonsence(int index)
 	string str = output_buffer[index];
 	smatch result;
 	canOutput = 1;
+	if (str == "NOP") {
+		return true;
+	}
 	regex pattern1("MOV\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
 	if (regex_match(str, result, pattern1)) {
 		if (result[1] == result[2]) {
@@ -176,6 +179,32 @@ bool is_nonsence(int index)
 			return true;
 		}
 	}
+	//mull + add -> mla
+	regex pattern3("MUL\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
+	regex pattern4("ADD\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
+	if (regex_match(str, result, pattern3)) {
+		string mul_re = result[1];
+		string mul_op1 = result[2];
+		string mul_op2 = result[3];
+		if (output_buffer[index + 1].substr(0,3) == "ADD" && 
+			regex_match(output_buffer[index + 1], result, pattern4)) {
+			string add_re = result[1];
+			string add_op1 = result[2];
+			string add_op2 = result[3];
+			if (mul_re == add_op1) {
+				output_buffer[index] = "MLA " + add_re + "," + mul_op1 + "," + mul_op2 + "," + add_op2;
+				output_buffer[index + 1] = "NOP";
+				return false;
+			}
+			if (mul_re == add_op2) {
+				output_buffer[index] = "MLA " + add_re + "," + mul_op1 + "," + mul_op2 + "," + add_op1;
+				output_buffer[index + 1] = "NOP";
+				return false;
+			}
+		}
+	}
+
+
 	string a = str.substr(0, 3);	//删除连续相同MOV,丛加的
 	if (a == "MOV" && output_buffer[index] == output_buffer[index - 1]) {
 		return true;
