@@ -117,4 +117,58 @@ private:
 	void add_A_DUChain(string var, const Node& use);
 };
 
+
+//=================================================
+//脱离于ssa的数组不变式外提
+//=================================================
+
+class UDchain1 {
+	vector<basicBlock> CFG;
+	vector<set<Node>> in, out, gen, kill;					//记录每个基本块的集合
+
+	map<Node, string> def2var;								//每个定义点只会定义一个变量
+	map<string, set<Node>> var2defs;						//记录每个变量的定义，将数组的也考虑进来，全局的全部不考虑
+
+	map<pair<string, Node>, set<Node>> chains;				//udchains
+	//因为临时变量只会使用一次
+	map<pair<string, Node>, Node> duchains;		//duchains	主要给临时变量用，变量是否需要这个？循环不变式外提
+public:
+	UDchain1() {}
+	UDchain1(vector<basicBlock>& cfg) : CFG(cfg) {
+		chains.clear();
+		init();
+		count_gen();
+		count_in_and_out();
+		count_UDchain();
+	}
+	void init();
+	void count_gen();						//根据CFG计算每个基本块的gen集合、kill集合
+	void iterate_in_out();					//迭代计算一次in、out集合
+	void count_in_and_out();				//根据gen、kill计算in，out
+	void count_UDchain();					//计算整个流程图的使用-定义链
+	void printUDchain(ofstream& ud);
+	set<Node> getDef(Node use, string var) {
+		pair<string, Node> tmp(var, use);
+		if (chains.find(tmp) != chains.end()) {
+			return chains[tmp];
+		}
+		else {
+			return set<Node>();
+		}
+	}
+	set<Node> get_Defs_of_var(string var) {
+		if (var2defs.find(var) != var2defs.end()) { //找到对应变量的所有定义
+			return var2defs[var];
+		}
+		else {
+			return set<Node>();
+		}
+	}
+private:
+	bool find_var_def(set<Node> container, string var);			//寻找变量的定义
+	void erase_defs(set<Node>& container, string var);			//删除集合中的var的定义
+	void add_A_UDChain(string var, const Node& use);			//添加一条使用-定义链
+	void add_A_DUChain(string var, const Node& use);
+};
+
 #endif //_DATA_ANALYSE_H_

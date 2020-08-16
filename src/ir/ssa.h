@@ -201,6 +201,7 @@ private:
 	
 	//ly：循环优化：代码外提  待做：强度削弱、规约变量删除
 	void count_UDchains();	//计算使用-定义链 用来查找不变式代码
+	void count_UDChains2();
 	void back_edge(int num);	//计算回边+查找循环
 	void code_outside(int funcNum, Circle& circle);	//代码外提
 	void mark_invariant(int funcNum, Circle& circle);			//标记不变式
@@ -213,9 +214,7 @@ private:
 	void const_propagation();	//常量传播
 	void copy_propagation();	//复写传播
 	void while_open();			//循环展开
-
-	void markArray(int funcNum, Circle& circle);
-
+	void arraycode_outside(int funcNum, Circle& circle); //数组不变式外提
 	//ly：循环优化
 
 	// 功能函数，可能在各个地方都会用到
@@ -255,7 +254,7 @@ private:
 
 	void Test_TempVariable();
 
-	void printCircle();
+	void printCircle(int funcNum);
 
 	std::vector<std::map<std::string, int>> varWeight;	// 变量的权重
 
