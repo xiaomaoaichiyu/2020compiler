@@ -108,3 +108,11 @@ int symbolTable::getisinlineFunc()
 {
 	return this->isinlineFunc;
 }
+void symbolTable::setUseCount(int a)
+{
+	this->useCount = a;
+}
+int symbolTable::getUseCount()
+{
+	return this->useCount;
+}

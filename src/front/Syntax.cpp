@@ -187,6 +187,9 @@ bool isNoChangeFunc(string a);		//跳转到该函数不会修改任何内容
 void changeGlobalToAlloc(int index);
 int haveCall;			//该函数不能出现call类型中间代码，在changeForInline函数内完成，节约一次遍历
 
+//局部数组基址和SP重合
+map<string, int> matrixUseCount;
+void addUseCount(int index);
 
 //=============================================================================================================
 //        以上为全局变量定义以及函数定义
@@ -349,6 +352,7 @@ void CompUnit()
 					total[Funcindex][0].setisinlineFunc(isinlineFunc);
 					changeGlobalToAlloc(Funcindex);
 					deleteSameExp(Funcindex);
+					addUseCount(Funcindex);
 				}
 				else {
 					symbol = sym_tag;
@@ -371,6 +375,7 @@ void CompUnit()
 				total[Funcindex][0].setisinlineFunc(isinlineFunc);
 				changeGlobalToAlloc(Funcindex);
 				deleteSameExp(Funcindex);
+				addUseCount(Funcindex);
 			}
 		}
 	}
@@ -756,6 +761,9 @@ void VarDef(int index, int block)             //变量定义
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
+	}
+	if (dimenson > 0) {
+		matrixUseCount[name] = 0;		//初始化计数次数
 	}
 	symbolTable item = symbolTable(VARIABLE, INT, name, dimenson, block);
 	item.setMatrixLength(length, index);
@@ -1738,6 +1746,7 @@ void assignStmt()        //赋值语句 LVal = Exp
 	}
 	//outfile << "<赋值语句>" << endl;
 }
+
 void ifStmt()            //条件语句 + 短路逻辑
 {
 	//printMessage();    //输出if信息
@@ -1868,8 +1877,8 @@ void ifStmt()            //条件语句+无短路逻辑
 	//退出前Stmt均预读
 	//outfile << "<条件语句>" << endl;
 }
-*/
-/*
+
+
 void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR, op;
@@ -3087,4 +3096,42 @@ void changeGlobalToAlloc(int index)
 		}
 	}
 
+}
+void addUseCount(int index)
+{
+	matrixUseCount.clear();
+	int i, j, k;
+	for (i = 1; i < total[index].size(); i++) {
+		if (total[index][i].getForm()==VARIABLE && total[index][i].getDimension() > 0 ) {
+			matrixUseCount[total[index][i].getName()] = 0;
+		}
+	}
+	for (i = 0; i < codetotal[index].size(); i++) {
+		if (codetotal[index][i].getCodetype() == LOADARR) {
+			//CodeItem citem = CodeItem(LOADARR, interRegister, b + name_tag, registerA); //数组取值
+			string matrixname = codetotal[index][i].getOperand1();
+			if (matrixname[0] == '%') {
+				string name2 = matrixname.substr(1, matrixname.size());
+				if (matrixUseCount.count(name2) > 0) {
+					matrixUseCount[name2]++;
+				}
+			}
+		}
+		if (codetotal[index][i].getCodetype() == STOREARR) {
+			//CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+			string matrixname = codetotal[index][i].getOperand1();
+			if (matrixname[0] == '%') {
+				string name2 = matrixname.substr(1, matrixname.size());
+				if (matrixUseCount.count(name2) > 0) {
+					matrixUseCount[name2]++;
+				}
+			}
+		}
+	}
+	for (i = 1; i < total[index].size(); i++) {
+		if (total[index][i].getForm() == VARIABLE && total[index][i].getDimension() > 0) {
+			total[index][i].setUseCount(matrixUseCount[total[index][i].getName()]);
+			//cout << matrixUseCount[total[index][i].getName()] << " " << total[index][i].getName() << endl;  检测统计正确性输出
+		}
+	}
 }

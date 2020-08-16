@@ -1550,6 +1550,25 @@ void arm_generate(string sname)
 {
 	ofstream arm(sname);
 	getcallerMap();
+	//将局部数组移动到最后
+	for (int i = 1; i < total.size(); i++) {
+		int max = 0;
+		int k = 0;
+		for (int j = 1; j < total[i].size(); j++) {
+			if (total[i][j].getForm() == VARIABLE && total[i][j].getDimension() > 0) {
+				if (total[i][j].getUseCount() > max) {
+					max = total[i][j].getUseCount();
+					k = j;
+				}
+			}
+		}
+		if (k > 0) {	//移动符号表，把局部数组使用次数最多的元素放到最后面
+			symbolTable item = total[i][k];
+			cout << item.getName() << endl;
+			total[i].erase(total[i].begin() + k);
+			total[i].push_back(item);
+		}
+	}
 	for (int i = 0; i < LIR.size(); i++) {
 		for (int j = 0; j < LIR[i].size(); j++) {
 			CodeItem* ir_now = &LIR[i][j];
