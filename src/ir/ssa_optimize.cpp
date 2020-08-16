@@ -12,6 +12,7 @@
 #include <iterator>
 
 //==========================================================
+void markArray(int funcNum, Circle& circle, UDchain1 udchain1, vector<basicBlock>& blocks);
 
 void printCircleIr(vector<vector<basicBlock>>& v, ofstream& debug_ssa) {
 	if (TIJIAO) {
@@ -164,7 +165,7 @@ void SSA::ssa_optimize(int num) {
 		}
 		//循环优化
 		if (num == 0) count_UDchains();		//计算使用-定义链
-		if (num == 1) count_UDChains2();	//计算不在ssa形式的 使用-定义链
+		if (num == 1) count_UDChains2();
 		back_edge(num);			//循环优化
 
 		// 删除中间代码中的phi
@@ -1753,7 +1754,11 @@ void SSA::back_edge(int num) {
 		}
 		if (num == 1) {
 			for (auto circle : circles) {
-				markArray(i, circle);				//确定不变式
+				/*UDchain1 udchain1s(blockCore.at(i));
+				ofstream ud("udchain2.txt");
+				udchain1s.printUDchain(ud);ud << endl;ud.close();*/
+				//markArray(i, circle, udchain1s, blockCore.at(i));				//确定不变式
+				markArray(i, circle, func2udChain1s.at(i), blockCore.at(i));				//确定不变式
 				ofstream ly1("shuzu1.txt");
 				printCircleIr(this->blockCore, ly1);
 				arraycode_outside(i, circle);
@@ -1785,9 +1790,7 @@ bool checkInvariant(const set<Node>& defs, const set<int>& cir_blks, vector<basi
 	return true;
 }
 
-void SSA::markArray(int funcNum, Circle& circle) {
-	auto& blocks = blockCore.at(funcNum);
-	auto& udchain1 = func2udChain1s.at(funcNum);
+void markArray(int funcNum, Circle& circle, UDchain1 udchain1, vector<basicBlock>& blocks) {
 	array2out.clear();
 	//先找循环中的可以被外提的数组，需满足两个条件：
 	//1. 循环中不存在call使用数组的地址
@@ -1837,58 +1840,59 @@ void SSA::markArray(int funcNum, Circle& circle) {
 			auto ope1 = instr.getOperand1();
 			auto ope2 = instr.getOperand2();
 			switch (op) {
-			case LOAD: {
-				if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
-					instr.setInvariant();
-				}
-				else {	//取变量的值，看变量的定义位置def是否在循环外
-					if (!isGlobal(ope1)) {
-						auto def = udchain1.getDef(Node(idx, j, ope1), ope1);
-						if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
-					}
-				}
-				break; }
-			case STORE: {
-				if (!isGlobal(ope1)) {
-					if (isNumber(res)) instr.setInvariant();
-					else {
-						auto def = udchain1.getDef(Node(idx, j, res), res);
-						if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
-					}
-				}
-				break;
-			}
-			case ADD: case SUB: case DIV: case MUL: case REM:
-			case AND: case OR: case NOT: case EQL:
-			case NEQ: case SGT: case SGE: case SLT: case SLE: {
-				if (isNumber(ope1)) {
-					auto def = udchain1.getDef(Node(idx, j, ope2), ope2);
-					if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
-				}
-				else if (isNumber(ope2)) {
-					auto def = udchain1.getDef(Node(idx, j, ope1), ope1);
-					if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
-				}
-				else {	//操作数全是变量		//如果是全局变量的use那么没有定义怎么办？
-					auto def1 = udchain1.getDef(Node(idx, j, ope1), ope1);
-					auto def2 = udchain1.getDef(Node(idx, j, ope2), ope2);
-					if (checkInvariant(def1, circle.cir_blks, blocks) && checkInvariant(def2, circle.cir_blks, blocks)) {
-						instr.setInvariant();
-					}
-				}
-				break; }
-			case LOADARR: {
-				if (array2out.find(ope1) != array2out.end()) {
-					if (isNumber(ope2)) {
-						instr.setInvariant();
-					}
-					else {
-						auto def = udchain1.getDef(Node(idx, j, ope2), ope2);
-						if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
-					}
-				}
-				break;
-			}case STOREARR: {
+			//case LOAD: {
+			//	if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
+			//		instr.setInvariant();
+			//	}
+			//	else {	//取变量的值，看变量的定义位置def是否在循环外
+			//		if (!isGlobal(ope1)) {
+			//			auto def = udchain1.getDef(Node(idx, j, ope1), ope1);
+			//			if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
+			//		}
+			//	}
+			//	break; }
+			//case STORE: {
+			//	if (!isGlobal(ope1)) {
+			//		if (isNumber(res)) instr.setInvariant();
+			//		else {
+			//			auto def = udchain1.getDef(Node(idx, j, res), res);
+			//			if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
+			//		}
+			//	}
+			//	break;
+			//}
+			//case ADD: case SUB: case DIV: case MUL: case REM:
+			//case AND: case OR: case NOT: case EQL:
+			//case NEQ: case SGT: case SGE: case SLT: case SLE: {
+			//	if (isNumber(ope1)) {
+			//		auto def = udchain1.getDef(Node(idx, j, ope2), ope2);
+			//		if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
+			//	}
+			//	else if (isNumber(ope2)) {
+			//		auto def = udchain1.getDef(Node(idx, j, ope1), ope1);
+			//		if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
+			//	}
+			//	else {	//操作数全是变量		//如果是全局变量的use那么没有定义怎么办？
+			//		auto def1 = udchain1.getDef(Node(idx, j, ope1), ope1);
+			//		auto def2 = udchain1.getDef(Node(idx, j, ope2), ope2);
+			//		if (checkInvariant(def1, circle.cir_blks, blocks) && checkInvariant(def2, circle.cir_blks, blocks)) {
+			//			instr.setInvariant();
+			//		}
+			//	}
+			//	break; }
+			//case LOADARR: {
+			//	if (array2out.find(ope1) != array2out.end()) {
+			//		if (isNumber(ope2)) {
+			//			instr.setInvariant();
+			//		}
+			//		else {
+			//			auto def = udchain1.getDef(Node(idx, j, ope2), ope2);
+			//			if (checkInvariant(def, circle.cir_blks, blocks)) instr.setInvariant();
+			//		}
+			//	}
+			//	break;
+			//}
+			case STOREARR: {
 				if (array2out.find(ope1) != array2out.end()) {
 					if (isNumber(res)) {
 						if (isNumber(ope2)) instr.setInvariant();

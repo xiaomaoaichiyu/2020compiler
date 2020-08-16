@@ -214,8 +214,6 @@ private:
 	void const_propagation();	//常量传播
 	void copy_propagation();	//复写传播
 	void while_open();			//循环展开
-
-	void markArray(int funcNum, Circle& circle);
 	void arraycode_outside(int funcNum, Circle& circle); //数组不变式外提
 	//ly：循环优化
 
