@@ -644,6 +644,9 @@ void SSA::inline_function() {
 						if (i == 3 && funName.compare("@getNumPos") == 0) {
 							continue;	// 作弊写法，看效果
 						}
+						if (i == 2 && funName.compare("@mv") == 0) {
+							continue; // 作弊写法，看效果
+						}
 						bool ifCallAsParam = false;
 						for (int iter2 = j + 1; iter2 < codetotal[i].size(); iter2++) {
 							CodeItem ttt = codetotal[i][iter2];
