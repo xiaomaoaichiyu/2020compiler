@@ -1323,7 +1323,6 @@ void SSA::generate() {
 		// 函数内联
 		//if (i == 0) registerAllocation();
 		//if (i == 0) count_global_reg_allocated();
-		//for (auto i : globalRegAllocated) cout << i << endl;
 		if (i == 0) optimize_para_transfer();
 		if (i == 0) inline_function();
 		
@@ -1513,6 +1512,7 @@ int myPow(int x, int y) {
 void SSA::calVarWeight(vector<map<int, int>> circleDepth) {
 	int size1 = blockCore.size();
 	int loopWeight = 5;	// 循环权重
+	varWeight.clear();
 	for (int i = 0; i < size1; i++) {
 		varWeight.push_back(map<string, int>());
 	}
