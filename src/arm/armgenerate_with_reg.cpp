@@ -154,7 +154,7 @@ bool judgeglobal(string a)		//丛加的
 }
 bool judgeLoadOp(string a)		//丛加的
 {
-	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL"  || a == "MOV") {
+	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL"  || a == "MOV" || a == "MLS" || a == "MLA") {
 		return true;
 	}
 	return false;
