@@ -16,7 +16,7 @@ vector<string> output_buffer;
 int symbol_pointer;
 map<string, int> var2addr;
 int sp;
-int sp_without_para;
+int sp_recover;
 int pushNum = 0;
 string global_var_name;
 int global_var_size = 0;
@@ -37,7 +37,7 @@ unsigned ror(unsigned val, int size)
 	return res;
 }
 
-bool is_illegal(string im,bool str=false);
+bool is_illegal(string im, bool str = false);
 
 void li(string reg, int im)
 {
@@ -63,7 +63,7 @@ string getname(string ir_name)
 	}
 }
 
-string get_varname_scale(string name) 
+string get_varname_scale(string name)
 {
 	if (name.size() == 0) {
 		return "";
@@ -147,14 +147,14 @@ bool judgetemp(string a)		//丛加的
 }
 bool judgeglobal(string a)		//丛加的
 {
-	if (a == "R4" || a == "R5" || a == "R6" || a == "R7" || a == "R8"||a=="R9"||a=="R10"||a=="R11") {
+	if (a == "R4" || a == "R5" || a == "R6" || a == "R7" || a == "R8" || a == "R9" || a == "R10" || a == "R11") {
 		return true;
 	}
 	return false;
 }
 bool judgeLoadOp(string a)		//丛加的
 {
-	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL") {
+	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL"  || a == "MOV" || a == "MLS" || a == "MLA") {
 		return true;
 	}
 	return false;
@@ -164,6 +164,9 @@ bool is_nonsence(int index)
 	string str = output_buffer[index];
 	smatch result;
 	canOutput = 1;
+	if (str == "NOP") {
+		return true;
+	}
 	regex pattern1("MOV\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
 	if (regex_match(str, result, pattern1)) {
 		if (result[1] == result[2]) {
@@ -176,6 +179,32 @@ bool is_nonsence(int index)
 			return true;
 		}
 	}
+	//mull + add -> mla
+	regex pattern3("MUL\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
+	regex pattern4("ADD\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
+	if (regex_match(str, result, pattern3)) {
+		string mul_re = result[1];
+		string mul_op1 = result[2];
+		string mul_op2 = result[3];
+		if (output_buffer[index + 1].substr(0, 3) == "ADD" &&
+			regex_match(output_buffer[index + 1], result, pattern4)) {
+			string add_re = result[1];
+			string add_op1 = result[2];
+			string add_op2 = result[3];
+			if (mul_re == add_op1) {
+				output_buffer[index] = "MLA " + add_re + "," + mul_op1 + "," + mul_op2 + "," + add_op2;
+				output_buffer[index + 1] = "NOP";
+				return false;
+			}
+			if (mul_re == add_op2) {
+				output_buffer[index] = "MLA " + add_re + "," + mul_op1 + "," + mul_op2 + "," + add_op1;
+				output_buffer[index + 1] = "NOP";
+				return false;
+			}
+		}
+	}
+
+
 	string a = str.substr(0, 3);	//删除连续相同MOV,丛加的
 	if (a == "MOV" && output_buffer[index] == output_buffer[index - 1]) {
 		return true;
@@ -183,14 +212,14 @@ bool is_nonsence(int index)
 	//数组做参数取值或存值时，基址是全局寄存器，会先将其放到临时寄存器产生冗余
 	//例：MOV R2,R7   STR R1,[R2,R0]   ——>  STR R1,[R7,R0]		丛加的
 	//注：由于寄存器可能是3位，因此会带来问题
-	
+
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
 		if (a == "MOV" && (nextOp == "STR" || nextOp == "LDR")) {
 			string str_num1 = str.substr(4, 2);
 			string str_num2 = str.substr(7, 2);
-			string next_num1 = strNext.substr(8, 2);   
+			string next_num1 = strNext.substr(8, 2);
 			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
@@ -253,7 +282,9 @@ bool is_nonsence(int index)
 			string next_num2 = strNext.substr(7, 2);
 			string next_num3 = strNext.substr(7, 3);		//防止next_num2实际是R11、R12只是因为取两位才为R1
 			string num1 = str.substr(4, 2);
-			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")&&next_num2==next_num3) {
+			string num2 = str.substr(4, 3);
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
+				&& next_num2 == next_num3 && num2 != "R10" && num2!="R11" && num2 != "R12") {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -262,11 +293,14 @@ bool is_nonsence(int index)
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				return false;
 			}
+			//MOV R10,R0  MOV R4,R1
 			next_num1 = strNext.substr(4, 3);
 			next_num2 = strNext.substr(8, 2);
 			next_num3 = strNext.substr(8, 3);				//防止next_num2实际是R11、R12只是因为取两位才为R1
 			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
-			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") && next_num2 == next_num3) {
+			num2 = str.substr(4, 3);
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
+				&& next_num2 == next_num3 && num2 != "R10" && num2 != "R11" && num2 != "R12") {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -355,7 +389,7 @@ bool check_format(CodeItem* ir) {
 	return true;
 }
 
-bool is_illegal(string im,bool str) {
+bool is_illegal(string im, bool str) {
 	int i = stoi(im);
 	if (str) {
 		return i < 4096;
@@ -479,7 +513,7 @@ void _define(CodeItem* ir)
 	var2addr.clear();
 	int paraNum;
 	int paraIndex = 0;
-	sp_without_para = 0;
+	int sp_without_para = 0;
 	sp = 0;
 	for (symbolTable st : total[symbol_pointer]) {
 		formType form = st.getForm();
@@ -503,7 +537,7 @@ void _define(CodeItem* ir)
 				var2addr[st.getName()] = sp;
 			}
 			else {
-				var2addr[st.getName()] = sp + 16 + 4 * (paraIndex - 5);
+				var2addr[st.getName()] = sp_without_para + 4 * (paraIndex - 5);
 			}
 			break;
 		}
@@ -514,42 +548,49 @@ void _define(CodeItem* ir)
 				sp -= (paraNum - 4) * 4;
 			}
 			sp_without_para = sp;
+			//store regs
+			{
+				global_reg_list = "";
+				global_reg_size = 0;
+				int regN = 1;
+				for (string reg : funcname2pushlist[name]) {
+					global_reg_list += "," + reg;
+					regN++;
+				}
+				global_reg_size = regN - 1;
+				sp -= regN * 4;
+				if (global_reg_list != "") {
+					OUTPUT("PUSH {" + global_reg_list.substr(1) + ",LR}"); //push LR together,right?
+				}
+				else {
+					OUTPUT("PUSH {LR}");
+				}
+				sp_recover = sp;
+			}
+			//pre alloc VR size
+			{
+				sp -= func2Vr[symbol_pointer].size() * 4;
+			}
 			break;
 		}
 		default:
 			break;
 		}
 	}
-
+	int temp_sp = sp_recover;
 	for (auto m : func2Vr[symbol_pointer]) {
-		sp -= 4;
-		var2addr[m.first] = sp;
+		temp_sp -= 4;
+		var2addr[m.first] = temp_sp;
 	}
 
-	global_reg_list = "";
-	global_reg_size = 0;
-	int regN = 1;
-	for (string reg : funcname2pushlist[name]) {
-		global_reg_list += "," + reg;
-		regN++;
-	}
-	global_reg_size = regN - 1;
-	if (!is_illegal(to_string(sp - sp_without_para))) {
+	if (!is_illegal(to_string(sp - sp_recover))) {
 		//OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
-		li("R12", sp - sp_without_para);
-		OUTPUT("ADD SP,SP,R12");
+		li("LR", sp - sp_recover);
+		OUTPUT("ADD SP,SP,LR");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
+		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_recover));
 	}
-	sp -= regN * 4;
-	if (global_reg_list != "") {
-		OUTPUT("PUSH {" + global_reg_list.substr(1) + ",LR}"); //push LR together,right?
-	}
-	else {
-		OUTPUT("PUSH {LR}");
-	}
-	//OUTPUT("PUSH {LR}");
 }
 
 void _alloc(CodeItem* ir)
@@ -581,7 +622,7 @@ void _load(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(var);
-		if (!is_illegal(to_string(p.second - sp),true)) {
+		if (!is_illegal(to_string(p.second - sp), true)) {
 			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			li("LR", p.second - sp);
 			OUTPUT("LDR " + target + ",[SP,LR]");
@@ -602,7 +643,7 @@ void _loadarr(CodeItem* ir)
 			OUTPUT("LDR " + target + ",[" + var + "," + offset + "]");
 		}
 		else {
-			auto p = get_location(var);			
+			auto p = get_location(var);
 			//丛改的
 			if (!is_illegal(to_string(p.second - sp))) {
 				//OUTPUT("LDR LR,=" + to_string(p.second - sp));
@@ -611,8 +652,13 @@ void _loadarr(CodeItem* ir)
 				OUTPUT("LDR " + target + ",[SP,LR]");
 			}
 			else {			//如果立即数合法，可以少一条LDR立即数指令
-				OUTPUT("ADD LR," + offset+",#"+ to_string(p.second - sp));
-				OUTPUT("LDR " + target + ",[SP,LR]");
+				if (p.second - sp == 0) {
+					OUTPUT("LDR " + target + ",[SP," + offset + "]");
+				}
+				else {
+					OUTPUT("ADD LR," + offset + ",#" + to_string(p.second - sp));
+					OUTPUT("LDR " + target + ",[SP,LR]");
+				}
 			}
 			/*
 			OUTPUT("ADD " + offset + "," + offset + ",SP");
@@ -623,7 +669,7 @@ void _loadarr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (!is_illegal(offset,true)) {
+			if (!is_illegal(offset, true)) {
 				//OUTPUT("LDR LR,=" + offset);
 				li("LR", stoi(offset));
 				OUTPUT("LDR " + target + ",[" + var + ",LR]");
@@ -635,7 +681,7 @@ void _loadarr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (!is_illegal(to_string(im),true)) {
+			if (!is_illegal(to_string(im), true)) {
 				//OUTPUT("LDR LR,=" + to_string(im));
 				li("LR", im);
 				OUTPUT("LDR " + target + ",[SP,LR]");
@@ -656,7 +702,7 @@ void _store(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(loca);
-		if (!is_illegal(to_string(p.second - sp),true)) {
+		if (!is_illegal(to_string(p.second - sp), true)) {
 			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			li("LR", p.second - sp);
 			OUTPUT("STR " + value + ",[SP,LR]");
@@ -692,8 +738,13 @@ void _storearr(CodeItem* ir)
 				OUTPUT("STR " + value + ",[SP,LR]");
 			}
 			else {			//如果立即数合法，可以少一条LDR立即数指令
-				OUTPUT("ADD LR," + offset + ",#" + to_string(p.second - sp));
-				OUTPUT("STR " + value + ",[SP,LR]");
+				if (p.second - sp == 0) {
+					OUTPUT("STR " + value + ",[SP," + offset + "]");
+				}
+				else {
+					OUTPUT("ADD LR," + offset + ",#" + to_string(p.second - sp));
+					OUTPUT("STR " + value + ",[SP,LR]");
+				}
 			}
 			/*
 			OUTPUT("ADD " + offset + ",SP," + offset);
@@ -704,7 +755,7 @@ void _storearr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (!is_illegal(offset,true)) {
+			if (!is_illegal(offset, true)) {
 				//OUTPUT("LDR LR,=" + offset);
 				li("LR", stoi(offset));
 				OUTPUT("STR " + value + ",[" + var + ",LR]");
@@ -716,7 +767,7 @@ void _storearr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (!is_illegal(to_string(im),true)) {
+			if (!is_illegal(to_string(im), true)) {
 				//OUTPUT("LDR LR,=" + to_string(im));
 				li("LR", im);
 				OUTPUT("STR " + value + ",[SP,LR]");
@@ -848,11 +899,17 @@ void _div(CodeItem* ir)
 			int sh_post;
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
 			bool pop = false;
-			//OUTPUT("LDR LR,=" + to_string(m_high));
 			li("LR", m_high);
-			OUTPUT("SMMUL LR,LR," + op1);
+			//OUTPUT("SMMUL LR,LR," + op1);
+			//if (m_high < 0) {
+			//	OUTPUT("ADD LR,LR," + op1);//璇曡瘯
+			//}
 			if (m_high < 0) {
-				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
+				//OUTPUT("ADD LR,LR," + op1);
+				OUTPUT("SMMLA LR,LR," + op1 + "," + op1);
+			}
+			else {
+				OUTPUT("SMMUL LR,LR," + op1);
 			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB " + target + ",LR," + op1 + ",ASR #31");
@@ -945,11 +1002,14 @@ void _rem(CodeItem* ir)
 			int m_high;
 			int sh_post;
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
-			//OUTPUT("LDR LR,=" + to_string(m_high));
 			li("LR", m_high);
-			OUTPUT("SMMUL LR,LR," + op1);
+			/*OUTPUT("SMMUL LR,LR," + op1);*/
 			if (m_high < 0) {
-				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
+				//OUTPUT("ADD LR,LR," + op1);
+				OUTPUT("SMMLA LR,LR," + op1 + "," + op1);
+			}
+			else {
+				OUTPUT("SMMUL LR,LR," + op1);
 			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB LR,LR," + op1 + ",ASR #31");
@@ -975,8 +1035,9 @@ void _rem(CodeItem* ir)
 			}
 			//OUTPUT("LDR " + tempreg + ",=" + op2);
 			li(tempreg, stoi(op2));
-			OUTPUT("MUL LR,LR," + tempreg);
-			OUTPUT("SUB " + target + "," + op1 + ",LR");
+			/*OUTPUT("MUL LR,LR," + tempreg);
+			OUTPUT("SUB " + target + "," + op1 + ",LR");*/
+			OUTPUT("MLS " + target + ",LR," + tempreg + "," + op1);
 			if (pop) {
 				OUTPUT("POP {" + tempreg + "}");
 			}
@@ -1365,26 +1426,21 @@ void _ret(CodeItem* ir)
 			}
 		}
 	}*/
-	int fake_sp = sp;
-	//OUTPUT("POP {LR}");
-	fake_sp += 4;
-	if (global_reg_list != "") {
-		OUTPUT("POP {" + global_reg_list.substr(1) + ",LR}"); //pop lr together,right?
-		//fake_sp += func2gReg[symbol_pointer].size() * 4;
-		fake_sp +=  global_reg_size* 4;
-	}
-	else {
-		OUTPUT("POP {LR}");
-	}
-	if (!is_illegal(to_string(sp_without_para-fake_sp))) {
+	if (!is_illegal(to_string(sp_recover - sp))) {
 		//OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
-		li("R12", sp_without_para - fake_sp);
+		li("R12", sp_recover - sp);
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(sp_without_para - fake_sp));
+		OUTPUT("ADD SP,SP,#" + to_string(sp_recover - sp));
 	}
-	OUTPUT("MOV PC,LR");
+	if (global_reg_list != "") {
+		OUTPUT("POP {" + global_reg_list.substr(1) + ",PC}"); //pop lr together,right?
+	}
+	else {
+		OUTPUT("POP {PC}");
+	}
+	//OUTPUT("MOV PC,LR");
 }
 
 void _mov(CodeItem* ir) {
@@ -1501,12 +1557,12 @@ void _arrayinit(CodeItem* ir)
 	//OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
 	//OUTPUT("BL memset");
 	//第二种，连续存
-	int length = stoi(size)+stoi(ir->getExtend());
+	int length = stoi(size) + stoi(ir->getExtend());
 	//OUTPUT("LDR LR,=" + iniv);
 	li("LR", stoi(iniv));
 	for (int i = stoi(ir->getExtend()); i < length; i += 1) {
-		int off = p.second - sp + i*4;
-		if (!is_illegal(to_string(off),true)) {
+		int off = p.second - sp + i * 4;
+		if (!is_illegal(to_string(off), true)) {
 			//OUTPUT("LDR R12,=" + to_string(off));
 			li("R12", off);
 			OUTPUT("STR LR,[SP,R12]");
@@ -1521,6 +1577,24 @@ void arm_generate(string sname)
 {
 	ofstream arm(sname);
 	getcallerMap();
+	//将局部数组移动到最后
+	for (int i = 1; i < total.size(); i++) {
+		int max = 0;
+		int k = 0;
+		for (int j = 1; j < total[i].size(); j++) {
+			if (total[i][j].getForm() == VARIABLE && total[i][j].getDimension() > 0) {
+				if (total[i][j].getUseCount() > max) {
+					max = total[i][j].getUseCount();
+					k = j;
+				}
+			}
+		}
+		if (k > 0) {	//移动符号表，把局部数组使用次数最多的元素放到最后面
+			symbolTable item = total[i][k];
+			total[i].erase(total[i].begin() + k);
+			total[i].push_back(item);
+		}
+	}
 	for (int i = 0; i < LIR.size(); i++) {
 		for (int j = 0; j < LIR[i].size(); j++) {
 			CodeItem* ir_now = &LIR[i][j];

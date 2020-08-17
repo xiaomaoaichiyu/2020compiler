@@ -264,6 +264,8 @@ private:
 
 	void clearNoCallFun();
 
+	void identifyNoCallFun(std::vector<bool>& funCall);
+
 public:
 	/*SSA(std::vector<std::vector<CodeItem>> codetotal, std::vector<std::vector<symbolTable>> symTable) {
 		this->codetotal = codetotal;

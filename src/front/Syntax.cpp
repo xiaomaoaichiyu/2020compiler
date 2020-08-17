@@ -79,6 +79,7 @@ symbolTable checkItem(string checkname)             //查表：在传参时判�
 	for (i = 0; i < total[0].size(); i++) {
 		name = total[0][i].getName();
 		if (name == checkname) {  //从最近的作用域找到了
+			total[0][i].setFuncindex(Funcindex);
 			Range = 0;
 			return total[0][i];
 		}
@@ -185,8 +186,12 @@ bool isNoChangeFunc(string a);		//跳转到该函数不会修改任何内容
 
 //全局变量多次使用变成局部变量，可以避免多次LDR和STR
 void changeGlobalToAlloc(int index);
+void changeGlobalToAlloc2(int index);
 int haveCall;			//该函数不能出现call类型中间代码，在changeForInline函数内完成，节约一次遍历
 
+//局部数组基址和SP重合
+map<string, int> matrixUseCount;
+void addUseCount(int index);
 
 //=============================================================================================================
 //        以上为全局变量定义以及函数定义
@@ -240,6 +245,9 @@ int frontExecute(string syname)
 	}
 	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
 	youhuaDivCompare();				//除法比较进行优化
+	for (int i = 1; i < codetotal.size(); i++) {
+		changeGlobalToAlloc2(i);
+	}
 	//检测符号表内容
 	/*
 	cout << "名字 " << "Block下标 " << "种类 0Con 1Var 2Para 3Func " << "维度 " << endl;
@@ -349,6 +357,7 @@ void CompUnit()
 					total[Funcindex][0].setisinlineFunc(isinlineFunc);
 					changeGlobalToAlloc(Funcindex);
 					deleteSameExp(Funcindex);
+					addUseCount(Funcindex);
 				}
 				else {
 					symbol = sym_tag;
@@ -371,6 +380,7 @@ void CompUnit()
 				total[Funcindex][0].setisinlineFunc(isinlineFunc);
 				changeGlobalToAlloc(Funcindex);
 				deleteSameExp(Funcindex);
+				addUseCount(Funcindex);
 			}
 		}
 	}
@@ -756,6 +766,9 @@ void VarDef(int index, int block)             //变量定义
 		wordAnalysis.getsym();
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
+	}
+	if (dimenson > 0) {
+		matrixUseCount[name] = 0;		//初始化计数次数
 	}
 	symbolTable item = symbolTable(VARIABLE, INT, name, dimenson, block);
 	item.setMatrixLength(length, index);
@@ -1738,6 +1751,7 @@ void assignStmt()        //赋值语句 LVal = Exp
 	}
 	//outfile << "<赋值语句>" << endl;
 }
+
 void ifStmt()            //条件语句 + 短路逻辑
 {
 	//printMessage();    //输出if信息
@@ -1868,8 +1882,8 @@ void ifStmt()            //条件语句+无短路逻辑
 	//退出前Stmt均预读
 	//outfile << "<条件语句>" << endl;
 }
-*/
-/*
+
+
 void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR, op;
@@ -2979,7 +2993,7 @@ bool isTemp(string a)
 }
 void changeGlobalToAlloc(int index)
 {
-	if (haveCall == 1) {	//出现调用，直接不做将全局变量变成局部变量的操作
+	if (haveCall == 1) {	//出现调用，直接不做将全局变量变成局部变量的操作  或者  全局变量只在该函数内部出现过，而且函数不会调用自身
 		return;
 	}
 	int i, j, k;
@@ -3019,7 +3033,7 @@ void changeGlobalToAlloc(int index)
 					break;
 				}
 			}
-			if (total[0][j].getDimension() > 0) {  //该变量不能是全局数组
+			if ( j==total[0].size() || total[0][j].getDimension() > 0) {  //没查到或者查到了该变量不能是全局数组
 				globalNames.erase(str);
 				flag = 1;
 				break;
@@ -3086,5 +3100,155 @@ void changeGlobalToAlloc(int index)
 			}
 		}
 	}
-
+}
+void addUseCount(int index)
+{
+	matrixUseCount.clear();
+	int i, j, k;
+	for (i = 1; i < total[index].size(); i++) {
+		if (total[index][i].getForm()==VARIABLE && total[index][i].getDimension() > 0 ) {
+			matrixUseCount[total[index][i].getName()] = 0;
+		}
+	}
+	for (i = 0; i < codetotal[index].size(); i++) {
+		if (codetotal[index][i].getCodetype() == LOADARR) {
+			//CodeItem citem = CodeItem(LOADARR, interRegister, b + name_tag, registerA); //数组取值
+			string matrixname = codetotal[index][i].getOperand1();
+			if (matrixname[0] == '%') {
+				string name2 = matrixname.substr(1, matrixname.size());
+				if (matrixUseCount.count(name2) > 0) {
+					matrixUseCount[name2]++;
+				}
+			}
+		}
+		if (codetotal[index][i].getCodetype() == STOREARR) {
+			//CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
+			string matrixname = codetotal[index][i].getOperand1();
+			if (matrixname[0] == '%') {
+				string name2 = matrixname.substr(1, matrixname.size());
+				if (matrixUseCount.count(name2) > 0) {
+					matrixUseCount[name2]++;
+				}
+			}
+		}
+	}
+	for (i = 1; i < total[index].size(); i++) {
+		if (total[index][i].getForm() == VARIABLE && total[index][i].getDimension() > 0) {
+			total[index][i].setUseCount(matrixUseCount[total[index][i].getName()]);
+			//cout << matrixUseCount[total[index][i].getName()] << " " << total[index][i].getName() << endl;  检测统计正确性输出
+		}
+	}
+}
+void changeGlobalToAlloc2(int index)
+{
+	int i, j, k;
+	int jilu = 0;
+	map<string, int> globalTimes;	//统计全局变量出现次数
+	set<string> globalNames;		//统计全局变量名
+	for (i = 1; i < codetotal[index].size(); i++) {		//先遍历中间代码统计全局变量出现次数
+		string res = codetotal[index][i].getResult();
+		string ope1 = codetotal[index][i].getOperand1();
+		string ope2 = codetotal[index][i].getOperand2();
+		if (codetotal[index][i].getCodetype() == NOTE) {			//注释类的中间代码不管
+			continue;
+		}
+		if (res[0] == '@') {
+			globalTimes[res] = globalTimes[res] + 1;
+			globalNames.insert(res);
+		}
+		if (ope1[0] == '@') {
+			globalTimes[ope1] = globalTimes[ope1] + 1;
+			globalNames.insert(ope1);
+		}
+		if (ope2[0] == '@') {
+			globalTimes[ope2] = globalTimes[ope2] + 1;
+			globalNames.insert(ope2);
+		}
+		if (codetotal[index][i].getCodetype() == CALL && ope1 == total[index][0].getName()) {
+			jilu = 1;		//不能调用函数本身
+		}
+	}
+	if (jilu == 1 || globalNames.size()==0 ) {
+		return;
+	}
+	while (true) {
+		int flag = 0;
+		for (string str : globalNames) {
+			if (globalTimes[str] <= 4) {		//该变量至少出现5次
+				globalNames.erase(str);
+				flag = 1;
+				break;
+			}
+			for (j = 0; j < total[0].size(); j++) {
+				if (total[0][j].getName() == str) {		//此时符号表中变量还没有@，所以要去掉首字符
+					break;
+				}
+			}
+			if (j == total[0].size() || total[0][j].getDimension() > 0 || total[0][j].getFuncindexSize() > 1) {  //没查到或者查到了该变量不能是全局数组
+				globalNames.erase(str);
+				flag = 1;
+				break;
+			}
+		}
+		if (flag == 0) {
+			break;
+		}
+	}
+	//此时globalNames中剩下符合要求的全局变量
+	if (globalNames.size() == 0) {
+		return;
+	}
+	if (total[index][0].getValuetype() == VOID) {		//VOID函数没有ret自动补齐
+		int size = codetotal[index].size();
+		if (codetotal[index][size - 1].getCodetype() != RET) {
+			CodeItem citem = CodeItem(RET, "", "", "void");
+			codetotal[index].push_back(citem);
+		}
+	}
+	for (string str : globalNames) {
+		string newName = str.substr(1, str.size());
+		newName = "%Glo-All-" + newName + "-" + total[index][0].getName();	//该全局变量对应局部变量新名字
+		for (i = 1; i < codetotal[index].size(); i++) {		//遍历中间代码，更改成分
+			if (codetotal[index][i].getResult() == str) {
+				codetotal[index][i].setResult(newName);
+			}
+			if (codetotal[index][i].getOperand1() == str) {
+				codetotal[index][i].setOperand1(newName);
+			}
+			if (codetotal[index][i].getOperand2() == str) {
+				codetotal[index][i].setOperand2(newName);
+			}
+		}
+		//在符号表中插入新变量
+		symbolTable item = symbolTable(VARIABLE, INT, newName, 0, 0);
+		total[index].push_back(item);
+		//在中间代码加入新内容
+		//先获取临时变量序号,共需要retNum+1个
+		for (j = 1; j < codetotal[index].size(); j++) {
+			if (codetotal[index][j].getCodetype() == PARA || codetotal[index][j].getCodetype() == ALLOC) {
+				continue;
+			}
+			else {
+				CodeItem citem = CodeItem(ALLOC, newName, "0", "1");
+				codetotal[index].insert(codetotal[index].begin() + j, citem);
+				CodeItem citem1 = CodeItem(LOAD, '%' + numToString(Temp), str, "");
+				codetotal[index].insert(codetotal[index].begin() + j + 1, citem1);
+				CodeItem citem2 = CodeItem(STORE, '%' + numToString(Temp), newName, "");	//赋值单值
+				codetotal[index].insert(codetotal[index].begin() + j + 2, citem2);
+				j = j + 3;
+				Temp++;
+				break;
+			}
+		}
+		for (; j < codetotal[index].size(); j++) {
+			if (codetotal[index][j].getCodetype() == RET) {
+				CodeItem citem1 = CodeItem(LOAD, '%' + numToString(Temp), newName, "");
+				codetotal[index].insert(codetotal[index].begin() + j, citem1);
+				CodeItem citem2 = CodeItem(STORE, '%' + numToString(Temp), str, "");	//赋值单值
+				codetotal[index].insert(codetotal[index].begin() + j + 1, citem2);
+				j = j + 2;
+				Temp++;
+			}
+		}
+	}
 }

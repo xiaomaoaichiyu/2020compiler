@@ -1220,6 +1220,10 @@ int SSA::str2int(string name) {
 	return ans;
 }
 
+string changeGlobal2Local(string varName) {
+	return "%local_" + varName.substr(1);
+}
+
 // 入口函数
 void SSA::generate() {
 
@@ -1295,7 +1299,7 @@ void SSA::generate() {
 		init();
 
 		// 测试输出上面各个函数
-		if (i == 0) Test_SSA();
+		Test_SSA();
 
 		// 恢复变量命名
 		if (i == 0) rename_back();
@@ -1319,7 +1323,6 @@ void SSA::generate() {
 		// 函数内联
 		//if (i == 0) registerAllocation();
 		//if (i == 0) count_global_reg_allocated();
-		//for (auto i : globalRegAllocated) cout << i << endl;
 		if (i == 0) optimize_para_transfer();
 		if (i == 0) inline_function();
 		
@@ -1331,6 +1334,38 @@ void SSA::generate() {
 		if (i == 1) TestIrCode("ir3.txt");
 	}
 	//Test_TempVariable();
+
+	int size1 = codetotal.size();
+	vector<bool> funCall(size1, false);
+	identifyNoCallFun(funCall);
+	bool ifOnlyMain = true;
+	for (int i = 1; i < funCall.size() - 1; i++) {
+		if (funCall[i]) ifOnlyMain = false;
+	}
+	if (ifOnlyMain) {
+		map<string, string> global2local;
+		int funNum = codetotal.size() - 1;
+		for (int i = 0; i < codetotal[funNum].size(); i++) {
+			CodeItem ci = codetotal[funNum][i];
+			string varName;
+			varName = ci.getResult();
+			if (ifGlobalVariable(varName)) {
+				string newVarName = changeGlobal2Local(varName);
+				global2local[varName] = newVarName;
+			}
+			varName = ci.getOperand1();
+			if (ifGlobalVariable(varName)) {
+				string newVarName = changeGlobal2Local(varName);
+				global2local[varName] = newVarName;
+			}
+			varName = ci.getOperand2();
+			if (ifGlobalVariable(varName)) {
+				string newVarName = changeGlobal2Local(varName);
+				global2local[varName] = newVarName;
+			}
+		}
+	}
+
 }
 
 // 仅进行活跃变量分析
@@ -1477,6 +1512,7 @@ int myPow(int x, int y) {
 void SSA::calVarWeight(vector<map<int, int>> circleDepth) {
 	int size1 = blockCore.size();
 	int loopWeight = 5;	// 循环权重
+	varWeight.clear();
 	for (int i = 0; i < size1; i++) {
 		varWeight.push_back(map<string, int>());
 	}
@@ -1525,9 +1561,8 @@ string SSA::removeKVar(int funNum) {
 	return ans;
 }
 
-void SSA::clearNoCallFun() {
+void SSA::identifyNoCallFun(vector<bool>& funCall) {
 	int size1 = codetotal.size();
-	vector<bool> funCall(size1, false);
 	int mainnum = funName2Num["@main"];
 	funCall[mainnum] = true;
 	for (int i = 1; i < size1; i++) {
@@ -1536,7 +1571,7 @@ void SSA::clearNoCallFun() {
 			CodeItem ci = codetotal[i][j];
 			if (ci.getCodetype() == CALL) {
 				string funName = ci.getOperand1();
-				if (funName2Num.find(funName) == funName2Num.end()) { 
+				if (funName2Num.find(funName) == funName2Num.end()) {
 					continue;
 				}
 				int funNum = funName2Num[funName];
@@ -1544,6 +1579,12 @@ void SSA::clearNoCallFun() {
 			}
 		}
 	}
+}
+
+void SSA::clearNoCallFun() {
+	int size1 = codetotal.size();
+	vector<bool> funCall(size1, false);
+	identifyNoCallFun(funCall);
 	for (int i = 1; i < size1; i++) {
 		if (!funCall[i]) {
 			CodeItem first_ci = codetotal[i][0];

@@ -1,5 +1,6 @@
 ﻿#include<string>
 #include<vector>
+#include<set>
 using namespace std;
 #ifndef _SYMBOLTABLE_H
 #define _SYMBOLTABLE_H
@@ -31,6 +32,10 @@ public:
 	valueType getValuetype();
 	void setisinlineFunc(int a);
 	int getisinlineFunc();
+	void setUseCount(int a);
+	int getUseCount();
+	void setFuncindex(int a);
+	int getFuncindexSize();
 private:
 	formType form;  //符号表形式种类
 	valueType valuetype;  //符号表值种类，除了函数可能有VOID剩下都是INT
@@ -42,6 +47,8 @@ private:
 	//string range;   作用域不要了，因为使用二级vector，第二层vector代表一个作用域
 	int blockIndex;    //当前block号
 	int isinlineFunc;	//标记函数是否为可内联函数
+	int useCount;		//记录局部数组使用次数
+	set<int> Funcindex;		//记录全局变量出现作用域
 };
 
 
