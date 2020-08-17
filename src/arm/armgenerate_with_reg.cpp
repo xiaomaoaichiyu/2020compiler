@@ -894,11 +894,17 @@ void _div(CodeItem* ir)
 			int sh_post;
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
 			bool pop = false;
-			//OUTPUT("LDR LR,=" + to_string(m_high));
 			li("LR", m_high);
-			OUTPUT("SMMUL LR,LR," + op1);
+			//OUTPUT("SMMUL LR,LR," + op1);
+			//if (m_high < 0) {
+			//	OUTPUT("ADD LR,LR," + op1);//璇曡瘯
+			//}
 			if (m_high < 0) {
-				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
+				//OUTPUT("ADD LR,LR," + op1);
+				OUTPUT("SMMLA LR,LR," + op1 + "," + op1);
+			}
+			else {
+				OUTPUT("SMMUL LR,LR," + op1);
 			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB " + target + ",LR," + op1 + ",ASR #31");
@@ -991,11 +997,14 @@ void _rem(CodeItem* ir)
 			int m_high;
 			int sh_post;
 			bool sign = replace_div(stoi(op2), &m_high, &sh_post);
-			//OUTPUT("LDR LR,=" + to_string(m_high));
 			li("LR", m_high);
-			OUTPUT("SMMUL LR,LR," + op1);
+			/*OUTPUT("SMMUL LR,LR," + op1);*/
 			if (m_high < 0) {
-				OUTPUT("ADD LR,LR," + op1);//璇曡瘯
+				//OUTPUT("ADD LR,LR," + op1);
+				OUTPUT("SMMLA LR,LR," + op1 + "," + op1);
+			}
+			else {
+				OUTPUT("SMMUL LR,LR," + op1);
 			}
 			OUTPUT("ASR LR,LR,#" + to_string(sh_post));
 			OUTPUT("SUB LR,LR," + op1 + ",ASR #31");
@@ -1021,8 +1030,9 @@ void _rem(CodeItem* ir)
 			}
 			//OUTPUT("LDR " + tempreg + ",=" + op2);
 			li(tempreg, stoi(op2));
-			OUTPUT("MUL LR,LR," + tempreg);
-			OUTPUT("SUB " + target + "," + op1 + ",LR");
+			/*OUTPUT("MUL LR,LR," + tempreg);
+			OUTPUT("SUB " + target + "," + op1 + ",LR");*/
+			OUTPUT("MLS " + target + ",LR," + tempreg + "," + op1);
 			if (pop) {
 				OUTPUT("POP {" + tempreg + "}");
 			}
