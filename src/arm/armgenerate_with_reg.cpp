@@ -647,8 +647,13 @@ void _loadarr(CodeItem* ir)
 				OUTPUT("LDR " + target + ",[SP,LR]");
 			}
 			else {			//如果立即数合法，可以少一条LDR立即数指令
-				OUTPUT("ADD LR," + offset+",#"+ to_string(p.second - sp));
-				OUTPUT("LDR " + target + ",[SP,LR]");
+				if (p.second - sp == 0) {
+					OUTPUT("LDR " + target + ",[SP," + offset + "]");
+				}
+				else {
+					OUTPUT("ADD LR," + offset + ",#" + to_string(p.second - sp));
+					OUTPUT("LDR " + target + ",[SP,LR]");
+				}
 			}
 			/*
 			OUTPUT("ADD " + offset + "," + offset + ",SP");
@@ -728,8 +733,13 @@ void _storearr(CodeItem* ir)
 				OUTPUT("STR " + value + ",[SP,LR]");
 			}
 			else {			//如果立即数合法，可以少一条LDR立即数指令
-				OUTPUT("ADD LR," + offset + ",#" + to_string(p.second - sp));
-				OUTPUT("STR " + value + ",[SP,LR]");
+				if (p.second - sp == 0) {
+					OUTPUT("STR " + value + ",[SP," + offset + "]");
+				}
+				else {
+					OUTPUT("ADD LR," + offset + ",#" + to_string(p.second - sp));
+					OUTPUT("STR " + value + ",[SP,LR]");
+				}
 			}
 			/*
 			OUTPUT("ADD " + offset + ",SP," + offset);
@@ -1566,7 +1576,6 @@ void arm_generate(string sname)
 		}
 		if (k > 0) {	//移动符号表，把局部数组使用次数最多的元素放到最后面
 			symbolTable item = total[i][k];
-			cout << item.getName() << endl;
 			total[i].erase(total[i].begin() + k);
 			total[i].push_back(item);
 		}
