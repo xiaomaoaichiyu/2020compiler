@@ -116,3 +116,11 @@ int symbolTable::getUseCount()
 {
 	return this->useCount;
 }
+void symbolTable::setFuncindex(int a)
+{
+	this->Funcindex.insert(a);
+}
+int symbolTable::getFuncindexSize()
+{
+	return this->Funcindex.size();
+}
