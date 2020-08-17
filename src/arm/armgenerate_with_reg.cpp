@@ -16,7 +16,7 @@ vector<string> output_buffer;
 int symbol_pointer;
 map<string, int> var2addr;
 int sp;
-int sp_without_para;
+int sp_recover; 
 int pushNum = 0;
 string global_var_name;
 int global_var_size = 0;
@@ -508,7 +508,7 @@ void _define(CodeItem* ir)
 	var2addr.clear();
 	int paraNum;
 	int paraIndex = 0;
-	sp_without_para = 0;
+	int sp_without_para = 0;
 	sp = 0;
 	for (symbolTable st : total[symbol_pointer]) {
 		formType form = st.getForm();
@@ -532,7 +532,7 @@ void _define(CodeItem* ir)
 				var2addr[st.getName()] = sp;
 			}
 			else {
-				var2addr[st.getName()] = sp + 16 + 4 * (paraIndex - 5);
+				var2addr[st.getName()] = sp_without_para + 4 * (paraIndex - 5);
 			}
 			break;
 		}
@@ -543,42 +543,49 @@ void _define(CodeItem* ir)
 				sp -= (paraNum - 4) * 4;
 			}
 			sp_without_para = sp;
+			//store regs
+			{
+				global_reg_list = "";
+				global_reg_size = 0;
+				int regN = 1;
+				for (string reg : funcname2pushlist[name]) {
+					global_reg_list += "," + reg;
+					regN++;
+				}
+				global_reg_size = regN - 1;
+				sp -= regN * 4;
+				if (global_reg_list != "") {
+					OUTPUT("PUSH {" + global_reg_list.substr(1) + ",LR}"); //push LR together,right?
+				}
+				else {
+					OUTPUT("PUSH {LR}");
+				}
+				sp_recover = sp;
+			}
+			//pre alloc VR size
+			{
+				sp -= func2Vr[symbol_pointer].size() * 4;
+			}
 			break;
 		}
 		default:
 			break;
 		}
 	}
-
+	int temp_sp = sp_recover;
 	for (auto m : func2Vr[symbol_pointer]) {
-		sp -= 4;
-		var2addr[m.first] = sp;
+		temp_sp -= 4;
+		var2addr[m.first] = temp_sp;
 	}
 
-	global_reg_list = "";
-	global_reg_size = 0;
-	int regN = 1;
-	for (string reg : funcname2pushlist[name]) {
-		global_reg_list += "," + reg;
-		regN++;
-	}
-	global_reg_size = regN - 1;
-	if (!is_illegal(to_string(sp - sp_without_para))) {
+	if (!is_illegal(to_string(sp - sp_recover))) {
 		//OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
-		li("R12", sp - sp_without_para);
-		OUTPUT("ADD SP,SP,R12");
+		li("LR", sp - sp_recover);
+		OUTPUT("ADD SP,SP,LR");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_without_para));
+		OUTPUT("ADD SP,SP,#" + to_string(sp - sp_recover));
 	}
-	sp -= regN * 4;
-	if (global_reg_list != "") {
-		OUTPUT("PUSH {" + global_reg_list.substr(1) + ",LR}"); //push LR together,right?
-	}
-	else {
-		OUTPUT("PUSH {LR}");
-	}
-	//OUTPUT("PUSH {LR}");
 }
 
 void _alloc(CodeItem* ir)
@@ -1394,24 +1401,19 @@ void _ret(CodeItem* ir)
 			}
 		}
 	}*/
-	int fake_sp = sp;
-	//OUTPUT("POP {LR}");
-	fake_sp += 4;
-	if (global_reg_list != "") {
-		OUTPUT("POP {" + global_reg_list.substr(1) + ",LR}"); //pop lr together,right?
-		//fake_sp += func2gReg[symbol_pointer].size() * 4;
-		fake_sp +=  global_reg_size* 4;
-	}
-	else {
-		OUTPUT("POP {LR}");
-	}
-	if (!is_illegal(to_string(sp_without_para-fake_sp))) {
+	if (!is_illegal(to_string(sp_recover-sp))) {
 		//OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
-		li("R12", sp_without_para - fake_sp);
+		li("R12", sp_recover - sp);
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(sp_without_para - fake_sp));
+		OUTPUT("ADD SP,SP,#" + to_string(sp_recover-sp));
+	}
+	if (global_reg_list != "") {
+		OUTPUT("POP {" + global_reg_list.substr(1) + ",LR}"); //pop lr together,right?
+	}
+	else {
+		OUTPUT("POP {LR}");
 	}
 	OUTPUT("MOV PC,LR");
 }
