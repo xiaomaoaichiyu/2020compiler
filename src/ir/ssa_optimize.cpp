@@ -1791,7 +1791,7 @@ bool checkInvariant(const set<Node>& defs, const set<int>& cir_blks, vector<basi
 }
 
 void markArray(int funcNum, Circle& circle, UDchain1 udchain1, vector<basicBlock>& blocks) {
-	array2out.clear();
+	array2out.clear(); arr2offset2num.clear();
 	//先找循环中的可以被外提的数组，需满足两个条件：
 	//1. 循环中不存在call使用数组的地址
 	//2. 循环中不存在数组的位置偏移赋值
@@ -2311,9 +2311,53 @@ void SSA::arraycode_outside(int funcNum, Circle& circle) {
 //不变式标记 代码外提
 //================================================
 
+set<string> array2out1;
+map<string, set<string>> arr2offset2num1;
+
 void SSA::mark_invariant(int funcNum, Circle& circle) {
 	auto& blocks = blockCore.at(funcNum);
 	auto& udchain = func2udChains.at(funcNum);
+	array2out1.clear();
+	arr2offset2num1.clear();
+	for (auto idx : circle.cir_blks) {
+		auto& ir = blocks.at(idx).Ir;
+		for (int j = 0; j < ir.size(); j++) { //先判断数组变量是否被未知偏移定义过
+			auto instr = ir.at(j);
+			auto op = instr.getCodetype();
+			auto res = instr.getResult();
+			auto ope1 = instr.getOperand1();
+			auto ope2 = instr.getOperand2();
+			if (op == STOREARR && !isGlobal(ope1)) {
+				if (!isNumber(ope2)) {
+					array2out1.erase(ope1);
+				}
+				else {
+					if (arr2offset2num1.find(ope1) != arr2offset2num1.end()) {
+						if (arr2offset2num1[ope1].find(ope2) != arr2offset2num1[ope1].end()) {
+							arr2offset2num1.erase(ope1);
+							array2out1.erase(ope2);
+						}
+						else {
+							arr2offset2num1[ope1].insert(ope2);
+							array2out1.insert(ope1);
+						}
+					}
+					else {
+						arr2offset2num1[ope1] = set<string>();
+						arr2offset2num1[ope1].insert(ope2);
+						array2out1.insert(ope1);
+					}
+				}
+			}
+			else if (op == LOADARR) {
+				array2out1.insert(ope1);
+			}
+			else if (op == LOAD && array2out1.find(ope1) != array2out1.end() && ope2 == "array") {
+				array2out1.erase(ope1);
+			}
+		}
+	}
+	
 	try {
 		//第一遍标记运算对象为常数和定值点在循环外的
 		for (auto idx : circle.cir_blks) {
@@ -2384,18 +2428,22 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				//case LOADARR: {
-				//	if (!isNumber(ope2)) {
-				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-				//		if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-				//			instr.setInvariant();
-				//		}
-				//	}
-				//	else {	//偏移是立即数
-				//		instr.setInvariant();
-				//	}
-				//	break;
-				//}
+				case LOADARR: {
+					if (array2out1.find(ope1) != array2out1.end()) {
+						if (!isNumber(ope2)) {
+							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+							if (def.var != "") {
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+						}
+						else {	//偏移是立即数
+							instr.setInvariant();
+						}
+					}
+					break;
+				}
 				/*case STOREARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2510,6 +2558,20 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
+				case LOADARR: {
+					if (array2out1.find(ope1) != array2out1.end()) {
+						if (!isNumber(ope2)) {
+							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+							if (def.var != "") {
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
+									|| blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {
+									instr.setInvariant();
+								}
+							}
+						}
+					}
+					break;
+				}
 				default:
 					break;
 				}
