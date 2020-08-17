@@ -1552,7 +1552,7 @@ void _getreg(CodeItem* ir) {
 }
 
 void _note(CodeItem* ir) {
-	OUTPUT("@note " + ir->getResult() + " " + ir->getOperand1() + " " + ir->getOperand2());
+	//OUTPUT("@note " + ir->getResult() + " " + ir->getOperand1() + " " + ir->getOperand2());
 	/*
 	string status = ir->getOperand2();
 	string note = ir->getOperand1();
