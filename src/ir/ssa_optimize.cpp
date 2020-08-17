@@ -641,9 +641,7 @@ void SSA::inline_function() {
 						/*else if (globalRegAllocated[i] == 8) {	// 只有sort样例中不内联
 							continue;
 						}*/
-						if (i == 3 && funName.compare("@getNumPos") == 0) {
-							continue;	// 作弊写法，看效果
-						}
+						else if (total[i].size() > 16) continue;
 						bool ifCallAsParam = false;
 						for (int iter2 = j + 1; iter2 < codetotal[i].size(); iter2++) {
 							CodeItem ttt = codetotal[i][iter2];
@@ -1624,6 +1622,7 @@ string getTmpVar(string funcName) {
 }
 
 void SSA::circleVar() {
+	func2circles.clear();
 	func2circles.push_back(vector<Circle>());
 	for (int i = 1; i < blockCore.size(); i++) {
 		circles.clear();
