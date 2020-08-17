@@ -3056,7 +3056,7 @@ void changeGlobalToAlloc(int index)
 	}
 	for (string str : globalNames) {
 		string newName = str.substr(1, str.size());
-		newName = "%Glo-All-" + newName + "-" + total[index][0].getName();	//该全局变量对应局部变量新名字
+		newName = "%Glo-All-" + newName + "+" + total[index][0].getName();	//该全局变量对应局部变量新名字
 		for (i = 1; i < codetotal[index].size(); i++) {		//遍历中间代码，更改成分
 			if (codetotal[index][i].getResult() == str) {
 				codetotal[index][i].setResult(newName);
@@ -3207,7 +3207,7 @@ void changeGlobalToAlloc2(int index)
 	}
 	for (string str : globalNames) {
 		string newName = str.substr(1, str.size());
-		newName = "%Glo-All-" + newName + "-" + total[index][0].getName();	//该全局变量对应局部变量新名字
+		newName = "%Glo-All-" + newName + "+" + total[index][0].getName().substr(1,total[index][0].getName().size());	//该全局变量对应局部变量新名字
 		for (i = 1; i < codetotal[index].size(); i++) {		//遍历中间代码，更改成分
 			if (codetotal[index][i].getResult() == str) {
 				codetotal[index][i].setResult(newName);
