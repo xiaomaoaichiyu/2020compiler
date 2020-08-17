@@ -16,7 +16,7 @@ vector<string> output_buffer;
 int symbol_pointer;
 map<string, int> var2addr;
 int sp;
-int sp_recover; 
+int sp_recover;
 int pushNum = 0;
 string global_var_name;
 int global_var_size = 0;
@@ -37,7 +37,7 @@ unsigned ror(unsigned val, int size)
 	return res;
 }
 
-bool is_illegal(string im,bool str=false);
+bool is_illegal(string im, bool str = false);
 
 void li(string reg, int im)
 {
@@ -63,7 +63,7 @@ string getname(string ir_name)
 	}
 }
 
-string get_varname_scale(string name) 
+string get_varname_scale(string name)
 {
 	if (name.size() == 0) {
 		return "";
@@ -147,14 +147,14 @@ bool judgetemp(string a)		//丛加的
 }
 bool judgeglobal(string a)		//丛加的
 {
-	if (a == "R4" || a == "R5" || a == "R6" || a == "R7" || a == "R8"||a=="R9"||a=="R10"||a=="R11") {
+	if (a == "R4" || a == "R5" || a == "R6" || a == "R7" || a == "R8" || a == "R9" || a == "R10" || a == "R11") {
 		return true;
 	}
 	return false;
 }
 bool judgeLoadOp(string a)		//丛加的
 {
-	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL") {
+	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL"  || a == "MOV") {
 		return true;
 	}
 	return false;
@@ -186,7 +186,7 @@ bool is_nonsence(int index)
 		string mul_re = result[1];
 		string mul_op1 = result[2];
 		string mul_op2 = result[3];
-		if (output_buffer[index + 1].substr(0,3) == "ADD" && 
+		if (output_buffer[index + 1].substr(0, 3) == "ADD" &&
 			regex_match(output_buffer[index + 1], result, pattern4)) {
 			string add_re = result[1];
 			string add_op1 = result[2];
@@ -212,14 +212,14 @@ bool is_nonsence(int index)
 	//数组做参数取值或存值时，基址是全局寄存器，会先将其放到临时寄存器产生冗余
 	//例：MOV R2,R7   STR R1,[R2,R0]   ——>  STR R1,[R7,R0]		丛加的
 	//注：由于寄存器可能是3位，因此会带来问题
-	
+
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
 		if (a == "MOV" && (nextOp == "STR" || nextOp == "LDR")) {
 			string str_num1 = str.substr(4, 2);
 			string str_num2 = str.substr(7, 2);
-			string next_num1 = strNext.substr(8, 2);   
+			string next_num1 = strNext.substr(8, 2);
 			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
@@ -282,7 +282,9 @@ bool is_nonsence(int index)
 			string next_num2 = strNext.substr(7, 2);
 			string next_num3 = strNext.substr(7, 3);		//防止next_num2实际是R11、R12只是因为取两位才为R1
 			string num1 = str.substr(4, 2);
-			if (num1 == next_num2 && (next_num2 == "R0"|| next_num2 == "R1"|| next_num2 == "R2"|| next_num2 == "R3")&&next_num2==next_num3) {
+			string num2 = str.substr(4, 3);
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
+				&& next_num2 == next_num3 && num2 != "R10" && num2!="R11" && num2 != "R12") {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -291,11 +293,14 @@ bool is_nonsence(int index)
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				return false;
 			}
+			//MOV R10,R0  MOV R4,R1
 			next_num1 = strNext.substr(4, 3);
 			next_num2 = strNext.substr(8, 2);
 			next_num3 = strNext.substr(8, 3);				//防止next_num2实际是R11、R12只是因为取两位才为R1
 			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
-			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") && next_num2 == next_num3) {
+			num2 = str.substr(4, 3);
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
+				&& next_num2 == next_num3 && num2 != "R10" && num2 != "R11" && num2 != "R12") {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -384,7 +389,7 @@ bool check_format(CodeItem* ir) {
 	return true;
 }
 
-bool is_illegal(string im,bool str) {
+bool is_illegal(string im, bool str) {
 	int i = stoi(im);
 	if (str) {
 		return i < 4096;
@@ -617,7 +622,7 @@ void _load(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(var);
-		if (!is_illegal(to_string(p.second - sp),true)) {
+		if (!is_illegal(to_string(p.second - sp), true)) {
 			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			li("LR", p.second - sp);
 			OUTPUT("LDR " + target + ",[SP,LR]");
@@ -638,7 +643,7 @@ void _loadarr(CodeItem* ir)
 			OUTPUT("LDR " + target + ",[" + var + "," + offset + "]");
 		}
 		else {
-			auto p = get_location(var);			
+			auto p = get_location(var);
 			//丛改的
 			if (!is_illegal(to_string(p.second - sp))) {
 				//OUTPUT("LDR LR,=" + to_string(p.second - sp));
@@ -664,7 +669,7 @@ void _loadarr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (!is_illegal(offset,true)) {
+			if (!is_illegal(offset, true)) {
 				//OUTPUT("LDR LR,=" + offset);
 				li("LR", stoi(offset));
 				OUTPUT("LDR " + target + ",[" + var + ",LR]");
@@ -676,7 +681,7 @@ void _loadarr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (!is_illegal(to_string(im),true)) {
+			if (!is_illegal(to_string(im), true)) {
 				//OUTPUT("LDR LR,=" + to_string(im));
 				li("LR", im);
 				OUTPUT("LDR " + target + ",[SP,LR]");
@@ -697,7 +702,7 @@ void _store(CodeItem* ir)
 	}
 	else {
 		auto p = get_location(loca);
-		if (!is_illegal(to_string(p.second - sp),true)) {
+		if (!is_illegal(to_string(p.second - sp), true)) {
 			//OUTPUT("LDR LR,=" + to_string(p.second - sp));
 			li("LR", p.second - sp);
 			OUTPUT("STR " + value + ",[SP,LR]");
@@ -750,7 +755,7 @@ void _storearr(CodeItem* ir)
 	}
 	else {
 		if (var[0] == 'R') {
-			if (!is_illegal(offset,true)) {
+			if (!is_illegal(offset, true)) {
 				//OUTPUT("LDR LR,=" + offset);
 				li("LR", stoi(offset));
 				OUTPUT("STR " + value + ",[" + var + ",LR]");
@@ -762,7 +767,7 @@ void _storearr(CodeItem* ir)
 		else {
 			auto p = get_location(var);
 			int im = p.second - sp + stoi(offset);
-			if (!is_illegal(to_string(im),true)) {
+			if (!is_illegal(to_string(im), true)) {
 				//OUTPUT("LDR LR,=" + to_string(im));
 				li("LR", im);
 				OUTPUT("STR " + value + ",[SP,LR]");
@@ -1421,13 +1426,13 @@ void _ret(CodeItem* ir)
 			}
 		}
 	}*/
-	if (!is_illegal(to_string(sp_recover-sp))) {
+	if (!is_illegal(to_string(sp_recover - sp))) {
 		//OUTPUT("LDR R12,=" + to_string(sp_without_para - fake_sp));
 		li("R12", sp_recover - sp);
 		OUTPUT("ADD SP,SP,R12");
 	}
 	else {
-		OUTPUT("ADD SP,SP,#" + to_string(sp_recover-sp));
+		OUTPUT("ADD SP,SP,#" + to_string(sp_recover - sp));
 	}
 	if (global_reg_list != "") {
 		OUTPUT("POP {" + global_reg_list.substr(1) + ",PC}"); //pop lr together,right?
@@ -1504,7 +1509,7 @@ void _getreg(CodeItem* ir) {
 }
 
 void _note(CodeItem* ir) {
-	OUTPUT("@note " + ir->getResult() + " " + ir->getOperand1() + " " + ir->getOperand2());
+	//OUTPUT("@note " + ir->getResult() + " " + ir->getOperand1() + " " + ir->getOperand2());
 	/*
 	string status = ir->getOperand2();
 	string note = ir->getOperand1();
@@ -1552,12 +1557,12 @@ void _arrayinit(CodeItem* ir)
 	//OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
 	//OUTPUT("BL memset");
 	//第二种，连续存
-	int length = stoi(size)+stoi(ir->getExtend());
+	int length = stoi(size) + stoi(ir->getExtend());
 	//OUTPUT("LDR LR,=" + iniv);
 	li("LR", stoi(iniv));
 	for (int i = stoi(ir->getExtend()); i < length; i += 1) {
-		int off = p.second - sp + i*4;
-		if (!is_illegal(to_string(off),true)) {
+		int off = p.second - sp + i * 4;
+		if (!is_illegal(to_string(off), true)) {
 			//OUTPUT("LDR R12,=" + to_string(off));
 			li("R12", off);
 			OUTPUT("STR LR,[SP,R12]");
