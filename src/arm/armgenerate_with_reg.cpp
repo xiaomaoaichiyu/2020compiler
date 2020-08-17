@@ -1420,12 +1420,12 @@ void _ret(CodeItem* ir)
 		OUTPUT("ADD SP,SP,#" + to_string(sp_recover-sp));
 	}
 	if (global_reg_list != "") {
-		OUTPUT("POP {" + global_reg_list.substr(1) + ",LR}"); //pop lr together,right?
+		OUTPUT("POP {" + global_reg_list.substr(1) + ",PC}"); //pop lr together,right?
 	}
 	else {
-		OUTPUT("POP {LR}");
+		OUTPUT("POP {PC}");
 	}
-	OUTPUT("MOV PC,LR");
+	//OUTPUT("MOV PC,LR");
 }
 
 void _mov(CodeItem* ir) {
