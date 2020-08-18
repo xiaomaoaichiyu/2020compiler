@@ -2348,7 +2348,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 					}
 				}
 			}
-			else if (op == LOADARR) {
+			else if (op == LOADARR && !isGlobal(ope1)) {
 				array2out1.insert(ope1);
 			}
 			else if (op == LOAD && array2out1.find(ope1) != array2out1.end() && ope2 == "array") {
