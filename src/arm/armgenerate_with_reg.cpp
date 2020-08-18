@@ -1281,6 +1281,11 @@ void _not(CodeItem* ir)
 	string op1 = ir->getOperand1();
 	string op2 = ir->getOperand2();
 	if (target[0] == '%') {
+		if (target.substr(1, 9) == "while.end") {
+			CodeItem c(NEQ, target, op1, "0");
+			b_stack.push(c);
+			while_cond_stack.push(while_buffer);
+		}
 		OUTPUT("CMP " + op1 + ",#0");
 		OUTPUT("BNE " + target.substr(1));
 		return;
