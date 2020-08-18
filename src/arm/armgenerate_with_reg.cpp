@@ -355,6 +355,21 @@ bool is_nonsence(int index)
 
 		}
 	}
+	//存取优化  STR R0,[SP,#176]	LDR R0, [SP, #176]这里第二条LDR完全没用
+	if (index + 1 < output_buffer.size()) {
+		string strNext = output_buffer[index + 1];
+		string nextOp = strNext.substr(0, 3);
+		if (nextOp == "LDR" && a=="STR") {
+			string aa = str.substr(4, str.size());
+			string bb = strNext.substr(4, str.size());
+			if (aa == bb) {
+				output_buffer.erase(output_buffer.begin() + index + 1);
+				cout << str << endl;
+				cout << strNext << endl;
+				return false;
+			}
+		}
+	}
 	return false;
 }
 /*
