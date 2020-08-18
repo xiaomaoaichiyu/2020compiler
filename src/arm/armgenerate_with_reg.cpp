@@ -1012,16 +1012,23 @@ void _div(CodeItem* ir)
 			OUTPUT("MOV " + target + "," + op1);
 		}
 		else if (bitoff > 0) {
+			//not considering negtive
+			//OUTPUT("ASR " + target + "," + op1 + "," + to_string(bitoff));
+
+			//considering negtive
 			OUTPUT("ASR LR," + op1 + ",#31");
 			OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 - bitoff));
 			OUTPUT("ASR " + target + "," + target + ",#" + to_string(bitoff));
 		}
 		else if (bitoff < 0) {
+			//not considering negtive
+			/*OUTPUT("ASR " + target + "," + op1 + "," + to_string(-bitoff));
+			OUTPUT("RSB " + target + "," + target + ",#0");*/
+
+			//considering negtive
 			OUTPUT("ASR LR," + op1 + ",#31");
 			OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 + bitoff));
 			OUTPUT("ASR " + target + "," + target + ",#" + to_string(-bitoff));
-			/*OUTPUT("MOV LR,#0");
-			OUTPUT("SUB " + target + ",LR," + target);*/
 			OUTPUT("RSB " + target + "," + target + ",#0");
 		}
 		return;
@@ -1134,6 +1141,9 @@ void _rem(CodeItem* ir)
 		else {
 			int im = stoi(op2);
 			im = bitoff < 0 ? -im : im;
+			//not considering negtive
+			//OUTPUT("AND " + target + "," + op1 + "," + to_string(im - 1));
+			//considering negtive
 			OUTPUT("RSBS LR," + op1 + ",#0");
 			OUTPUT("AND LR,LR,#" + to_string(im - 1));
 			OUTPUT("AND " + target + "," + op1 + ",#" + to_string(im - 1));
@@ -1448,7 +1458,10 @@ void _sle(CodeItem* ir)
 void _label(CodeItem* ir)
 {
 	string l = ir->getResult().substr(1);
+	bool temp_p = while_buffer_push; //right? or we can leave it when while_buffer has label
+	while_buffer_push = false;
 	OUTPUT(l + ":");
+	while_buffer_push = temp_p;
 	if (l.substr(0, 10) == "while.cond") {
 		while_buffer_push = true;
 	}
