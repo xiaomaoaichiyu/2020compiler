@@ -2650,19 +2650,32 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 						var = "";
 						break;
 					}
-					if (instr.getCodetype() == LOAD && j + 1 < ir.size() && ir.at(j+1).getCodetype() != NOTE && ir.at(j + 1).getInvariant() != 1) {
-						instr.setInvariant("");
+					if (instr.getCodetype() == LOAD) {
+						int k10 = j + 1;
+						while (k10 < ir.size()) {
+							if (ir.at(k10).getCodetype() != NOTE) break;
+							k10++;
+						}
+						if (k10 < ir.size() && ir.at(k10).getInvariant() != 1) {
+							instr.setInvariant("");
+						}
+						/*
+						if (j + 1 < ir.size() && ir.at(j + 1).getCodetype() != NOTE && ir.at(j + 1).getInvariant() != 1) {
+							instr.setInvariant("");
+						}*/
 					}
-					if (condition1(circle.cir_outs, circle.cir_blks, idx, funcNum)
-						|| condition2(circle.cir_quits, circle.cir_blks, var, funcNum)) {
-						auto tmp = instr;
-						tmp.setInvariant("");
-						irTmp.push_back(tmp);
-						ir.erase(ir.begin() + j);
-						continue;
-					}
-					else {
-						instr.setInvariant("");
+					if (instr.getInvariant() == 1) {
+						if (condition1(circle.cir_outs, circle.cir_blks, idx, funcNum)
+							|| condition2(circle.cir_quits, circle.cir_blks, var, funcNum)) {
+							auto tmp = instr;
+							tmp.setInvariant("");
+							irTmp.push_back(tmp);
+							ir.erase(ir.begin() + j);
+							continue;
+						}
+						else {
+							instr.setInvariant("");
+						}
 					}
 				}
 				j++;

@@ -952,7 +952,7 @@ void SSA::turn_back_codetotal() {
 	for (int i = 1; i < blockCore.size(); i++) {		// 遍历函数
 		codetotal[i].clear();
 		int size2 = blockCore[i].size();
-		for (int j = 1; j < size2 - 1; j++) {	// 遍历基本块，跳过entry和exit块
+		for (int j = 0; j < size2; j++) {	// 遍历基本块，跳过entry和exit块
 			codetotal[i].insert(codetotal[i].end(), blockCore[i][j].Ir.begin(), blockCore[i][j].Ir.end());
 		}
 	}
