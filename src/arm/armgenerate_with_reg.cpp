@@ -1501,29 +1501,37 @@ void _br(CodeItem* ir)
 					OUTPUT(s);
 				}
 				while_buffer_push = push_temp;
+				bool b_end = true;
 				if (ir->getOperand2() != "1") {
 					b_stack.pop();
 					while_cond_stack.pop();
+					b_end = false;
 				}
 				switch (t)
 				{
 				case EQL:
 					_eql(&c);
+					if(b_end) OUTPUT("B %while.end_" + n);
 					return;
 				case NEQ:
 					_neq(&c);
+					if (b_end) OUTPUT("B %while.end_" + n);
 					return;
 				case SGT:
 					_sgt(&c);
+					if (b_end) OUTPUT("B %while.end_" + n);
 					return;
 				case SGE:
 					_sge(&c);
+					if (b_end) OUTPUT("B %while.end_" + n);
 					return;
 				case SLT:
 					_slt(&c);
+					if (b_end) OUTPUT("B %while.end_" + n);
 					return;
 				case SLE:
 					_sle(&c);
+					if (b_end) OUTPUT("B %while.end_" + n);
 					return;
 				}
 			}
