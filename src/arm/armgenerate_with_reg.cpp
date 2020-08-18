@@ -1511,27 +1511,27 @@ void _br(CodeItem* ir)
 				{
 				case EQL:
 					_eql(&c);
-					if(b_end) OUTPUT("B %while.end_" + n);
+					if(b_end) OUTPUT("B while.end_" + n);
 					return;
 				case NEQ:
 					_neq(&c);
-					if (b_end) OUTPUT("B %while.end_" + n);
+					if (b_end) OUTPUT("B while.end_" + n);
 					return;
 				case SGT:
 					_sgt(&c);
-					if (b_end) OUTPUT("B %while.end_" + n);
+					if (b_end) OUTPUT("B while.end_" + n);
 					return;
 				case SGE:
 					_sge(&c);
-					if (b_end) OUTPUT("B %while.end_" + n);
+					if (b_end) OUTPUT("B while.end_" + n);
 					return;
 				case SLT:
 					_slt(&c);
-					if (b_end) OUTPUT("B %while.end_" + n);
+					if (b_end) OUTPUT("B while.end_" + n);
 					return;
 				case SLE:
 					_sle(&c);
-					if (b_end) OUTPUT("B %while.end_" + n);
+					if (b_end) OUTPUT("B while.end_" + n);
 					return;
 				}
 			}
