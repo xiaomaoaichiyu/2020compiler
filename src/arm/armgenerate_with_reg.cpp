@@ -10,7 +10,7 @@
 #include<algorithm>
 #include<queue>
 #include<stack>
-#define OUTPUT(s) do{output_buffer.push_back(s);}while(0)
+#define OUTPUT(s) do{output_buffer.push_back(s);if (while_buffer_push)while_buffer.push_back(s);}while (0)
 using namespace std;
 
 vector<string> output_buffer;
@@ -31,6 +31,9 @@ map<string, int> func2para;
 map<string, vector<string>> funcname2pushlist;
 int canOutput;
 stack<CodeItem> b_stack;
+stack<vector<string>> while_cond_stack;
+vector<string> while_buffer;
+bool while_buffer_push = false;
 
 unsigned ror(unsigned val, int size)
 {
@@ -1439,7 +1442,15 @@ void _sle(CodeItem* ir)
 
 void _label(CodeItem* ir)
 {
-	OUTPUT(ir->getResult().substr(1) + ":");
+	string l = ir->getResult().substr(1);
+	OUTPUT(l + ":");
+	if (l.substr(0, 10) == "while.cond") {
+		while_buffer_push = true;
+	}
+	else if (l.substr(0, 10) == "while.body") {
+		while_buffer.clear();
+		while_buffer_push = false;
+	}
 }
 
 void _br(CodeItem* ir)
@@ -1451,6 +1462,7 @@ void _br(CodeItem* ir)
 		if (label2.substr(0, 9) == "while.end") {
 			CodeItem c(EQL, "%" + label2, res, "0");
 			b_stack.push(c);
+			while_cond_stack.push(while_buffer);
 		}
 		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
@@ -1459,13 +1471,20 @@ void _br(CodeItem* ir)
 	else {
 		if (res.substr(1, 10) == "while.cond" && b_stack.size()!=0) {
 			auto temp_ir = &(b_stack.top());
-			int n = stoi(temp_ir->getResult().substr(11));
-			if (n == stoi(res.substr(12))) {
+			string n = temp_ir->getResult().substr(11);
+			if (n == res.substr(12)) {
 				irCodeType t = Bconverse(temp_ir->getCodetype());
-				CodeItem c(t, "%while.body_" + to_string(n), 
+				CodeItem c(t, "%while.body_" + n, 
 					temp_ir->getOperand1(), temp_ir->getOperand2());
+				bool push_temp = while_buffer_push;
+				while_buffer_push = false;
+				for (string s : while_cond_stack.top()) {
+					OUTPUT(s);
+				}
+				while_buffer_push = push_temp;
 				if (ir->getOperand2() != "1") {
 					b_stack.pop();
+					while_cond_stack.pop();
 				}
 				switch (t)
 				{
@@ -1754,6 +1773,7 @@ void arm_generate(string sname)
 				string s = ir_now->getResult();
 				if (s[0] == '%' && s.substr(1,9) == "while.end") {
 					b_stack.push(*ir_now);
+					while_cond_stack.push(while_buffer);
 				}
 				_eql(ir_now);
 				break;
@@ -1762,6 +1782,7 @@ void arm_generate(string sname)
 				string s = ir_now->getResult();
 				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
 					b_stack.push(*ir_now);
+					while_cond_stack.push(while_buffer);
 				}
 				_neq(ir_now);
 				break;
@@ -1770,6 +1791,7 @@ void arm_generate(string sname)
 				string s = ir_now->getResult();
 				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
 					b_stack.push(*ir_now);
+					while_cond_stack.push(while_buffer);
 				}
 				_sgt(ir_now);
 				break;
@@ -1778,6 +1800,7 @@ void arm_generate(string sname)
 				string s = ir_now->getResult();
 				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
 					b_stack.push(*ir_now);
+					while_cond_stack.push(while_buffer);
 				}
 				_sge(ir_now);
 				break;
@@ -1786,6 +1809,7 @@ void arm_generate(string sname)
 				string s = ir_now->getResult();
 				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
 					b_stack.push(*ir_now);
+					while_cond_stack.push(while_buffer);
 				}
 				_slt(ir_now);
 				break;
@@ -1794,6 +1818,7 @@ void arm_generate(string sname)
 				string s = ir_now->getResult();
 				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
 					b_stack.push(*ir_now);
+					while_cond_stack.push(while_buffer);
 				}
 				_sle(ir_now);
 				break;
