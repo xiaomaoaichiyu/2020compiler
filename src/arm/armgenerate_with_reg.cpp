@@ -212,7 +212,6 @@ bool is_nonsence(int index)
 	//数组做参数取值或存值时，基址是全局寄存器，会先将其放到临时寄存器产生冗余
 	//例：MOV R2,R7   STR R1,[R2,R0]   ——>  STR R1,[R7,R0]		丛加的
 	//注：由于寄存器可能是3位，因此会带来问题
-
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
@@ -220,6 +219,7 @@ bool is_nonsence(int index)
 			string str_num1 = str.substr(4, 2);
 			string str_num2 = str.substr(7, 2);
 			string next_num1 = strNext.substr(8, 2);
+			string next_num2 = strNext.substr(9, 2);      //MOV R2,R11  LDR R12,[R2,R12]
 			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
@@ -230,9 +230,20 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
+			if (str_num1 == next_num2 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(11, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
 			str_num1 = str.substr(4, 2);
 			str_num2 = str.substr(7, 3);
 			next_num1 = strNext.substr(8, 2); //例：MOV R2,R10   STR R1,[R2,R0] 
+			next_num2 = strNext.substr(9, 2); //例：MOV R2,R10   STR R1,[R2,R0] 
 			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况二：默认全局寄存器是3位
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
@@ -243,9 +254,20 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
+			if (str_num1 == next_num2 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(11, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
 			str_num1 = str.substr(4, 3);
 			str_num2 = str.substr(8, 2);
 			next_num1 = strNext.substr(8, 3);  //例：MOV R12,R4   STR R1,[R12,R0] 
+			next_num2 = strNext.substr(9, 3);
 			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况三：默认临时寄存器是3位
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
@@ -256,15 +278,36 @@ bool is_nonsence(int index)
 				canOutput = 0;
 				return false;
 			}
+			if (str_num1 == next_num2 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(12, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
 			str_num1 = str.substr(4, 3);
 			str_num2 = str.substr(8, 3);
 			next_num1 = strNext.substr(8, 3);  //例：MOV R12,R10   STR R1,[R12,R0] 
+			next_num2 = strNext.substr(9, 3);
 			if (str_num1 == next_num1 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况四：默认临时寄存器和全局寄存器都是3位
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
 				cout << strNext << endl;
 				string newstr = strNext.substr(0, 8) + str_num2 + strNext.substr(11, strNext.size());
+				output_buffer.insert(output_buffer.begin() + index, newstr);
+				canOutput = 0;
+				return false;
+			}
+			if (str_num1 == next_num2 && judgetemp(str_num1) && judgeglobal(str_num2)) {	//情况一：默认寄存器都是2位
+				output_buffer.erase(output_buffer.begin() + index);
+				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
+				cout << str << endl;
+				cout << strNext << endl;
+				string newstr = strNext.substr(0, 9) + str_num2 + strNext.substr(12, strNext.size());
 				output_buffer.insert(output_buffer.begin() + index, newstr);
 				canOutput = 0;
 				return false;
@@ -310,6 +353,21 @@ bool is_nonsence(int index)
 				return false;
 			}
 
+		}
+	}
+	//存取优化  STR R0,[SP,#176]	LDR R0, [SP, #176]这里第二条LDR完全没用
+	if (index + 1 < output_buffer.size()) {
+		string strNext = output_buffer[index + 1];
+		string nextOp = strNext.substr(0, 3);
+		if (nextOp == "LDR" && a=="STR") {
+			string aa = str.substr(4, str.size());
+			string bb = strNext.substr(4, str.size());
+			if (aa == bb) {
+				output_buffer.erase(output_buffer.begin() + index + 1);
+				cout << str << endl;
+				cout << strNext << endl;
+				return false;
+			}
 		}
 	}
 	return false;
@@ -1509,7 +1567,7 @@ void _getreg(CodeItem* ir) {
 }
 
 void _note(CodeItem* ir) {
-	OUTPUT("@note " + ir->getResult() + " " + ir->getOperand1() + " " + ir->getOperand2());
+	//OUTPUT("@note " + ir->getResult() + " " + ir->getOperand1() + " " + ir->getOperand2());
 	/*
 	string status = ir->getOperand2();
 	string note = ir->getOperand1();

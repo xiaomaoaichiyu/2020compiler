@@ -246,8 +246,10 @@ int frontExecute(string syname)
 	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
 	youhuaDivCompare();				//除法比较进行优化
 	for (int i = 1; i < codetotal.size(); i++) {
-		changeGlobalToAlloc2(i);
+		changeGlobalToAlloc2(i);		//二次将全局变局部
 	}
+	func2tmpIndex.pop_back();
+	func2tmpIndex.push_back(Temp);			//重新更新Temp上限
 	//检测符号表内容
 	/*
 	cout << "名字 " << "Block下标 " << "种类 0Con 1Var 2Para 3Func " << "维度 " << endl;
@@ -3056,7 +3058,7 @@ void changeGlobalToAlloc(int index)
 	}
 	for (string str : globalNames) {
 		string newName = str.substr(1, str.size());
-		newName = "%Glo-All-" + newName + "-" + total[index][0].getName();	//该全局变量对应局部变量新名字
+		newName = "%Glo-All-" + newName + "+" + total[index][0].getName();	//该全局变量对应局部变量新名字
 		for (i = 1; i < codetotal[index].size(); i++) {		//遍历中间代码，更改成分
 			if (codetotal[index][i].getResult() == str) {
 				codetotal[index][i].setResult(newName);
@@ -3207,7 +3209,7 @@ void changeGlobalToAlloc2(int index)
 	}
 	for (string str : globalNames) {
 		string newName = str.substr(1, str.size());
-		newName = "%Glo-All-" + newName + "-" + total[index][0].getName();	//该全局变量对应局部变量新名字
+		newName = "%Glo-All-" + newName + "+" + total[index][0].getName().substr(1,total[index][0].getName().size());	//该全局变量对应局部变量新名字
 		for (i = 1; i < codetotal[index].size(); i++) {		//遍历中间代码，更改成分
 			if (codetotal[index][i].getResult() == str) {
 				codetotal[index][i].setResult(newName);
