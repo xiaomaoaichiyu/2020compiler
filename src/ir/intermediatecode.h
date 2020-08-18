@@ -63,8 +63,6 @@ public:
 	string getFuncName();
 	string getContent();
 	bool isequal(CodeItem a);
-	void setIsContinue(int a);
-	int getIsContinue();
 private:
 	int id;					//索引
 	string invariant;			//标明指令结果是一个不变式

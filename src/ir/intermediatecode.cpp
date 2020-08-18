@@ -366,11 +366,3 @@ bool CodeItem::isequal(CodeItem a)
 	}
 	return true;
 }
-void CodeItem::setIsContinue(int a)
-{
-	this->isContinue = a;
-}
-int CodeItem::getIsContinue()
-{
-	return this->isContinue;
-}
