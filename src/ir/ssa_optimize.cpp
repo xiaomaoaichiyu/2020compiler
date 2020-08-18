@@ -2650,10 +2650,10 @@ void SSA::code_outside(int funcNum, Circle& circle) {
 						var = "";
 						break;
 					}
-					if (instr.getCodetype() == LOAD && j+1 < ir.size() && ir.at(j+1).getInvariant() != 1) {
+					if (instr.getCodetype() == LOAD && j + 1 < ir.size() && ir.at(j+1).getCodetype() != NOTE && ir.at(j + 1).getInvariant() != 1) {
 						instr.setInvariant("");
 					}
-					else if (condition1(circle.cir_outs, circle.cir_blks, idx, funcNum)
+					if (condition1(circle.cir_outs, circle.cir_blks, idx, funcNum)
 						|| condition2(circle.cir_quits, circle.cir_blks, var, funcNum)) {
 						auto tmp = instr;
 						tmp.setInvariant("");
