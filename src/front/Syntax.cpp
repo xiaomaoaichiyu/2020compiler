@@ -1508,6 +1508,7 @@ void Stmt()              //语句
 	else if (symbol == CONTINUETK) {	//continue ;
 		//printMessage();    //输出continue信息
 		CodeItem citem = CodeItem(BR, "", whileLabel[whileLabel.size() - 1], ""); //br %while.cond 
+		citem.setIsContinue(1);
 		citem.setFatherBlock(fatherBlock);
 		codetotal[Funcindex].push_back(citem);
 		wordAnalysis.getsym();
@@ -2270,6 +2271,7 @@ void loopStmt()          //循环语句+短路逻辑
 	whileLabel.pop_back();
 	whileLabel.pop_back();
 	CodeItem citem4 = CodeItem(BR, "", while_cond_label, ""); //br %while.cond 
+	citem4.setIsContinue(0);
 	citem4.setFatherBlock(fatherBlock);
 	codetotal[Funcindex].push_back(citem4);
 	CodeItem citem5 = CodeItem(LABEL, while_end_label, "", "");	//label %while.end

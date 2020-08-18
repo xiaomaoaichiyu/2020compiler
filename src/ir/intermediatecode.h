@@ -63,6 +63,8 @@ public:
 	string getFuncName();
 	string getContent();
 	bool isequal(CodeItem a);
+	void setIsContinue(int a);
+	int getIsContinue();
 private:
 	int id;					//索引
 	string invariant;			//标明指令结果是一个不变式
@@ -74,6 +76,7 @@ private:
 	string extend;				// 额外的附加域
 	vector<int> fatherBlock;	//当前中间代码所在作用域
 	int inlineMatrixTag;        //数组能否内联
+	int isContinue;
 	string funcName;			//push类型中间代码所属的函数
 };
 
