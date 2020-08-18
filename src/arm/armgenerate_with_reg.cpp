@@ -9,6 +9,7 @@
 #include<regex>
 #include<algorithm>
 #include<queue>
+#include<stack>
 #define OUTPUT(s) do{output_buffer.push_back(s);}while(0)
 using namespace std;
 
@@ -29,6 +30,7 @@ int global_reg_size;
 map<string, int> func2para;
 map<string, vector<string>> funcname2pushlist;
 int canOutput;
+stack<CodeItem> b_stack;
 
 unsigned ror(unsigned val, int size)
 {
@@ -391,6 +393,32 @@ bool is_nonsence(string str)
 	return false;
 }
 */
+
+irCodeType Bconverse(irCodeType t)
+{
+	//BEQ,BGE,BGT,BLE,BLT,BNE
+	if (t == EQL) {
+		return NEQ;
+	}
+	else if (t == SGE) {
+		return SLT;
+	}
+	else if (t == SGT) {
+		return SLE;
+	}
+	else if (t == SLE) {
+		return SGT;
+	}
+	else if (t == SLT) {
+		return SGE;
+	}
+	else if (t == NEQ) {
+		return EQL;
+	}
+	else {
+		return NOTE;
+	}
+}
 
 bool replace_div(int d, int* m_high, int* sh_post)
 {
@@ -1420,11 +1448,48 @@ void _br(CodeItem* ir)
 	if (res[0] != '%') {
 		string label1 = ir->getOperand2().substr(1);
 		string label2 = ir->getResult().substr(1);
+		if (label2.substr(0, 9) == "while.end") {
+			CodeItem c(EQL, "%" + label2, res, "0");
+			b_stack.push(c);
+		}
 		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
 		//OUTPUT("BNE " + label1); //鏈夐棶棰樺彲浠ュ洖澶嶈繖閲岃瘯璇?
 	}
 	else {
+		if (res.substr(1, 10) == "while.cond" && b_stack.size()!=0) {
+			auto temp_ir = &(b_stack.top());
+			int n = stoi(temp_ir->getResult().substr(11));
+			if (n == stoi(res.substr(12))) {
+				irCodeType t = Bconverse(temp_ir->getCodetype());
+				CodeItem c(t, "%while.body_" + to_string(n), 
+					temp_ir->getOperand1(), temp_ir->getOperand2());
+				if (ir->getOperand2() != "1") {
+					b_stack.pop();
+				}
+				switch (t)
+				{
+				case EQL:
+					_eql(&c);
+					return;
+				case NEQ:
+					_neq(&c);
+					return;
+				case SGT:
+					_sgt(&c);
+					return;
+				case SGE:
+					_sge(&c);
+					return;
+				case SLT:
+					_slt(&c);
+					return;
+				case SLE:
+					_sle(&c);
+					return;
+				}
+			}
+		}
 		OUTPUT("B " + res.substr(1));
 	}
 }
@@ -1685,24 +1750,54 @@ void arm_generate(string sname)
 			case NOT:
 				_not(ir_now);
 				break;
-			case EQL:
+			case EQL: {
+				string s = ir_now->getResult();
+				if (s[0] == '%' && s.substr(1,9) == "while.end") {
+					b_stack.push(*ir_now);
+				}
 				_eql(ir_now);
 				break;
-			case NEQ:
+			}
+			case NEQ: {
+				string s = ir_now->getResult();
+				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
+					b_stack.push(*ir_now);
+				}
 				_neq(ir_now);
 				break;
-			case SGT:
+			}
+			case SGT: {
+				string s = ir_now->getResult();
+				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
+					b_stack.push(*ir_now);
+				}
 				_sgt(ir_now);
 				break;
-			case SGE:
+			}
+			case SGE: {
+				string s = ir_now->getResult();
+				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
+					b_stack.push(*ir_now);
+				}
 				_sge(ir_now);
 				break;
-			case SLT:
+			}
+			case SLT: {
+				string s = ir_now->getResult();
+				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
+					b_stack.push(*ir_now);
+				}
 				_slt(ir_now);
 				break;
-			case SLE:
+			}
+			case SLE: {
+				string s = ir_now->getResult();
+				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
+					b_stack.push(*ir_now);
+				}
 				_sle(ir_now);
 				break;
+			}
 			case ALLOC:
 				//_alloc(ir_now); //啥锟斤拷锟斤拷锟矫干ｏ拷
 				break;
