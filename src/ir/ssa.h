@@ -110,7 +110,7 @@ private:
 	std::map<int, int> exitStatementNum;						// 函数内出口的数量
 
 	std::vector<int> addrIndex;										// 数组参数命名编号
-	std::vector<int> labelIndex;										// 函数内部标签改名编号
+	//std::vector<int> labelIndex;										// 函数内部标签改名编号
 	std::vector<std::set<std::string>> inlineArrayName;// 内联函数数组传参新定义变量名
 	std::vector<int> funCallCount;									// 记录一个函数第几次被调用
 

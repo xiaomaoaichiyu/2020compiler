@@ -531,12 +531,14 @@ string SSA::getNewInsertAddr(int funNum, string name) {
 } 
 
 string SSA::getNewInsertLabel(int funNum, string name) {
-	string ans = name + "." + to_string(labelIndex[0]);
-	labelIndex[0]++;
+	//string ans = name + "." + to_string(labelIndex[0]);
+	//labelIndex[0]++;
+	string ans = name + "." + to_string(funCallCount[funNum]);
 	return ans;
 }
 
 string SSA::getNewFunEndLabel(int funNum, string name) {
+	//cout << name << " " << funCallCount[funNum] << endl;
 	string ans = "%function." + name.substr(1) + ".end" + to_string(funCallCount[funNum]);
 	funCallCount[funNum]++;
 	return ans;
@@ -559,7 +561,7 @@ void SSA::inline_function() {
 	// init & 建立函数名与对应序号的对应关系
 	for (i = 0; i < size1; i++) {
 		addrIndex.push_back(0);
-		labelIndex.push_back(0);
+		//labelIndex.push_back(0);
 		set<string> s; inlineArrayName.push_back(s);
 		funCallCount.push_back(0);
 		if (switch_optimize_return) exitStatementNum[i] = 0;	// optimize return
@@ -784,14 +786,14 @@ void SSA::inline_function() {
 								if (ifTempVariable(ci.getOperand1()) || ifVR(ci.getOperand1())) {	// 有条件跳转
 									string newLabel1, newLabel2;
 									if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
-										newLabel1 = getNewInsertLabel(i, ci.getResult());
+										newLabel1 = getNewInsertLabel(funNum, ci.getResult());
 										label2NewLabel[ci.getResult()] = newLabel1;
 									}
 									else {
 										newLabel1 = label2NewLabel[ci.getResult()];
 									}
 									if (label2NewLabel.find(ci.getOperand2()) == label2NewLabel.end()) {
-										newLabel2 = getNewInsertLabel(i, ci.getOperand2());
+										newLabel2 = getNewInsertLabel(funNum, ci.getOperand2());
 										label2NewLabel[ci.getOperand2()] = newLabel2;
 									}
 									else {
@@ -804,7 +806,7 @@ void SSA::inline_function() {
 								else {
 									string newLabel;
 									if (label2NewLabel.find(ci.getOperand1()) == label2NewLabel.end()) {
-										newLabel = getNewInsertLabel(i, ci.getOperand1());
+										newLabel = getNewInsertLabel(funNum, ci.getOperand1());
 										label2NewLabel[ci.getOperand1()] = newLabel;
 									}
 									else {
@@ -818,7 +820,7 @@ void SSA::inline_function() {
 							else if (ci.getCodetype() == LABEL) {
 								string newLabel;
 								if (label2NewLabel.find(ci.getResult()) == label2NewLabel.end()) {
-									newLabel = getNewInsertLabel(i, ci.getResult());
+									newLabel = getNewInsertLabel(funNum, ci.getResult());
 									label2NewLabel[ci.getResult()] = newLabel;
 								}
 								else {
