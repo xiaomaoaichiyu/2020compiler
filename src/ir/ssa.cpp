@@ -1251,7 +1251,7 @@ void SSA::generate() {
 		// 死代码删除2
 		build_def_use_chain();
 		active_var_analyse();
-		//delete_dead_codes_2();
+		delete_dead_codes_2();
 
 		// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 		if (i == 0) build_dom_tree();
@@ -1289,8 +1289,8 @@ void SSA::generate() {
 		if (i == 0) deal_phi_function();
 
 		// 优化
-		//if (i == 0) ssa_optimize();
-		//if (i == 1) delete_dead_codes();
+		if (i == 0) ssa_optimize();
+		if (i == 1) delete_dead_codes();
 
 		init();
 
@@ -1300,9 +1300,9 @@ void SSA::generate() {
 		// 恢复变量命名
 		if (i == 0) rename_back();
 
-		//optimize_arrayinit();
+		optimize_arrayinit();
 
-		//optimize_br_label();
+		optimize_br_label();
 
 		//复写传播
 		//copy_propagation();
@@ -1320,7 +1320,7 @@ void SSA::generate() {
 		//if (i == 0) registerAllocation();
 		//if (i == 0) count_global_reg_allocated();
 		//for (auto i : globalRegAllocated) cout << i << endl;
-		//if (i == 0) optimize_para_transfer();
+		if (i == 0) optimize_para_transfer();
 		//if (i == 0) inline_function();
 		
 		// 恢复为之前中间代码形式后再做一次无用代码删除
