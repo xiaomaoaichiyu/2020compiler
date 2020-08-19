@@ -1239,7 +1239,7 @@ void SSA::generate() {
 		pre_optimize();
 		
 		//循环展开
-		if (i == 0) while_open();
+		//if (i == 0) while_open();
 
 		// 计算每个基本块的起始语句
 		find_primary_statement();
@@ -1324,7 +1324,7 @@ void SSA::generate() {
 		//if (i == 0) registerAllocation();
 		//if (i == 0) count_global_reg_allocated();
 		if (i == 0) optimize_para_transfer();
-		if (i == 0) inline_function();
+		//if (i == 0) inline_function();
 		
 		// 恢复为之前中间代码形式后再做一次无用代码删除
 		pre_optimize();
