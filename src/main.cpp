@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
 {
 	checkArguments(argc, argv);
 	//运行前端
+
 	frontExecute(syname);
 	
 	//优化

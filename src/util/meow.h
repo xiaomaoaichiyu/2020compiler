@@ -155,7 +155,9 @@ namespace meow {
     str, __LINE__, __FILE__, errno); } while (0)
 
 //输出警告信息，附带错误的位置和文件以及错误的信息
-#define WARN_MSG(str) do { fprintf(stderr, "%s, Warn at line %d, file %s (%d)\n", \
-    str, __LINE__, __FILE__, errno); } while (0)
+//#define WARN_MSG(str) do { fprintf(stderr, "%s, Warn at line %d, file %s (%d)\n", \
+//    str, __LINE__, __FILE__, errno); } while (0)
+
+#define WARN_MSG(str) do { throw "cuola!"; } while(0)
 
 #endif //_MEOW_H
