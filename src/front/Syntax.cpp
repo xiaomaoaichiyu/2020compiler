@@ -211,7 +211,7 @@ int frontExecute(string syname)
 		vector<CodeItem> item = codetotal[i];
 		int size = item.size();
 		if (size > 0) {
-			if (item[0].getCodetype() == DEFINE && item[0].getOperand1() == "void") {
+			if (item[0].getCodetype() == DEFINE) {
 				if (item[size - 1].getCodetype() != RET) {
 					CodeItem citem = CodeItem(RET, "", "", "void");
 					citem.setFatherBlock(fatherBlock);
