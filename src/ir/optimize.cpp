@@ -796,7 +796,7 @@ void irOptimize() {
 		countVars();
 		
 		//2. 图着色分配寄存器
-		if (1) {
+		if (0) {
 			codetotal = LIR;
 			ssa.registerAllocation();
 			//各个函数中变量名与寄存器的对应关系，在debug_reg.txt文件中可以见到输出	
@@ -809,7 +809,7 @@ void irOptimize() {
 		}
 		
 		//1. 寄存器直接指派
-		if (0) {
+		if (1) {
 			convertCondition();		//优化条件跳转
 			printLIR("LIR2.txt");
 			registerAllocation();
