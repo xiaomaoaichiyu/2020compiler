@@ -155,22 +155,22 @@ void SSA::ssa_optimize(int num) {
 		delete_dead_codes();
 	}
 
-	//if (0) { // 关闭循环优化
-	//// 将phi函数加入到中间代码
-	//	if (num == 0) add_phi_to_Ir();
-	//	
-	//	if (num == 1) {
-	//		ofstream ly1("xunhuan3.txt");
-	//		printCircleIr(this->blockCore, ly1);
-	//	}
-	//	//循环优化
-	//	if (num == 0) count_UDchains();		//计算使用-定义链
-	//	if (num == 1) count_UDChains2();
-	//	back_edge(num);			//循环优化
+	if (1) { // 关闭循环优化
+		// 将phi函数加入到中间代码
+		if (num == 0) add_phi_to_Ir();
+		
+		if (num == 1) {
+			ofstream ly1("xunhuan3.txt");
+			printCircleIr(this->blockCore, ly1);
+		}
+		//循环优化
+		if (num == 0) count_UDchains();		//计算使用-定义链
+		if (num == 1) count_UDChains2();
+		back_edge(num);			//循环优化
 
-	//	// 删除中间代码中的phi
-	//	if (num == 0) delete_Ir_phi();
-	//}
+		// 删除中间代码中的phi
+		if (num == 0) delete_Ir_phi();
+	}
 	//count_use_def_chain();
 }
 
@@ -1639,9 +1639,11 @@ void SSA::circleVar() {
 			for (auto suc : succs) {
 				//后继结点是必经节点说明是一条回边
 				if (doms.find(suc) != doms.end()) {
-					backEdges.push_back(pair<int, int>(num, suc));
 					if (suc > num) {
-						WARN_MSG("wrong in back_edge find!");
+						//WARN_MSG("wrong in back_edge find!");
+					}
+					else {
+						backEdges.push_back(pair<int, int>(num, suc));
 					}
 				}
 			}
