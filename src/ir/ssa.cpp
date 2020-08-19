@@ -1013,7 +1013,15 @@ void SSA::simplify_basic_block() {
 		while (update) {
 			update = false;
 			vector<basicBlock> v = blockCore[i];
-			int size2 = v.size();for (j = 1; j < size2; j++) if (v[j].pred.empty()) { update = true; break; }
+			int size2 = v.size();
+			for (j = 1; j < size2; j++) 
+				if (v[j].pred.empty()) { update = true; break; }
+				/*else {
+					update = true;
+					for (set<int>::iterator lzhhh = v[j].pred.begin(); lzhhh != v[j].pred.end(); lzhhh++)
+						if (*lzhhh <= j) { update = false; break; }
+					if (update) break;
+				}*/
 			if (update) {
 				v.erase(v.begin() + j);
 				int size3 = v.size();
@@ -1374,12 +1382,6 @@ void SSA::generate_active_var_analyse() {
 	// 初始化varName2St结构体
 	init();
 
-	// 简化条件判断为常值的跳转指令
-	simplify_br();
-
-	// 在睿轩生成的中间代码上做优化
-	pre_optimize();
-
 	// 计算每个基本块的起始语句
 	find_primary_statement();
 	// 为每个函数划分基本块
@@ -1388,11 +1390,6 @@ void SSA::generate_active_var_analyse() {
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
 	simplify_basic_block();
-
-	// 死代码删除2
-	build_def_use_chain();
-	active_var_analyse();
-	delete_dead_codes_2();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
