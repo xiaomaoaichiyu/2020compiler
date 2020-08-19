@@ -342,7 +342,7 @@ void CompUnit()
 					change(Funcindex);		//修改中间代码、符号表
 					changeForInline(Funcindex);
 					total[Funcindex][0].setisinlineFunc(isinlineFunc);
-					changeGlobalToAlloc(Funcindex);
+					//changeGlobalToAlloc(Funcindex);
 					//deleteSameExp(Funcindex);
 				}
 				else {
@@ -364,7 +364,7 @@ void CompUnit()
 				change(Funcindex);			//修改中间代码、符号表
 				changeForInline(Funcindex);
 				total[Funcindex][0].setisinlineFunc(isinlineFunc);
-				changeGlobalToAlloc(Funcindex);
+				//changeGlobalToAlloc(Funcindex);
 				//deleteSameExp(Funcindex);
 			}
 		}
