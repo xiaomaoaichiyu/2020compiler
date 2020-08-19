@@ -2473,7 +2473,7 @@ void SSA::optimize_delete_same_exp()
 								else {		//可以删除了
 									string xiabiao = numtoString(j1) + "-" + numtoString(j2);
 									if (!(newVarName.count(xiabiao) > 0)) {		//第一次找到公共子表达式
-										string replace = "%Rep+"+xiabiao+"-" + numtoString(times++) + "+" + total[o][0].getName();
+										string replace = "%Rep"+xiabiao+"-" + numtoString(times++) + "+" + total[o][0].getName();
 										newVarName[xiabiao] = replace;
 										string newTemp;
 										int i4 = i1;
