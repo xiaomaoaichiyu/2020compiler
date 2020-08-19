@@ -148,7 +148,7 @@ string newName(string name, int blockindex)
 	trans << blockindex;
 	return name + "-" + trans.str();
 }
-
+/*
 string newFuncName(string name)		//给函数名加后缀，防止与变量重名
 {
 	if (name == "putf"|| name == "starttime" || name == "stoptime" || name == "putarray"
@@ -158,7 +158,7 @@ string newFuncName(string name)		//给函数名加后缀，防止与变量重名
 	else {
 		return name + ".1";
 	}
-}
+}*/
 symbolTable checkTable(string checkname, int function_number, vector<int> fatherBlock);					//查表：改进中间代码和符号表时使用
 void change(int index);				//修改中间代码、符号表
 void putAllocGlobalFirst();		//将中间代码中alloc类型前移
@@ -905,7 +905,7 @@ void valueFuncDef()    //有返回值函数定义
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();
-	string name = newFuncName(token);   //获取函数名
+	string name = token;   //获取函数名
 	//printMessage();   //获得标识符并输出
 	symbolTable item(FUNCTION, INT, name);
 	total[Funcindex].push_back(item);
@@ -943,7 +943,7 @@ void novalueFuncDef()  //无返回值函数定义
 	wordAnalysis.getsym();
 	symbol = wordAnalysis.getSymbol();
 	token = wordAnalysis.getToken();//获得标识符
-	string name = newFuncName(token);  //保存函数名
+	string name = token;  //保存函数名
 	symbolTable item(FUNCTION, VOID, name);
 	total[Funcindex].push_back(item);
 	CodeItem citem(DEFINE, "@" + name, "void", "");           //define @foo int
@@ -1174,7 +1174,7 @@ void UnaryExp()			// '(' Exp ')' | LVal | Number | Ident '(' [FuncRParams] ')' |
 		string Functionname;
 		if (symbol == LPARENT) {  //标识符 (函数实参表)
 			paraNum = 0;
-			Functionname = newFuncName(name_tag);
+			Functionname = name_tag;
 			//printMessage();    //输出(信息
 			wordAnalysis.getsym();
 			symbol = wordAnalysis.getSymbol();
