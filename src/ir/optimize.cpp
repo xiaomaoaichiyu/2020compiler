@@ -113,6 +113,7 @@ void MIR2LIRpass() {
 			string ope2 = instr.getOperand2();
 
 			if (op == NOT) {
+				if (isNumber(ope1)) WARN_MSG("wuhu!");
 				res = dealTmpOpe(res);
 				ope1 = dealTmpOpe(ope1);
 				instr.setInstr(res, ope1, ope2);
