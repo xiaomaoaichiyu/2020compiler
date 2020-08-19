@@ -1758,18 +1758,18 @@ void SSA::back_edge(int num) {
 			}
 		}
 		if (num == 1) {
-			//for (auto circle : circles) {
-			//	/*UDchain1 udchain1s(blockCore.at(i));
-			//	ofstream ud("udchain2.txt");
-			//	udchain1s.printUDchain(ud);ud << endl;ud.close();*/
-			//	//markArray(i, circle, udchain1s, blockCore.at(i));				//确定不变式
-			//	markArray(i, circle, func2udChain1s.at(i), blockCore.at(i));				//确定不变式
-			//	ofstream ly1("shuzu1.txt");
-			//	printCircleIr(this->blockCore, ly1);
-			//	arraycode_outside(i, circle);
-			//	ofstream ly2("shuzu2.txt");
-			//	printCircleIr(this->blockCore, ly2);
-			//}
+			for (auto circle : circles) {
+				/*UDchain1 udchain1s(blockCore.at(i));
+				ofstream ud("udchain2.txt");
+				udchain1s.printUDchain(ud);ud << endl;ud.close();*/
+				//markArray(i, circle, udchain1s, blockCore.at(i));				//确定不变式
+				markArray(i, circle, func2udChain1s.at(i), blockCore.at(i));				//确定不变式
+				ofstream ly1("shuzu1.txt");
+				printCircleIr(this->blockCore, ly1);
+				arraycode_outside(i, circle);
+				ofstream ly2("shuzu2.txt");
+				printCircleIr(this->blockCore, ly2);
+			}
 		}
 	}
 }
@@ -2433,22 +2433,22 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case LOADARR: {
-					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
-						if (!isNumber(ope2)) {
-							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-							if (def.var != "") {
-								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-									instr.setInvariant();
-								}
-							}
-						}
-						else {	//偏移是立即数
-							instr.setInvariant();
-						}
-					}
-					break;
-				}
+				//case LOADARR: {
+				//	if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
+				//		if (!isNumber(ope2)) {
+				//			auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//			if (def.var != "") {
+				//				if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//					instr.setInvariant();
+				//				}
+				//			}
+				//		}
+				//		else {	//偏移是立即数
+				//			instr.setInvariant();
+				//		}
+				//	}
+				//	break;
+				//}
 				/*case STOREARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
