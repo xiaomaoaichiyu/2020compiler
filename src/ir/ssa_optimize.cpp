@@ -155,7 +155,7 @@ void SSA::ssa_optimize(int num) {
 		delete_dead_codes();
 	}
 
-	if (0) { // 关闭循环优化
+	if (1) { // 关闭循环优化
 	// 将phi函数加入到中间代码
 		if (num == 0) add_phi_to_Ir();
 		
@@ -1170,12 +1170,12 @@ void SSA::const_propagation() {
 				case BR: {
 					if (var2value.find(ope1) != var2value.end()) {
 						instr.setOperand1(var2value[ope1]);
-						//if (A2I(var2value[ope1]) == 0) {
-						//	instr.setInstr("", instr.getResult(), "");	//如果结果==0，就直接跳转到res对应的标签
-						//}
-						//else {
-						//	instr.setInstr("", instr.getOperand2(), "");	//如果结果!=0，直接跳转到ope2对应的标签
-						//}
+						if (A2I(var2value[ope1]) == 0) {
+							instr.setInstr("", instr.getResult(), "");	//如果结果==0，就直接跳转到res对应的标签
+						}
+						else {
+							instr.setInstr("", instr.getOperand2(), "");	//如果结果!=0，直接跳转到ope2对应的标签
+						}
 					}
 					break;
 				}case CALL: {	//数组清空，数组作为地址其值可以被改变
@@ -1702,9 +1702,11 @@ void SSA::back_edge(int num) {
 			for (auto suc : succs) {
 				//后继结点是必经节点说明是一条回边
 				if (doms.find(suc) != doms.end()) {
-					backEdges.push_back(pair<int, int>(num, suc));
 					if (suc > num) {
-						WARN_MSG("wrong in back_edge find!");
+						//WARN_MSG("wrong in back_edge find!");
+					}
+					else {
+						backEdges.push_back(pair<int, int>(num, suc));
 					}
 				}
 			}
