@@ -1078,9 +1078,10 @@ void registerAllocation3(vector<map<string, string>>& var2gReg) {
 		}//全局变量使用临时变量来加载和使用
 
 		//临时寄存器池
-		vector<string> tmpRegs;
-		for (auto lzh : noUseReg) { tmpRegs.push_back(lzh); }
-		for (auto one : leftGregs) { tmpRegs.push_back(one); }
+		vector<string> tmpRegs = { "R0", "R1", "R2", "R3", "R12" };
+		//vector<string> tmpRegs;
+		//for (auto lzh : noUseReg) { tmpRegs.push_back(lzh); }
+		//for (auto one : leftGregs) { tmpRegs.push_back(one); }
 		RegPool regpool(tmpRegs);
 
 		string funcName = "";
