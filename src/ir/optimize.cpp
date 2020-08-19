@@ -125,7 +125,7 @@ void MIR2LIRpass() {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope1));
 					ope1 = curVreg;
 				}
-				if (isNumber(ope2) && (A2I(ope2) < -128 || A2I(ope2) > 127)) {
+				if (isNumber(ope2)) {
 					dst.push_back(CodeItem(MOV, "", getVreg(), ope2));
 					ope2 = curVreg;
 				}
