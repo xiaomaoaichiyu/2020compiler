@@ -1251,7 +1251,7 @@ void SSA::generate() {
 		// 死代码删除2
 		build_def_use_chain();
 		active_var_analyse();
-		delete_dead_codes_2();
+		//delete_dead_codes_2();
 
 		// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 		if (i == 0) build_dom_tree();
@@ -1289,8 +1289,8 @@ void SSA::generate() {
 		if (i == 0) deal_phi_function();
 
 		// 优化
-		if (i == 0) ssa_optimize();
-		if (i == 1) delete_dead_codes();
+		//if (i == 0) ssa_optimize();
+		//if (i == 1) delete_dead_codes();
 
 		init();
 
@@ -1353,11 +1353,6 @@ void SSA::generate_active_var_analyse() {
 	build_pred_and_succeeds();
 	// 消除无法到达基本块
 	simplify_basic_block();
-
-	// 死代码删除2
-	build_def_use_chain();
-	active_var_analyse();
-	delete_dead_codes_2();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
