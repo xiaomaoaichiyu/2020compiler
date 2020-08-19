@@ -137,7 +137,7 @@ void ActiveAnalyse::print_ly_act() {
 //ssa形式上的优化
 void SSA::ssa_optimize(int num) {
 	// 常量传播
-	if (num == 0) {
+	if (1) {
 		// 重新计算use-def关系
 		build_def_use_chain();
 		// 重新进行活跃变量分析
