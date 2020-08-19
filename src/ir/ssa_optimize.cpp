@@ -130,6 +130,7 @@ void ActiveAnalyse::print_ly_act() {
 
 //ssa形式上的优化
 void SSA::ssa_optimize() {
+	
 	// 常量传播
 	if (1) {
 		// 重新计算use-def关系
@@ -139,6 +140,7 @@ void SSA::ssa_optimize() {
 		//常量传播
 		const_propagation();
 	}
+
 	// 死代码删除
 	if (1) {
 		// 重新计算use-def关系
@@ -157,12 +159,12 @@ void SSA::ssa_optimize() {
 		count_UDchains();		//计算使用-定义链
 		back_edge();			//找循环
 		mark_invariant();		//确定不变式
-		ofstream ly1("xunhuan1.txt");
+		ofstream ly1("lyceshi1.txt");
 		printCircleIr(this->blockCore, ly1);
 
 		code_outside();			//不变式外提
 
-		ofstream ly2("xunhuan2.txt");
+		ofstream ly2("lyceshi2.txt");
 		printCircleIr(this->blockCore, ly2);
 
 		// 删除中间代码中的phi
@@ -446,17 +448,10 @@ void SSA::inline_function() {
 					else if (!funSt.getisinlineFunc()) {	// 不能内联，该调用函数不是叶子函数
 						continue;
 					}
-					//else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
-					/*else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && codetotal[funNum].size()>200) {
+					else if (alreadyNeilian.find(funNum)==alreadyNeilian.end() && total[funNum].size()+total[i].size()>10) {		//临时变量总数不超过8个就内联,否则不内敛(丛睿轩添加的...)  
 						continue;		//第一个条件说明当前函数没被内联过
 					}
 					else if (codetotal[i].size() > 750) {		//丛睿轩添加的....
-						continue;
-					}*/
-					else if (codetotal[i].size() + codetotal[funNum].size() > 800) {	// 内联后行数超过800
-						continue;
-					}
-					else if (alreadyNeilian.find(funNum) == alreadyNeilian.end() && varName2St[i].size() + varName2St[funNum].size() > 10) {	// 内联后变量个数超过10个Orz
 						continue;
 					}
 					else {
@@ -685,7 +680,6 @@ void SSA::delete_dead_codes() {
 								tmpout.insert(ci.getOperand1());
 							if (ifGlobalVariable(ci.getOperand2()) || ifLocalVariable(ci.getOperand2()) || ifTempVariable(ci.getOperand2()))
 								tmpout.insert(ci.getOperand2());
-							tmpout.erase(ci.getResult());
 						}
 						break;
 					case STORE:
@@ -696,7 +690,6 @@ void SSA::delete_dead_codes() {
 						else {
 							if (ifGlobalVariable(ci.getResult()) || ifLocalVariable(ci.getResult()) || ifTempVariable(ci.getResult()))
 								tmpout.insert(ci.getResult());
-							tmpout.erase(ci.getOperand1());
 						}
 						break;
 					case STOREARR:		// 数组不敢删除
@@ -730,34 +723,15 @@ map<string, string> var2value;
 //数组
 map<string, map<string, string>> arr2value;
 //array offset value
+
 //数组
 
-//记录被赋值的全局数组
-set<string> globalChanged;
-
 //标记没有被定义过的全局变量，用于常量传播
-void markGloablVar(vector<vector<basicBlock>>& funcs) {
-	for (int i = 1; i < funcs.size(); i++) {
-		for (int j = 0; j < funcs.at(i).size(); j++) {
-			for (int k = 0; k < funcs.at(i).at(j).Ir.size(); k++) {
-				auto instr = funcs.at(i).at(j).Ir.at(k);
-				//全局数组被赋值，就不能被常量传播
-				if (instr.getCodetype() == STOREARR && isGlobal(instr.getOperand1())) {
-					globalChanged.insert(instr.getOperand1());
-				}
-				if (instr.getCodetype() == LOAD && instr.getOperand2() == "array" && isGlobal(instr.getOperand1())) {
-					globalChanged.insert(instr.getOperand1());
-				}
-				if (instr.getCodetype() == STORE && isGlobal(instr.getOperand1())) {
-					globalChanged.insert(instr.getOperand1());
-				}
-			}
-		}
-	}
+void markGloablVar() {
+
 }
 
 void SSA::const_propagation() {
-	markGloablVar(blockCore);
 	for (int i = 1; i < blockCore.size(); i++) {	//遍历每个函数
 		auto& blocks = blockCore.at(i);
 		for (int j = 0; j < blocks.size(); j++) {	//遍历每个基本的ir
@@ -835,16 +809,6 @@ void SSA::const_propagation() {
 							var2value[res] = arr2value[ope1].find(instr.getOperand2())->second;
 						}
 					}
-					//没有改赋值过的全局数组
-					if (isGlobal(ope1) && globalChanged.find(ope1) == globalChanged.end()) {
-						if (isNumber(instr.getOperand2())) {
-							for (int k = 0; k < total.at(0).size(); k++) {
-								if (total.at(0).at(k).getName() == ope1) {
-									var2value[res] = I2A(total.at(0).at(k).getIntValue()[A2I(instr.getOperand2()) / 4]);
-								}
-							}
-						}
-					}
 					break;
 				}
 				case RET: case PUSH: {
@@ -909,7 +873,7 @@ void SSA::copy_propagation() {
 				switch (op)
 				{
 				case STORE: {
-					if (isTmp(res) && !isGlobal(ope1)) {	//变量赋值，非立即数赋值
+					if (isTmp(res)) {	//变量赋值，非立即数赋值
 						if (var2copy.find(res) != var2copy.end()) {	//如果赋值的中间变量对应某个变量，那么被赋值的变量也对应那个变量
 							var2copy[ope1] = var2copy[res];
 						}
@@ -918,7 +882,7 @@ void SSA::copy_propagation() {
 					break;
 				}
 				case LOAD: {
-					if (ope2 != "para" && ope2 != "array" && !isGlobal(ope1)) {	//加载变量的值
+					if (ope2 != "para" && ope2 != "array") {	//加载变量的值
 						if (var2copy.find(ope1) != var2copy.end()) {	//变量ope1已经有了对应关系
 							var2copy[res] = var2copy[ope1];
 							instr.setOperand1(var2copy[ope1]);	//将ope1设置为ope1对应的变量
