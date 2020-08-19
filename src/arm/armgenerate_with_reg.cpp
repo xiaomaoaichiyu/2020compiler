@@ -144,6 +144,9 @@ void _define(CodeItem* ir)
 	OUTPUT("");
 	OUTPUT(".ltorg");
 	OUTPUT(name + ":");
+	if (name == "main") {
+		OUTPUT("B 0");
+	}
 	var2addr.clear();
 	int paraNum;
 	int paraIndex = 0;
