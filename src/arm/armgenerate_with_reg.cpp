@@ -996,6 +996,7 @@ void arm_generate(string sname)
 	arm << ".global main\n";
 	arm << ".global __aeabi_idiv\n"; 
 	arm << ".global __aeabi_idivmod\n";
+	arm << "b 0";
 	int cnt = 1;
 	for (auto s : output_buffer) {
 		if (cnt % 800 == 0) {

@@ -129,16 +129,16 @@ void UnaryExp();					//一元表达式
 void Stmt();              //语句
 void assignStmt();        //赋值语句
 void ifStmt();            //条件语句
-//void Cond();              //条件表达式(逻辑或表达式)
+void Cond();              //条件表达式(逻辑或表达式)
 void loopStmt();          //循环语句
 void FuncRParams();		  //值参数表
 void returnStmt();        //返回语句
-//void LAndExp();			  //逻辑与表达式
+void LAndExp();			  //逻辑与表达式
 void EqExp();			  //相等性表达式
 void RelExp();			  //关系表达式
 
-void Cond(string label);              //条件表达式(逻辑或表达式)
-void LAndExp(string label);			  //逻辑与表达式
+//void Cond(string label);              //条件表达式(逻辑或表达式)
+//void LAndExp(string label);			  //逻辑与表达式
 int orlabelIndex = 0;		//生成or标签
 int andlabelIndex = 0;		//生成and标签
 
@@ -1636,6 +1636,7 @@ void assignStmt()        //赋值语句 LVal = Exp
 	}
 	//outfile << "<赋值语句>" << endl;
 }
+/*
 void ifStmt()            //条件语句 + 短路逻辑
 {
 	//printMessage();    //输出if信息
@@ -1709,7 +1710,8 @@ void ifStmt()            //条件语句 + 短路逻辑
 	//退出前Stmt均预读
 	//outfile << "<条件语句>" << endl;
 }
-/*
+*/
+
 void ifStmt()            //条件语句
 {
 	//printMessage();    //输出if信息
@@ -1765,9 +1767,9 @@ void ifStmt()            //条件语句
 	//退出前Stmt均预读
 	//outfile << "<条件语句>" << endl;
 }
-*/
-//短路逻辑
 
+//短路逻辑
+/*
 void Cond(string label)              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR, op;
@@ -1905,8 +1907,8 @@ void LAndExp(string label)			  //逻辑与表达式   EqExp{'&&' EqExp }
 		}
 	}
 	//注意最后一个与表达式不单独生成中间代码
-}
-/*
+}*/
+
 void Cond()              //条件表达式(逻辑或表达式)  LAndExp { '||' LAndExp}
 {
 	string registerL, registerR, op;
@@ -1982,7 +1984,7 @@ void LAndExp()			  //逻辑与表达式   EqExp{'&&' EqExp }
 		registerL = interRegister;
 	}
 }
-*/
+
 void EqExp()		  //相等性表达式
 {
 	string registerL, registerR, op;
@@ -2073,7 +2075,7 @@ void RelExp()			  //关系表达式
 		registerL = interRegister;
 	}
 }
-/*
+
 void loopStmt()          //循环语句
 {
 	//?while '('＜条件＞')'＜语句＞
@@ -2117,7 +2119,7 @@ void loopStmt()          //循环语句
 	//退出前均预读
 	//outfile << "<循环语句>" << endl;
 }
-*/
+/*
 void loopStmt()          //循环语句+短路逻辑
 {
 	//?while '('＜条件＞')'＜语句＞
@@ -2170,7 +2172,7 @@ void loopStmt()          //循环语句+短路逻辑
 	codetotal[Funcindex].push_back(citem5);
 	//退出前均预读
 	//outfile << "<循环语句>" << endl;
-}
+}*/
 void FuncRParams()    //函数实参数表
 {
 	if (symbol == RPARENT) {
