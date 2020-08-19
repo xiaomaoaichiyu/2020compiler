@@ -1343,7 +1343,7 @@ void SSA::generate() {
 	}
 	//Test_TempVariable();
 
-	int size1 = codetotal.size();
+	/*int size1 = codetotal.size();
 	vector<bool> funCall(size1, false);
 	identifyNoCallFun(funCall);
 	bool ifOnlyMain = true;
@@ -1372,7 +1372,7 @@ void SSA::generate() {
 				global2local[varName] = newVarName;
 			}
 		}
-	}
+	}*/
 
 }
 
