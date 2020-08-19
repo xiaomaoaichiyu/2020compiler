@@ -627,6 +627,19 @@ void _sge(CodeItem* ir)
 	OUTPUT("MOVGE " + target + ",#1");
 	OUTPUT("MOVLT " + target + ",#0");
 }
+void _arrayinit(CodeItem* ir)
+{
+	string iniv = ir->getResult();
+	string name = ir->getOperand1();
+	string size = ir->getOperand2();
+	auto p = get_location(name);
+	////第一种，使用memset
+	OUTPUT("LDR LR,=" + to_string(p.second - sp));
+	OUTPUT("ADD R0,SP,LR");
+	OUTPUT("LDR R1,=" + iniv);
+	OUTPUT("LDR R2,=" + to_string(stoi(size) * 4));
+	OUTPUT("BL memset");
+}
 
 void _slt(CodeItem* ir)
 {
@@ -964,6 +977,8 @@ void arm_generate(string sname)
 				break;
 			case NOTE:
 				_note(ir_now);
+			case ARRAYINIT:
+				_arrayinit(ir_now);
 			default:
 				break;
 			}
