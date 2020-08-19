@@ -243,6 +243,7 @@ int frontExecute(string syname)
 	*/
 	//检测中间代码正确性
 	TestIrCode("ir.txt");
+	cout << "yes" << endl;
 	//outfile.close();
 	return 0;
 }
@@ -739,7 +740,11 @@ void VarDef(int index, int block)             //变量定义
 		symbol = wordAnalysis.getSymbol();
 		token = wordAnalysis.getToken();//预读
 
-
+		if (b == "%" && dimenson > 0) {		//局部数组调用初始化
+			CodeItem citem = CodeItem(ARRAYINIT, "0", b + name, numToString(totalSize));
+			citem.setFatherBlock(fatherBlock);
+			codetotal[index].push_back(citem);
+		}
 		//变量赋值前做好变量初始化相关工作
 		offset = 0;
 		matrixLength = length;
@@ -819,18 +824,6 @@ void InitVal(int index)
 			}
 			if (b == "%") {
 				int zzzzz = offset + mod;
-				while (offset < zzzzz) {
-					offset++;
-					string offset_string = numToString((offset - 1) * 4);
-					string b = "@";
-					symbolTable item = checkItem(nodeName);
-					if (Range != 0) {
-						b = "%";
-					}
-					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
-					citem.setFatherBlock(fatherBlock);
-					codetotal[index].push_back(citem);
-				}
 			}
 			else {
 				offset += mod;
@@ -850,15 +843,6 @@ void InitVal(int index)
 			else {
 				while (offset % mod != 0) {
 					offset++;
-					string offset_string = numToString((offset - 1) * 4);
-					string b = "@";
-					symbolTable item = checkItem(nodeName);
-					if (Range != 0) {
-						b = "%";
-					}
-					CodeItem citem = CodeItem(STOREARR, "0", b + nodeName, offset_string);
-					citem.setFatherBlock(fatherBlock);
-					codetotal[index].push_back(citem);
 				}
 			}
 		}

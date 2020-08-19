@@ -30,6 +30,7 @@ enum irCodeType {
 	MOV,							//移动
 	LEA,							//取地址
 	GETREG,							//取返回值
+	ARRAYINIT
 };
 
 class CodeItem

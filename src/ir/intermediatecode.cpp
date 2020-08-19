@@ -166,6 +166,10 @@ string CodeItem::getContent()
 		content = "getReg                " + standardLength(operand1);
 		break;
 	}
+	case ARRAYINIT: {
+		content = "arrayinit  " + standardLength(result) + " " + standardLength(operand1) + " " + standardLength(operand2);
+		break;
+	}
 	default:
 		break;
 	}
