@@ -343,7 +343,7 @@ void CompUnit()
 					changeForInline(Funcindex);
 					total[Funcindex][0].setisinlineFunc(isinlineFunc);
 					changeGlobalToAlloc(Funcindex);
-					deleteSameExp(Funcindex);
+					//deleteSameExp(Funcindex);
 				}
 				else {
 					symbol = sym_tag;
@@ -365,7 +365,7 @@ void CompUnit()
 				changeForInline(Funcindex);
 				total[Funcindex][0].setisinlineFunc(isinlineFunc);
 				changeGlobalToAlloc(Funcindex);
-				deleteSameExp(Funcindex);
+				//deleteSameExp(Funcindex);
 			}
 		}
 	}
