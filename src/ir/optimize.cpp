@@ -810,7 +810,7 @@ void irOptimize() {
 		
 		//1. 寄存器直接指派
 		if (1) {
-			convertCondition();		//优化条件跳转
+			//convertCondition();		//优化条件跳转
 			printLIR("LIR2.txt");
 			registerAllocation();
 		}
