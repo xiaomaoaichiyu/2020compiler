@@ -26,6 +26,7 @@ public:
 	void setFilepath(string filename);
 	void setToken(string Token);
 	void setfRecord(int record);
+	int getlineNumber();
 	int getfRecord();
 private:
 	enum Memory symbol;
@@ -34,6 +35,7 @@ private:
 	int fRecord;   //文件下标
 	string token;  //当前读的单词
 	int number;   
+	int lineNumber; //行号
 	void getmark();
 	void clearToken();
 	void catToken();  //拼接 

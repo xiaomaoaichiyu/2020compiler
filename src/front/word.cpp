@@ -18,6 +18,7 @@ void Word::setFilepath(string filename)
 	}
 	infile.close();
 	fRecord = 0;
+	lineNumber = 1;
 }
 int Word::getNumber()
 {
@@ -98,11 +99,18 @@ void Word::transNum16()
 		number = number * 16 + j;
 	}
 }
+int Word::getlineNumber()
+{
+	return this->lineNumber;
+}
 bool Word::getsym()   //为后期做准备，可以判断是否读完文件了
 {
 	clearToken();
 	do {
 		getmark();
+		if (mark == '\n' || mark == '\r') {
+			lineNumber++;
+		}
 	} while (mark == ' ' || mark == '	' || mark == '\n' || mark == '\r');
 	if (isalpha(mark) || mark == '_') {
 		while (isalpha(mark) || isdigit(mark) || mark == '_') {
