@@ -200,7 +200,7 @@ void _define(CodeItem* ir)
 		global_reg_list += "," + reg;
 		regN++;
 	}*/
-	global_reg_list = "R4,R5,R6,R7,R8,R9,R10,R11";
+	global_reg_list = " R4,R5,R6,R7,R8,R9,R10,R11";
 	regN = 9;
 	if (sp - sp_without_para < -127 || sp-sp_without_para > 127) {
 		OUTPUT("LDR R12,=" + to_string(sp - sp_without_para));
@@ -763,7 +763,7 @@ void _ret(CodeItem* ir)
 		OUTPUT("POP {" + global_reg_list.substr(1) + "}");
 		fake_sp += func2gReg[symbol_pointer].size() * 4;
 	}*/
-	OUTPUT("POP {" + global_reg_list + "}");
+	OUTPUT("POP {" + global_reg_list.substr(1) + "}");
 	fake_sp += 36;
 	if (sp_without_para-fake_sp > 127) {
 		OUTPUT("LDR R12,=" + to_string(sp_without_para-fake_sp));
