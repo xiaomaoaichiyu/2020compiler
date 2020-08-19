@@ -977,8 +977,10 @@ void arm_generate(string sname)
 				break;
 			case NOTE:
 				_note(ir_now);
+				break;
 			case ARRAYINIT:
 				_arrayinit(ir_now);
+				break;
 			default:
 				break;
 			}
