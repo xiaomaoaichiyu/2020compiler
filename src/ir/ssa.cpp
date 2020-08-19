@@ -1339,20 +1339,12 @@ void SSA::generate_active_var_analyse() {
 	// 初始化varName2St结构体
 	init();
 
-	// 简化条件判断为常值的跳转指令
-	simplify_br();
-
-	// 在睿轩生成的中间代码上做优化
-	pre_optimize();
-
 	// 计算每个基本块的起始语句
 	find_primary_statement();
 	// 为每个函数划分基本块
 	divide_basic_block();
 	// 建立基本块间的前序和后序关系
 	build_pred_and_succeeds();
-	// 消除无法到达基本块
-	simplify_basic_block();
 
 	// 确定每个基本块的必经关系，参见《高级编译器设计与实现》P132 Dom_Comp算法
 	build_dom_tree();
