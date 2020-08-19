@@ -234,7 +234,7 @@ int frontExecute(string syname)
 		}
 	}
 	putAllocGlobalFirst();		//将中间代码中alloc、global类型前移
-	youhuaDivCompare();				//除法比较进行优化
+	//youhuaDivCompare();				//除法比较进行优化
 	//检测符号表内容
 	/*
 	cout << "名字 " << "Block下标 " << "种类 0Con 1Var 2Para 3Func " << "维度 " << endl;
