@@ -1313,7 +1313,7 @@ void SSA::generate() {
 		// 恢复变量命名
 		if (i == 0) rename_back();
 
-		optimize_arrayinit();
+		if (i == 0) optimize_arrayinit();
 
 		optimize_br_label();
 
