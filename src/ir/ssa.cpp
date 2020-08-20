@@ -1016,12 +1016,13 @@ void SSA::simplify_basic_block() {
 			int size2 = v.size();
 			for (j = 1; j < size2; j++) 
 				if (v[j].pred.empty()) { update = true; break; }
-				/*else {
-					update = true;
-					for (set<int>::iterator lzhhh = v[j].pred.begin(); lzhhh != v[j].pred.end(); lzhhh++)
-						if (*lzhhh <= j) { update = false; break; }
-					if (update) break;
-				}*/
+				else {
+					int blk_1 = j;
+					int blk_2 = *(v[j].pred.begin());
+					if (v[blk_1].pred.size() == 1 && v[blk_2].pred.size() == 1 && *(v[blk_2].pred.begin()) == blk_1) {
+						update = true; break;
+					}
+				}
 			if (update) {
 				v.erase(v.begin() + j);
 				int size3 = v.size();
