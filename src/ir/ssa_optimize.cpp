@@ -2413,23 +2413,37 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 				auto ope2 = instr.getOperand2();
 				switch (op) {
 				case LOAD: {
-					if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
-						instr.setInvariant();
+					//if (ope2 == "para" || ope2 == "array") {	//取数组地址，一定是不变式
+					//	instr.setInvariant();
+					//}
+					//else {	//取变量的值，看变量的定义位置def是否在循环外
+					//	int pos = ope1.find('^');
+					//	if (pos != -1
+					//		&& j+1 < ir.size() 
+					//		&& ir.at(j+1).getCodetype() == STORE 
+					//		&& ir.at(j+1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
+					//		j++;
+					//		break;
+					//	}
+					//	if (!isGlobal(ope1)) {
+					//		auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+					//		if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+					//			instr.setInvariant();
+					//		}
+					//	}
+					//}
+					int pos = ope1.find('^');
+					if (pos != -1
+						&& j + 1 < ir.size()
+						&& ir.at(j + 1).getCodetype() == STORE
+						&& ir.at(j + 1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
+						j++;
+						break;
 					}
-					else {	//取变量的值，看变量的定义位置def是否在循环外
-						int pos = ope1.find('^');
-						if (pos != -1
-							&& j+1 < ir.size() 
-							&& ir.at(j+1).getCodetype() == STORE 
-							&& ir.at(j+1).getOperand1().substr(0, pos) == ope1.substr(0, pos)) {
-							j++;
-							break;
-						}
-						if (!isGlobal(ope1)) {
-							auto def = udchain.getDef(Node(idx, j, ope1), ope1);
-							if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-								instr.setInvariant();
-							}
+					if (!isGlobal(ope1)) {
+						auto def = udchain.getDef(Node(idx, j, ope1), ope1);
+						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+							instr.setInvariant();
 						}
 					}
 					break; } 
@@ -2447,7 +2461,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 					}
 					break; }
 				case ADD: case SUB: case DIV: case MUL: case REM:
-				case AND: case OR: case NOT: case EQL:
+				case AND: case OR: case EQL:
 				case NEQ: case SGT: case SGE: case SLT: case SLE: {
 					if (isNumber(ope1)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2471,6 +2485,14 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
+				/*case NOT: {
+					if (isNumber(ope1)) {
+						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+						if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+							instr.setInvariant();
+						}
+					}
+					break; }*/
 				case LOADARR: {
 					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
 						if (!isNumber(ope2)) {
@@ -2487,24 +2509,6 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 					}
 					break;
 				}
-				/*case STOREARR: {
-					if (!isNumber(ope2)) {
-						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-						auto def1 = udchain.getDef(Node(idx, j, res), res);
-						if (def.var != "" && def1.var != "" 
-							&& circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()
-							&& circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
-							instr.setInvariant();
-						}
-					}
-					else {
-						auto def1 = udchain.getDef(Node(idx, j, res), res);
-						if (def1.var != "" && circle.cir_blks.find(def1.bIdx) == circle.cir_blks.end()) {
-							instr.setInvariant();
-						}
-					}
-					break;
-				}*/
 				default:
 					break;
 				}
@@ -2558,7 +2562,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 					}
 					break; }
 				case ADD: case SUB: case DIV: case MUL: case REM:
-				case AND: case OR: case NOT: case EQL:
+				case AND: case OR: case EQL:
 				case NEQ: case SGT: case SGE: case SLT: case SLE: {
 					if (isNumber(ope1)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2601,6 +2605,19 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
+				//case NOT: {
+				//	if (isNumber(ope1)) {
+				//		auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+				//		if (def.var != "" && circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+				//			instr.setInvariant();
+				//		}
+				//		else {
+				//			if (def.var != "" && blocks.at(def.bIdx).Ir.at(def.lIdx).getInvariant() == 1) {	//定值点被标记了
+				//				instr.setInvariant();
+				//			}
+				//		}
+				//	}
+				//	break; }
 				case LOADARR: {
 					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
 						if (!isNumber(ope2)) {
