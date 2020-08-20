@@ -1014,23 +1014,23 @@ void _div(CodeItem* ir)
 		}
 		else if (bitoff > 0) {
 			//not considering negtive
-			/*OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(bitoff));*/
+			OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(bitoff));
 
 			//considering negtive
-			OUTPUT("ASR LR," + op1 + ",#31");
-			OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 - bitoff));
-			OUTPUT("ASR " + target + "," + target + ",#" + to_string(bitoff));
+			// OUTPUT("ASR LR," + op1 + ",#31");
+			// OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 - bitoff));
+			// OUTPUT("ASR " + target + "," + target + ",#" + to_string(bitoff));
 		}
 		else if (bitoff < 0) {
 			//not considering negtive
-			/*OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(-bitoff));
-			OUTPUT("RSB " + target + "," + target + ",#0");*/
+			OUTPUT("ASR " + target + "," + op1 + ",#" + to_string(-bitoff));
+			OUTPUT("RSB " + target + "," + target + ",#0");
 
 			//considering negtive
-			OUTPUT("ASR LR," + op1 + ",#31");
-			OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 + bitoff));
-			OUTPUT("ASR " + target + "," + target + ",#" + to_string(-bitoff));
-			OUTPUT("RSB " + target + "," + target + ",#0");
+			// OUTPUT("ASR LR," + op1 + ",#31");
+			// OUTPUT("ADD " + target + "," + op1 + ",LR,LSR #" + to_string(32 + bitoff));
+			// OUTPUT("ASR " + target + "," + target + ",#" + to_string(-bitoff));
+			// OUTPUT("RSB " + target + "," + target + ",#0");
 		}
 		return;
 	}
@@ -1143,12 +1143,12 @@ void _rem(CodeItem* ir)
 			int im = stoi(op2);
 			im = bitoff < 0 ? -im : im;
 			//not considering negtive
-			//OUTPUT("AND " + target + "," + op1 + ",#" + to_string(im - 1));
-			//considering negtive
-			OUTPUT("RSBS LR," + op1 + ",#0");
-			OUTPUT("AND LR,LR,#" + to_string(im - 1));
 			OUTPUT("AND " + target + "," + op1 + ",#" + to_string(im - 1));
-			OUTPUT("RSBPL " + target + ",LR,#0");
+			//considering negtive
+			// OUTPUT("RSBS LR," + op1 + ",#0");
+			// OUTPUT("AND LR,LR,#" + to_string(im - 1));
+			// OUTPUT("AND " + target + "," + op1 + ",#" + to_string(im - 1));
+			// OUTPUT("RSBPL " + target + ",LR,#0");
 		}
 		return;
 	}
