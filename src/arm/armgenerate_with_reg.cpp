@@ -159,7 +159,7 @@ bool judgeglobal(string a)		//丛加的
 }
 bool judgeLoadOp(string a)		//丛加的
 {
-	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL"  || a == "MOV" || a == "MLS" || a == "MLA") {
+	if (a == "LDR" || a == "ADD" || a == "SUB" || a == "ASR" || a == "LSL" || a == "MUL" || a == "MOV" || a == "MLS" || a == "MLA") {
 		return true;
 	}
 	return false;
@@ -208,25 +208,28 @@ bool is_nonsence(int index)
 			}
 		}
 	}
-	// regex pattern5("LSL\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*#2");
-	// regex pattern6("(LDR|STR)\\s+([SPLR0-9]+)\\s*,\\[\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*\\]\\s*");
-	// if (regex_match(str, result, pattern5)) {
-	// 	string lsl1 = result[1];
-	// 	string lsl2 = result[2];
-	// 	if ((output_buffer[index + 1].substr(0, 3) == "LDR" 
-	// 		|| output_buffer[index + 1].substr(0, 3) == "STR") 
-	// 		&& regex_match(output_buffer[index + 1], result, pattern6)) {
-	// 		string op = result[1];
-	// 		string op_re = result[2];
-	// 		string op_op1 = result[3];
-	// 		string op_op2 = result[4];
-	// 		if (op_op2 == lsl1) {
-	// 			output_buffer[index] = op + " " + op_re + ",[" + op_op1 + "," + lsl2 + ",LSL #2]";
-	// 			output_buffer[index + 1] = "NOP";
-	// 			return false;
-	// 		}
-	// 	}
-	// }
+	regex pattern5("LSL\\s+(R0|R1|R2|R3|R12)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*#2");
+	regex pattern6("(LDR|STR)\\s+([SPLR0-9]+)\\s*,\\[\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*\\]\\s*");
+	if (regex_match(str, result, pattern5)) {
+		string lsl1 = result[1];
+		string lsl2 = result[2];
+		if ((output_buffer[index + 1].substr(0, 3) == "LDR"
+			|| output_buffer[index + 1].substr(0, 3) == "STR")
+			&& regex_match(output_buffer[index + 1], result, pattern6)) {
+			string op = result[1];
+			string op_re = result[2];
+			string op_op1 = result[3];
+			string op_op2 = result[4];
+			if (op_op2 == lsl1) {
+				cout << to_string(index) + "LSL origin:" + output_buffer[index] + "\n" + output_buffer[index + 1] + "\n";
+				string lsl_str = op + " " + op_re + ",[" + op_op1 + "," + lsl2 + ",LSL #2]";
+				cout << "LSL change:" + lsl_str;
+				output_buffer[index] = "NOP";
+				output_buffer[index + 1] = lsl_str;
+				return false;
+			}
+		}
+	}
 
 	string a = str.substr(0, 3);	//删除连续相同MOV,丛加的
 	if (a == "MOV" && output_buffer[index] == output_buffer[index - 1]) {
@@ -349,8 +352,8 @@ bool is_nonsence(int index)
 			string next_num3 = strNext.substr(7, 3);		//防止next_num2实际是R11、R12只是因为取两位才为R1
 			string num1 = str.substr(4, 2);
 			string num2 = str.substr(4, 3);
-			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
-				&& next_num2 == next_num3 && num2 != "R10" && num2!="R11" && num2 != "R12") {
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3")
+				&& next_num2 == next_num3 && num2 != "R10" && num2 != "R11" && num2 != "R12") {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
 				cout << str << endl;
@@ -365,7 +368,7 @@ bool is_nonsence(int index)
 			next_num3 = strNext.substr(8, 3);				//防止next_num2实际是R11、R12只是因为取两位才为R1
 			num1 = str.substr(4, 2);		//情况二：LDR R0,=C   MOV R10, R0
 			num2 = str.substr(4, 3);
-			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3") 
+			if (num1 == next_num2 && (next_num2 == "R0" || next_num2 == "R1" || next_num2 == "R2" || next_num2 == "R3")
 				&& next_num2 == next_num3 && num2 != "R10" && num2 != "R11" && num2 != "R12") {
 				output_buffer.erase(output_buffer.begin() + index);
 				output_buffer.erase(output_buffer.begin() + index);   //连删两条指令
@@ -382,7 +385,7 @@ bool is_nonsence(int index)
 	if (index + 1 < output_buffer.size()) {
 		string strNext = output_buffer[index + 1];
 		string nextOp = strNext.substr(0, 3);
-		if (nextOp == "LDR" && a=="STR") {
+		if (nextOp == "LDR" && a == "STR") {
 			string aa = str.substr(4, str.size());
 			string bb = strNext.substr(4, str.size());
 			if (aa == bb) {
@@ -1498,61 +1501,61 @@ void _br(CodeItem* ir)
 		if (label2.substr(0, 9) == "while.end") {
 			CodeItem c(EQL, "%" + label2, res, "0");
 			b_stack.push(c);
-			while_cond_stack.push(while_buffer); 
+			while_cond_stack.push(while_buffer);
 		}
 		OUTPUT("CMP " + res + ",#0");
 		OUTPUT("BEQ " + label2);
 		//OUTPUT("BNE " + label1); //鏈夐棶棰樺彲浠ュ洖澶嶈繖閲岃瘯璇?
 	}
 	else {
-		 if (res.substr(1, 10) == "while.cond" && b_stack.size()!=0) {
-		 	auto temp_ir = &(b_stack.top());
-		 	string n = temp_ir->getResult().substr(11);
-		 	if (n == res.substr(12)) {
-		 		irCodeType t = Bconverse(temp_ir->getCodetype());
-		 		CodeItem c(t, "%while.body_" + n, 
-		 			temp_ir->getOperand1(), temp_ir->getOperand2());
-		 		bool push_temp = while_buffer_push;
-		 		while_buffer_push = false;
-		 		for (string s : while_cond_stack.top()) {
-		 			OUTPUT(s);
-		 		}
-		 		while_buffer_push = push_temp;
-		 		bool b_end = true;
-		 		if (ir->getOperand2() != "1") {
-		 			b_stack.pop();
-		 			while_cond_stack.pop();
-		 			b_end = false;
-		 		}
-		 		switch (t)
-		 		{
-		 		case EQL:
-		 			_eql(&c);
-		 			if(b_end) OUTPUT("B while.end_" + n);
-		 			return;
-		 		case NEQ:
-		 			_neq(&c);
-		 			if (b_end) OUTPUT("B while.end_" + n);
-		 			return;
-		 		case SGT:
-		 			_sgt(&c);
-		 			if (b_end) OUTPUT("B while.end_" + n);
-		 			return;
-		 		case SGE:
-		 			_sge(&c);
-		 			if (b_end) OUTPUT("B while.end_" + n);
-		 			return;
-		 		case SLT:
-		 			_slt(&c);
-		 			if (b_end) OUTPUT("B while.end_" + n);
-		 			return;
-		 		case SLE:
-		 			_sle(&c);
-		 			if (b_end) OUTPUT("B while.end_" + n);
-		 			return;
-		 		}
-		 	}
-		 }
+		if (res.substr(1, 10) == "while.cond" && b_stack.size() != 0) {
+			auto temp_ir = &(b_stack.top());
+			string n = temp_ir->getResult().substr(11);
+			if (n == res.substr(12)) {
+				irCodeType t = Bconverse(temp_ir->getCodetype());
+				CodeItem c(t, "%while.body_" + n,
+					temp_ir->getOperand1(), temp_ir->getOperand2());
+				bool push_temp = while_buffer_push;
+				while_buffer_push = false;
+				for (string s : while_cond_stack.top()) {
+					OUTPUT(s);
+				}
+				while_buffer_push = push_temp;
+				bool b_end = true;
+				if (ir->getOperand2() != "1") {
+					b_stack.pop();
+					while_cond_stack.pop();
+					b_end = false;
+				}
+				switch (t)
+				{
+				case EQL:
+					_eql(&c);
+					if (b_end) OUTPUT("B while.end_" + n);
+					return;
+				case NEQ:
+					_neq(&c);
+					if (b_end) OUTPUT("B while.end_" + n);
+					return;
+				case SGT:
+					_sgt(&c);
+					if (b_end) OUTPUT("B while.end_" + n);
+					return;
+				case SGE:
+					_sge(&c);
+					if (b_end) OUTPUT("B while.end_" + n);
+					return;
+				case SLT:
+					_slt(&c);
+					if (b_end) OUTPUT("B while.end_" + n);
+					return;
+				case SLE:
+					_sle(&c);
+					if (b_end) OUTPUT("B while.end_" + n);
+					return;
+				}
+			}
+		}
 		OUTPUT("B " + res.substr(1));
 	}
 }
@@ -1815,7 +1818,7 @@ void arm_generate(string sname)
 				break;
 			case EQL: {
 				string s = ir_now->getResult();
-				if (s[0] == '%' && s.substr(1,9) == "while.end") {
+				if (s[0] == '%' && s.substr(1, 9) == "while.end") {
 					b_stack.push(*ir_now);
 					while_cond_stack.push(while_buffer);
 				}
