@@ -136,9 +136,9 @@ void getcallerMap()
 			func_done.insert(f);
 		}
 		for (string g : func2gReg[funcname2index[p.first]]) {
-			if (caller_gReg.find(g) != caller_gReg.end()) {
+			//if (caller_gReg.find(g) != caller_gReg.end()) {
 				funcname2pushlist[p.first].push_back(g);
-			}
+			//}
 		}
 	}
 }
