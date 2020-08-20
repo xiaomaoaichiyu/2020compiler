@@ -1794,6 +1794,7 @@ void SSA::back_edge(int num) {
 //先不考虑全局数组
 set<string> array2out;
 map<string, set<string>> arr2offset2num;
+set<string> initarray2;
 
 bool checkInvariant(const set<Node>& defs, const set<int>& cir_blks, vector<basicBlock>& blocks) {
 	for (auto def : defs) {
@@ -1843,6 +1844,14 @@ void markArray(int funcNum, Circle& circle, UDchain1 udchain1, vector<basicBlock
 			else if (op == LOAD && array2out.find(ope1) != array2out.end() && ope2 == "array") {
 				array2out.erase(ope1);
 			}
+			else if (op == ARRAYINIT) {
+				initarray2.insert(ope1);
+			}
+		}
+	}
+	for (auto one : initarray2) {
+		if (array2out.find(one) != array2out.end()) {
+			array2out.erase(one);
 		}
 	}
 	//标记 storearr 不变式
@@ -2337,6 +2346,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 	arr2offset2num1.clear();
 	for (auto idx : circle.cir_blks) {
 		auto& ir = blocks.at(idx).Ir;
+		int flag100 = 1;
 		for (int j = 0; j < ir.size(); j++) { //先判断数组变量是否被未知偏移定义过
 			auto instr = ir.at(j);
 			auto op = instr.getCodetype();
@@ -2368,12 +2378,25 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 			else if (op == LOADARR && !isGlobal(ope1)) {
 				array2out1.insert(ope1);
 			}
-			else if (op == LOAD && array2out1.find(ope1) != array2out1.end() && ope2 == "array") {
+			else if (op == LOAD && array2out1.find(ope1) != array2out1.end() && ope2 == "array") {	//被函数调用作为参数处理的时候
 				array2out1.erase(ope1);
 			}
-			/*else if (op == ARRAYINIT) {
-				initArray.find();
-			}*/
+			else if (op == CALL) {
+				array2out1.clear();
+				flag100 = 0;
+				break;
+			}
+			else if (op == ARRAYINIT) {
+				initArray.insert(ope1);
+			}
+		}
+		if (flag100 == 0) {
+			break;
+		}
+	}
+	for (auto one : initArray) {
+		if (array2out1.find(one) != array2out1.end()) {
+			array2out1.erase(one);
 		}
 	}
 	
