@@ -166,6 +166,13 @@ void SSA::ssa_optimize(int num) {
 		//循环优化
 		if (num == 0) count_UDchains();		//计算使用-定义链
 		if (num == 1) count_UDChains2();
+		
+		/*for (int i = 0; i < total.size(); i++) {
+			for (int j = 0; j < total.at(i).size(); j++) {
+
+			}
+		}*/
+		
 		back_edge(num);			//循环优化
 
 		// 删除中间代码中的phi
@@ -2433,22 +2440,22 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				//case LOADARR: {
-				//	if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
-				//		if (!isNumber(ope2)) {
-				//			auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-				//			if (def.var != "") {
-				//				if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-				//					instr.setInvariant();
-				//				}
-				//			}
-				//		}
-				//		else {	//偏移是立即数
-				//			instr.setInvariant();
-				//		}
-				//	}
-				//	break;
-				//}
+				case LOADARR: {
+					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
+						if (!isNumber(ope2)) {
+							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+							if (def.var != "") {
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+						}
+						else {	//偏移是立即数
+							instr.setInvariant();
+						}
+					}
+					break;
+				}
 				/*case STOREARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2563,7 +2570,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				/*case LOADARR: {
+				case LOADARR: {
 					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
 						if (!isNumber(ope2)) {
 							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2576,7 +2583,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break;
-				}*/
+				}
 				default:
 					break;
 				}
