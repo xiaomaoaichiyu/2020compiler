@@ -1758,18 +1758,18 @@ void SSA::back_edge(int num) {
 			}
 		}
 		if (num == 1) {
-			for (auto circle : circles) {
-				/*UDchain1 udchain1s(blockCore.at(i));
-				ofstream ud("udchain2.txt");
-				udchain1s.printUDchain(ud);ud << endl;ud.close();*/
-				//markArray(i, circle, udchain1s, blockCore.at(i));				//确定不变式
-				markArray(i, circle, func2udChain1s.at(i), blockCore.at(i));				//确定不变式
-				ofstream ly1("shuzu1.txt");
-				printCircleIr(this->blockCore, ly1);
-				arraycode_outside(i, circle);
-				ofstream ly2("shuzu2.txt");
-				printCircleIr(this->blockCore, ly2);
-			}
+			//for (auto circle : circles) {
+			//	/*UDchain1 udchain1s(blockCore.at(i));
+			//	ofstream ud("udchain2.txt");
+			//	udchain1s.printUDchain(ud);ud << endl;ud.close();*/
+			//	//markArray(i, circle, udchain1s, blockCore.at(i));				//确定不变式
+			//	markArray(i, circle, func2udChain1s.at(i), blockCore.at(i));				//确定不变式
+			//	ofstream ly1("shuzu1.txt");
+			//	printCircleIr(this->blockCore, ly1);
+			//	arraycode_outside(i, circle);
+			//	ofstream ly2("shuzu2.txt");
+			//	printCircleIr(this->blockCore, ly2);
+			//}
 		}
 	}
 }
