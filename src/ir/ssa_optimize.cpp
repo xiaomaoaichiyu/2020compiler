@@ -183,16 +183,16 @@ void SSA::ssa_optimize(int num) {
 		if (num == 0) count_UDchains();		//计算使用-定义链
 		if (num == 1) count_UDChains2();
 		
-		/*int flag = 1;
+		int flag = 0;
 		for (int i = 1; i < total.size(); i++) {
 			string name = total.at(i).at(0).getName();
 			regex r(".*conv.*");
 			if (regex_match(name, r)) {
-				flag = 0;
+				flag = 1;
 			}
-		}*/
+		}
 		if (num == 0) deleteNote();
-		/*if (flag)*/ back_edge(num);			//循环优化
+		back_edge(num, flag);			//循环优化
 
 		// 删除中间代码中的phi
 		if (num == 0) delete_Ir_phi();
@@ -1714,7 +1714,7 @@ void SSA::circleVar() {
 //存放tmpvar对应的代码
 vector<map<string, vector<CodeItem>>> func2tmpvar2Codes;
 
-void SSA::back_edge(int num) {
+void SSA::back_edge(int num, int flag) {
 	func2tmpvar2Codes.push_back(map<string, vector<CodeItem>>());
 	for (int i = 1; i < blockCore.size(); i++) {
 		circles.clear();
@@ -1773,17 +1773,18 @@ void SSA::back_edge(int num) {
 			add_a_circle(circle);
 		}
 		printCircle(i);
-		if (num == 0) {
-			for (auto circle : circles) {
-				mark_invariant(i, circle);				//确定不变式
-				ofstream ly1("xunhuan1.txt");
-				printCircleIr(this->blockCore, ly1);
-				code_outside(i, circle);				//不变式外提
-				ofstream ly2("xunhuan2.txt");
-				printCircleIr(this->blockCore, ly2);
+		if (flag == 1) {
+			if (num == 0) {
+				for (auto circle : circles) {
+					mark_invariant(i, circle);				//确定不变式
+					ofstream ly1("xunhuan1.txt");
+					printCircleIr(this->blockCore, ly1);
+					code_outside(i, circle);				//不变式外提
+					ofstream ly2("xunhuan2.txt");
+					printCircleIr(this->blockCore, ly2);
+				}
 			}
 		}
-
 		if (num == 1) {
 			for (auto circle : circles) {
 				/*UDchain1 udchain1s(blockCore.at(i));
