@@ -2563,7 +2563,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case LOADARR: {
+				/*case LOADARR: {
 					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
 						if (!isNumber(ope2)) {
 							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2576,7 +2576,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break;
-				}
+				}*/
 				default:
 					break;
 				}
