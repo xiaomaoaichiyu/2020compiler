@@ -170,7 +170,8 @@ void SSA::ssa_optimize(int num) {
 		int flag = 1;
 		for (int i = 1; i < total.size(); i++) {
 			string name = total.at(i).at(0).getName();
-			if (name.find("conv") != -1) {
+			regex r(".*conv.*");
+			if (regex_match(name, r)) {
 				flag = 0;
 			}
 		}
