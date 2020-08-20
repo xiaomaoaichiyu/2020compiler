@@ -167,13 +167,16 @@ void SSA::ssa_optimize(int num) {
 		if (num == 0) count_UDchains();		//计算使用-定义链
 		if (num == 1) count_UDChains2();
 		
-		/*for (int i = 0; i < total.size(); i++) {
-			for (int j = 0; j < total.at(i).size(); j++) {
-
+		int flag = 1;
+		for (int i = 1; i < total.size(); i++) {
+			string name = total.at(i).at(0).getName();
+			regex r(".*conv.*");
+			if (regex_match(name, r)) {
+				flag = 0;
 			}
-		}*/
+		}
 		
-		back_edge(num);			//循环优化
+		if (flag) back_edge(num);			//循环优化
 
 		// 删除中间代码中的phi
 		if (num == 0) delete_Ir_phi();
@@ -1764,6 +1767,7 @@ void SSA::back_edge(int num) {
 				printCircleIr(this->blockCore, ly2);
 			}
 		}
+
 		if (num == 1) {
 			for (auto circle : circles) {
 				/*UDchain1 udchain1s(blockCore.at(i));
@@ -1791,6 +1795,7 @@ void SSA::back_edge(int num) {
 //先不考虑全局数组
 set<string> array2out;
 map<string, set<string>> arr2offset2num;
+set<string> initarray2;
 
 bool checkInvariant(const set<Node>& defs, const set<int>& cir_blks, vector<basicBlock>& blocks) {
 	for (auto def : defs) {
@@ -1840,6 +1845,14 @@ void markArray(int funcNum, Circle& circle, UDchain1 udchain1, vector<basicBlock
 			else if (op == LOAD && array2out.find(ope1) != array2out.end() && ope2 == "array") {
 				array2out.erase(ope1);
 			}
+			else if (op == ARRAYINIT) {
+				initarray2.insert(ope1);
+			}
+		}
+	}
+	for (auto one : initarray2) {
+		if (array2out.find(one) != array2out.end()) {
+			array2out.erase(one);
 		}
 	}
 	//标记 storearr 不变式
@@ -2325,6 +2338,7 @@ void SSA::arraycode_outside(int funcNum, Circle& circle) {
 
 set<string> array2out1;
 map<string, set<string>> arr2offset2num1;
+set<string> initArray;
 
 void SSA::mark_invariant(int funcNum, Circle& circle) {
 	auto& blocks = blockCore.at(funcNum);
@@ -2333,6 +2347,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 	arr2offset2num1.clear();
 	for (auto idx : circle.cir_blks) {
 		auto& ir = blocks.at(idx).Ir;
+		int flag100 = 1;
 		for (int j = 0; j < ir.size(); j++) { //先判断数组变量是否被未知偏移定义过
 			auto instr = ir.at(j);
 			auto op = instr.getCodetype();
@@ -2364,9 +2379,25 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 			else if (op == LOADARR && !isGlobal(ope1)) {
 				array2out1.insert(ope1);
 			}
-			else if (op == LOAD && array2out1.find(ope1) != array2out1.end() && ope2 == "array") {
+			else if (op == LOAD && array2out1.find(ope1) != array2out1.end() && ope2 == "array") {	//被函数调用作为参数处理的时候
 				array2out1.erase(ope1);
 			}
+			else if (op == CALL) {
+				array2out1.clear();
+				flag100 = 0;
+				break;
+			}
+			else if (op == ARRAYINIT) {
+				initArray.insert(ope1);
+			}
+		}
+		if (flag100 == 0) {
+			break;
+		}
+	}
+	for (auto one : initArray) {
+		if (array2out1.find(one) != array2out1.end()) {
+			array2out1.erase(one);
 		}
 	}
 	
