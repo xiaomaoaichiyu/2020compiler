@@ -166,6 +166,8 @@ bool judgeLoadOp(string a)		//丛加的
 }
 bool is_nonsence(int index)
 {
+	canOutput = 1;
+	return false;
 	string str = output_buffer[index];
 	smatch result;
 	canOutput = 1;
