@@ -168,7 +168,7 @@ void SSA::ssa_optimize(int num) {
 		if (num == 1) count_UDChains2();
 		
 		int flag = 1;
-		for (int i = 1; i < total.size(); i++) {
+		/*for (int i = 1; i < total.size(); i++) {
 			string name = total.at(i).at(0).getName();
 			regex r(".*conv.*");
 			if (regex_match(name, r)) {
@@ -176,7 +176,7 @@ void SSA::ssa_optimize(int num) {
 			}
 		}
 		
-		if (flag) back_edge(num);			//循环优化
+		if (flag)*/ back_edge(num);			//循环优化
 
 		// 删除中间代码中的phi
 		if (num == 0) delete_Ir_phi();
