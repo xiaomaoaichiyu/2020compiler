@@ -1488,54 +1488,54 @@ void _br(CodeItem* ir)
 		//OUTPUT("BNE " + label1); //鏈夐棶棰樺彲浠ュ洖澶嶈繖閲岃瘯璇?
 	}
 	else {
-		if (res.substr(1, 10) == "while.cond" && b_stack.size()!=0) {
-			auto temp_ir = &(b_stack.top());
-			string n = temp_ir->getResult().substr(11);
-			if (n == res.substr(12)) {
-				irCodeType t = Bconverse(temp_ir->getCodetype());
-				CodeItem c(t, "%while.body_" + n, 
-					temp_ir->getOperand1(), temp_ir->getOperand2());
-				bool push_temp = while_buffer_push;
-				while_buffer_push = false;
-				for (string s : while_cond_stack.top()) {
-					OUTPUT(s);
-				}
-				while_buffer_push = push_temp;
-				bool b_end = true;
-				if (ir->getOperand2() != "1") {
-					b_stack.pop();
-					while_cond_stack.pop();
-					b_end = false;
-				}
-				switch (t)
-				{
-				case EQL:
-					_eql(&c);
-					if(b_end) OUTPUT("B while.end_" + n);
-					return;
-				case NEQ:
-					_neq(&c);
-					if (b_end) OUTPUT("B while.end_" + n);
-					return;
-				case SGT:
-					_sgt(&c);
-					if (b_end) OUTPUT("B while.end_" + n);
-					return;
-				case SGE:
-					_sge(&c);
-					if (b_end) OUTPUT("B while.end_" + n);
-					return;
-				case SLT:
-					_slt(&c);
-					if (b_end) OUTPUT("B while.end_" + n);
-					return;
-				case SLE:
-					_sle(&c);
-					if (b_end) OUTPUT("B while.end_" + n);
-					return;
-				}
-			}
-		}
+		// if (res.substr(1, 10) == "while.cond" && b_stack.size()!=0) {
+		// 	auto temp_ir = &(b_stack.top());
+		// 	string n = temp_ir->getResult().substr(11);
+		// 	if (n == res.substr(12)) {
+		// 		irCodeType t = Bconverse(temp_ir->getCodetype());
+		// 		CodeItem c(t, "%while.body_" + n, 
+		// 			temp_ir->getOperand1(), temp_ir->getOperand2());
+		// 		bool push_temp = while_buffer_push;
+		// 		while_buffer_push = false;
+		// 		for (string s : while_cond_stack.top()) {
+		// 			OUTPUT(s);
+		// 		}
+		// 		while_buffer_push = push_temp;
+		// 		bool b_end = true;
+		// 		if (ir->getOperand2() != "1") {
+		// 			b_stack.pop();
+		// 			while_cond_stack.pop();
+		// 			b_end = false;
+		// 		}
+		// 		switch (t)
+		// 		{
+		// 		case EQL:
+		// 			_eql(&c);
+		// 			if(b_end) OUTPUT("B while.end_" + n);
+		// 			return;
+		// 		case NEQ:
+		// 			_neq(&c);
+		// 			if (b_end) OUTPUT("B while.end_" + n);
+		// 			return;
+		// 		case SGT:
+		// 			_sgt(&c);
+		// 			if (b_end) OUTPUT("B while.end_" + n);
+		// 			return;
+		// 		case SGE:
+		// 			_sge(&c);
+		// 			if (b_end) OUTPUT("B while.end_" + n);
+		// 			return;
+		// 		case SLT:
+		// 			_slt(&c);
+		// 			if (b_end) OUTPUT("B while.end_" + n);
+		// 			return;
+		// 		case SLE:
+		// 			_sle(&c);
+		// 			if (b_end) OUTPUT("B while.end_" + n);
+		// 			return;
+		// 		}
+		// 	}
+		// }
 		OUTPUT("B " + res.substr(1));
 	}
 }
