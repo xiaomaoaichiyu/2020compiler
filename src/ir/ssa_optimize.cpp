@@ -3156,7 +3156,9 @@ void SSA::optimize_arrayinit() {
 					string arrayName = ci.getOperand1();
 					int firstMember = v[0];
 					int lastMember = v[v.size() - 1];
+					bool debug = false;
 					if (firstMember == 0) {
+						if (debug) cout << "are you ok1?" << endl;
 						int initSize = arraySize[arrayName] - v.size();
 						if (initSize > 1) {
 							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize), to_string(lastMember + 1));
@@ -3172,6 +3174,7 @@ void SSA::optimize_arrayinit() {
 						}
 					}
 					else if (lastMember == arraySize[arrayName] - 1) {
+						if (debug) cout << "are you ok2?" << endl;
 						int initSize = arraySize[arrayName] - v.size();
 						if (initSize > 1) {
 							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize), "0");
@@ -3187,7 +3190,8 @@ void SSA::optimize_arrayinit() {
 						}
 					}
 					else {
-						int initSize1 = firstMember + 1;
+						if (debug) cout << "are you ok3?" << endl;
+						int initSize1 = firstMember;
 						if (initSize1 > 1) {
 							CodeItem nci(ARRAYINIT, "0", arrayName, to_string(initSize1), "0");
 							blockCore[i][j].Ir[k] = nci;
