@@ -210,7 +210,8 @@ private:
 	void strength_reduction();	//强度削弱
 	void protocol_variable_deletion(); //规约变量删除
 	void circleVar();
-	
+	void deleteNote();
+
 	void const_propagation();	//常量传播
 	void copy_propagation();	//复写传播
 	void while_open();			//循环展开
