@@ -208,8 +208,25 @@ bool is_nonsence(int index)
 			}
 		}
 	}
-	regex pattern5("LSL\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*");
-	regex pattern6("ADD\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*");
+	regex pattern5("LSL\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*#2");
+	regex pattern6("(LDR|STR)\\s+([SPLR0-9]+)\\s*,\\[\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*\\]\\s*");
+	if (regex_match(str, result, pattern5)) {
+		string lsl1 = result[1];
+		string lsl2 = result[2];
+		if ((output_buffer[index + 1].substr(0, 3) == "LDR" 
+			|| output_buffer[index + 1].substr(0, 3) == "STR") 
+			&& regex_match(output_buffer[index + 1], result, pattern6)) {
+			string op = result[1];
+			string op_re = result[2];
+			string op_op1 = result[3];
+			string op_op2 = result[4];
+			if (op_op2 == lsl1) {
+				output_buffer[index] = op + " " + op_re + ",[" + op_op1 + "," + lsl2 + ",LSL #2]";
+				output_buffer[index + 1] = "NOP";
+				return false;
+			}
+		}
+	}
 
 	string a = str.substr(0, 3);	//删除连续相同MOV,丛加的
 	if (a == "MOV" && output_buffer[index] == output_buffer[index - 1]) {
@@ -961,17 +978,17 @@ void _div(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op1[0] != 'R') {
 		OUTPUT("PUSH {R0}");
-		OUTPUT("PUSH {R1,R2,R3}");//remove R12,right?
+		OUTPUT("PUSH {R1,R2,R3,R12}");//remove R12,right?
 		OUTPUT("MOV R1," + op2);
 		//OUTPUT("LDR R0,=" + op1);
 		li("R0", stoi(op1));
 		OUTPUT("BL __aeabi_idiv");
 		if (target == "R0") {
-			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
+			OUTPUT("POP {R1,R2,R3,R12}");//remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
+			OUTPUT("POP {R1,R2,R3,R12}");//remove R12,right?
 			OUTPUT("MOV " + target + ",R0");
 			OUTPUT("POP {R0}");
 		}
@@ -1036,7 +1053,7 @@ void _div(CodeItem* ir)
 	}
 	{
 		OUTPUT("PUSH {R0}");
-		OUTPUT("PUSH {R1,R2,R3}");//remove R12,right?
+		OUTPUT("PUSH {R1,R2,R3,R12}");//remove R12,right?
 		if (op2 == "R0") {
 			OUTPUT("MOV LR,R0");
 		}
@@ -1055,11 +1072,11 @@ void _div(CodeItem* ir)
 		}
 		OUTPUT("BL __aeabi_idiv");
 		if (target == "R0") {
-			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
+			OUTPUT("POP {R1,R2,R3,R12}");//remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R1,R2,R3}");//remove R12,right?
+			OUTPUT("POP {R1,R2,R3,R12}");//remove R12,right?
 			OUTPUT("MOV " + target + ",R0");
 			OUTPUT("POP {R0}");
 		}
@@ -1074,17 +1091,17 @@ void _rem(CodeItem* ir)
 	string op2 = ir->getOperand2();
 	if (op1[0] != 'R') {
 		OUTPUT("PUSH {R1}");
-		OUTPUT("PUSH {R0,R2,R3}"); //remove R12,right?
+		OUTPUT("PUSH {R0,R2,R3,R12}"); //remove R12,right?
 		OUTPUT("MOV R1," + op2);
 		//OUTPUT("LDR R0,=" + op1);
 		li("R0", stoi(op1));
 		OUTPUT("BL __aeabi_idivmod");
 		if (target == "R1") {
-			OUTPUT("POP {R0,R2,R3}"); //remove R12,right?
+			OUTPUT("POP {R0,R2,R3,R12}"); //remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R0,R2,R3}"); //remove R12,right?
+			OUTPUT("POP {R0,R2,R3,R12}"); //remove R12,right?
 			OUTPUT("MOV " + target + ",R1");
 			OUTPUT("POP {R1}");
 		}
@@ -1154,7 +1171,7 @@ void _rem(CodeItem* ir)
 	}
 	{
 		OUTPUT("PUSH {R1}");
-		OUTPUT("PUSH {R0,R2,R3}");//remove R12,right?
+		OUTPUT("PUSH {R0,R2,R3,R12}");//remove R12,right?
 		if (op2 == "R0") {
 			OUTPUT("MOV LR,R0");
 		}
@@ -1173,11 +1190,11 @@ void _rem(CodeItem* ir)
 		}
 		OUTPUT("BL __aeabi_idivmod");
 		if (target == "R1") {
-			OUTPUT("POP {R0,R2,R3}");//remove R12,right?
+			OUTPUT("POP {R0,R2,R3,R12}");//remove R12,right?
 			OUTPUT("ADD SP,SP,#4");
 		}
 		else {
-			OUTPUT("POP {R0,R2,R3}");//remove R12,right?
+			OUTPUT("POP {R0,R2,R3,R12}");//remove R12,right?
 			OUTPUT("MOV " + target + ",R1");
 			OUTPUT("POP {R1}");
 		}
