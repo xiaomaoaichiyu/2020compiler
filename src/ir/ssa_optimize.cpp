@@ -2460,7 +2460,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case ADD: case SUB: case DIV: case MUL: case REM:
+				case ADD: case SUB: /*case DIV: case MUL: case REM:*/
 				/*case AND: case OR: case EQL:*/
 				/*case NEQ: case SGT: case SGE: case SLT: case SLE:*/ {
 					if (isNumber(ope1)) {
@@ -2561,7 +2561,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				case ADD: case SUB: case DIV: case MUL: case REM:
+				case ADD: case SUB: /*case DIV: case MUL: case REM:*/
 				/*case AND: case OR: case EQL:*/
 				/*case NEQ: case SGT: case SGE: case SLT: case SLE: */{
 					if (isNumber(ope1)) {
