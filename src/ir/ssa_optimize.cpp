@@ -137,7 +137,7 @@ void ActiveAnalyse::print_ly_act() {
 //ssa形式上的优化
 void SSA::ssa_optimize(int num) {
 	// 常量传播
-	if (0) {
+	if (1) {
 		// 重新计算use-def关系
 		build_def_use_chain();
 		// 重新进行活跃变量分析
@@ -166,6 +166,13 @@ void SSA::ssa_optimize(int num) {
 		//循环优化
 		if (num == 0) count_UDchains();		//计算使用-定义链
 		if (num == 1) count_UDChains2();
+		
+		/*for (int i = 0; i < total.size(); i++) {
+			for (int j = 0; j < total.at(i).size(); j++) {
+
+			}
+		}*/
+		
 		back_edge(num);			//循环优化
 
 		// 删除中间代码中的phi
