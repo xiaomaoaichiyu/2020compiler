@@ -137,7 +137,7 @@ void ActiveAnalyse::print_ly_act() {
 //ssa形式上的优化
 void SSA::ssa_optimize(int num) {
 	// 常量传播
-	if (1) {
+	if (0) {
 		// 重新计算use-def关系
 		build_def_use_chain();
 		// 重新进行活跃变量分析
@@ -1758,18 +1758,18 @@ void SSA::back_edge(int num) {
 			}
 		}
 		if (num == 1) {
-			//for (auto circle : circles) {
-			//	/*UDchain1 udchain1s(blockCore.at(i));
-			//	ofstream ud("udchain2.txt");
-			//	udchain1s.printUDchain(ud);ud << endl;ud.close();*/
-			//	//markArray(i, circle, udchain1s, blockCore.at(i));				//确定不变式
-			//	markArray(i, circle, func2udChain1s.at(i), blockCore.at(i));				//确定不变式
-			//	ofstream ly1("shuzu1.txt");
-			//	printCircleIr(this->blockCore, ly1);
-			//	arraycode_outside(i, circle);
-			//	ofstream ly2("shuzu2.txt");
-			//	printCircleIr(this->blockCore, ly2);
-			//}
+			for (auto circle : circles) {
+				/*UDchain1 udchain1s(blockCore.at(i));
+				ofstream ud("udchain2.txt");
+				udchain1s.printUDchain(ud);ud << endl;ud.close();*/
+				//markArray(i, circle, udchain1s, blockCore.at(i));				//确定不变式
+				markArray(i, circle, func2udChain1s.at(i), blockCore.at(i));				//确定不变式
+				ofstream ly1("shuzu1.txt");
+				printCircleIr(this->blockCore, ly1);
+				arraycode_outside(i, circle);
+				ofstream ly2("shuzu2.txt");
+				printCircleIr(this->blockCore, ly2);
+			}
 		}
 	}
 }
@@ -2433,22 +2433,22 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				//case LOADARR: {
-				//	if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
-				//		if (!isNumber(ope2)) {
-				//			auto def = udchain.getDef(Node(idx, j, ope2), ope2);
-				//			if (def.var != "") {
-				//				if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
-				//					instr.setInvariant();
-				//				}
-				//			}
-				//		}
-				//		else {	//偏移是立即数
-				//			instr.setInvariant();
-				//		}
-				//	}
-				//	break;
-				//}
+				case LOADARR: {
+					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
+						if (!isNumber(ope2)) {
+							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
+							if (def.var != "") {
+								if (circle.cir_blks.find(def.bIdx) == circle.cir_blks.end()) {
+									instr.setInvariant();
+								}
+							}
+						}
+						else {	//偏移是立即数
+							instr.setInvariant();
+						}
+					}
+					break;
+				}
 				/*case STOREARR: {
 					if (!isNumber(ope2)) {
 						auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2563,7 +2563,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break; }
-				/*case LOADARR: {
+				case LOADARR: {
 					if (array2out1.find(ope1) != array2out1.end() && !isGlobal(ope1)) {
 						if (!isNumber(ope2)) {
 							auto def = udchain.getDef(Node(idx, j, ope2), ope2);
@@ -2576,7 +2576,7 @@ void SSA::mark_invariant(int funcNum, Circle& circle) {
 						}
 					}
 					break;
-				}*/
+				}
 				default:
 					break;
 				}
