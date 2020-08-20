@@ -208,25 +208,25 @@ bool is_nonsence(int index)
 			}
 		}
 	}
-	regex pattern5("LSL\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*#2");
-	regex pattern6("(LDR|STR)\\s+([SPLR0-9]+)\\s*,\\[\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*\\]\\s*");
-	if (regex_match(str, result, pattern5)) {
-		string lsl1 = result[1];
-		string lsl2 = result[2];
-		if ((output_buffer[index + 1].substr(0, 3) == "LDR" 
-			|| output_buffer[index + 1].substr(0, 3) == "STR") 
-			&& regex_match(output_buffer[index + 1], result, pattern6)) {
-			string op = result[1];
-			string op_re = result[2];
-			string op_op1 = result[3];
-			string op_op2 = result[4];
-			if (op_op2 == lsl1) {
-				output_buffer[index] = op + " " + op_re + ",[" + op_op1 + "," + lsl2 + ",LSL #2]";
-				output_buffer[index + 1] = "NOP";
-				return false;
-			}
-		}
-	}
+	// regex pattern5("LSL\\s+([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*,\\s*#2");
+	// regex pattern6("(LDR|STR)\\s+([SPLR0-9]+)\\s*,\\[\\s*([SPLR0-9]+)\\s*,\\s*([SPLR0-9]+)\\s*\\]\\s*");
+	// if (regex_match(str, result, pattern5)) {
+	// 	string lsl1 = result[1];
+	// 	string lsl2 = result[2];
+	// 	if ((output_buffer[index + 1].substr(0, 3) == "LDR" 
+	// 		|| output_buffer[index + 1].substr(0, 3) == "STR") 
+	// 		&& regex_match(output_buffer[index + 1], result, pattern6)) {
+	// 		string op = result[1];
+	// 		string op_re = result[2];
+	// 		string op_op1 = result[3];
+	// 		string op_op2 = result[4];
+	// 		if (op_op2 == lsl1) {
+	// 			output_buffer[index] = op + " " + op_re + ",[" + op_op1 + "," + lsl2 + ",LSL #2]";
+	// 			output_buffer[index + 1] = "NOP";
+	// 			return false;
+	// 		}
+	// 	}
+	// }
 
 	string a = str.substr(0, 3);	//删除连续相同MOV,丛加的
 	if (a == "MOV" && output_buffer[index] == output_buffer[index - 1]) {
